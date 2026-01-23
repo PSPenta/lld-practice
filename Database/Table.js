@@ -3,8 +3,8 @@ class Table {
   columnTypes = ['integer', 'string', 'boolean'];
   properties = {
     lastId: 0,
-    schema: {},           // Schema contains columns and their types
-    indexes: {}           // Indexes contains each column with their associated Maps
+    schema: {}, // Schema contains columns and their types
+    indexes: {}, // Indexes contains each column with their associated Maps
   };
   rows = new Map();
 
@@ -30,7 +30,8 @@ class Table {
       if (!indexes || !indexes.length) throw new Error('Invalid indexes!');
 
       for (let col of indexes) {
-        if (this.properties.indexes[col]) throw new Error('Index already exists!');
+        if (this.properties.indexes[col])
+          throw new Error('Index already exists!');
 
         this.properties.indexes[col] = new Map();
       }
@@ -38,7 +39,8 @@ class Table {
   }
 
   addIndex(column) {
-    if (!column || !this.properties.schema[column]) throw new Error('Invalid column!');
+    if (!column || !this.properties.schema[column])
+      throw new Error('Invalid column!');
 
     this.properties.indexes[column] = new Map();
 
@@ -53,7 +55,8 @@ class Table {
   }
 
   removeIndex(column) {
-    if (!column || !this.properties.schema[column]) throw new Error('Invalid column!');
+    if (!column || !this.properties.schema[column])
+      throw new Error('Invalid column!');
 
     if (!this.properties.indexes[column]) return false;
 
@@ -78,7 +81,7 @@ class Table {
         delete where[col];
       }
     }
-    
+
     let result = [];
     ids = Array.from(new Set(ids));
     for (let id of ids) {
@@ -87,7 +90,7 @@ class Table {
 
     if (Object.keys(where).length) {
       let rows = Array.from(this.rows.values());
-      let result2 = rows.filter(row => {
+      let result2 = rows.filter((row) => {
         let cols = Object.keys(where);
         for (const col in cols) {
           if (row[col] !== where[col]) {
@@ -165,10 +168,10 @@ class Table {
     if (!id || typeof id !== 'number') throw new Error('Invalid row!');
 
     if (!this.properties.schema[id]) {
-      console.log('Row doesn\'t exist!');
+      console.log("Row doesn't exist!");
       return;
     }
-    
+
     this.properties.schema.delete(id);
 
     for (let [key, val] of this.properties.indexes) {
@@ -179,6 +182,16 @@ class Table {
   truncate() {
     this.rows.clear();
     this.properties.lastId = 0;
+  }
+
+  drop() {
+    this.rows.clear();
+    this.properties.lastId = 0;
+    this.properties.schema = {};
+    this.properties.indexes = {};
+    this.name = '';
+
+    this = null;
   }
 }
 

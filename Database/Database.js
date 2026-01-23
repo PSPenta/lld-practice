@@ -14,7 +14,6 @@ class Database {
 
   addTable(table) {
     if (!table || !table.name || !table.properties || !table.properties.schema) {
-      console.log('table', table);
       throw new Error('Invalid table name or schema!');
     }
 
