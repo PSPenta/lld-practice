@@ -25,13 +25,11 @@ class SlidingWindowCounter {
     // If timeLapsed >= windowMs, time to reset the window
     if (timeLapsed >= this.windowMs) {
       window.previousStart = window.currentStart;
-      window.previousCount = window.currentCount;
+      window.previousCount =
+        timeLapsed >= this.windowMs * 2 ? 0 : window.currentCount;
       window.currentStart = currentTime;
       window.currentCount = 0;
 
-      if (timeLapsed >= (this.windowMs * 2)) {
-        window.previousCount = 0;
-      }
       this.requests.set(ip, window);
 
       // Fresh window started
@@ -46,6 +44,7 @@ class SlidingWindowCounter {
     const effectiveTotal = window.currentCount + effectivePreviousCount;
     if (effectiveTotal < this.limit) {
       window.currentCount++;
+      this.requests.set(ip, window);
       return true;
     }
 
