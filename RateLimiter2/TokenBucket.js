@@ -1,5 +1,8 @@
-class TokenBucket {
+const RateLimiterStrategy = require('./RateLimiterStrategy');
+
+class TokenBucket extends RateLimiterStrategy {
   constructor(capacity, refillRate) {
+    super();
     this.capacity = capacity;
     this.refillRate = refillRate;
     this.bucket = new Map();
@@ -15,7 +18,7 @@ class TokenBucket {
     if (refills > 0) {
       this.bucket.set(ip, {
         tokens: Math.min(this.capacity, ipRequests.tokens + refills),
-        lastRefilledAt: currentTime
+        lastRefilledAt: currentTime,
       });
     }
   }
@@ -26,7 +29,7 @@ class TokenBucket {
     if (!this.bucket.has(ip)) {
       this.bucket.set(ip, {
         tokens: this.capacity - 1,
-        lastRefilledAt: Date.now()
+        lastRefilledAt: Date.now(),
       });
 
       return true;
@@ -40,7 +43,7 @@ class TokenBucket {
     if (ipRequests.tokens > 0) {
       this.bucket.set(ip, {
         tokens: ipRequests.tokens - 1,
-        lastRefilledAt: ipRequests.lastRefilledAt
+        lastRefilledAt: ipRequests.lastRefilledAt,
       });
       return true;
     }
@@ -49,12 +52,4 @@ class TokenBucket {
   }
 }
 
-const limiter = new TokenBucket(0, 0);
-const ip = "1.2.3.4";
-
-let i = 1;
-const id = setInterval(() => {
-  if (i > 20) clearInterval(id);
-  console.log(`Request ${i}:`, limiter.isAllowed(ip));
-  i++;
-}, 500);
+module.exports = TokenBucket;

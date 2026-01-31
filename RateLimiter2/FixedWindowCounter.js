@@ -1,10 +1,13 @@
-class FixedWindowCounter {
+const RateLimiterStrategy = require('./RateLimiterStrategy');
+
+class FixedWindowCounter extends RateLimiterStrategy {
   limit = 0;
   windowMs = 0;
   requests = new Map();
   windowStart = Date.now();
 
   constructor(limit, windowMs) {
+    super();
     this.limit = limit;
     this.windowMs = windowMs;
     this.windowStart = Date.now();
@@ -30,11 +33,6 @@ class FixedWindowCounter {
     this.requests.set(ip, currentCount + 1);
     return true;
   }
-};
-
-const limiter = new FixedWindowCounter(3, 10000); // 3 req / 10s
-const ip = "1.2.3.4";
-
-for (let i = 1; i <= 5; i++) {
-  console.log(`Request ${i}:`, limiter.isAllowed(ip));
 }
+
+module.exports = FixedWindowCounter;

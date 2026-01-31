@@ -1,5 +1,8 @@
-class LeakyBucket {
+const RateLimiterStrategy = require('./RateLimiterStrategy');
+
+class LeakyBucket extends RateLimiterStrategy {
   constructor(capacity, leakRate) {
+    super();
     this.capacity = capacity;
     this.leakRate = leakRate;
     this.bucket = new Map();
@@ -15,7 +18,7 @@ class LeakyBucket {
     if (leaks > 0) {
       this.bucket.set(ip, {
         totalRequests: Math.max(0, ipRequests.totalRequests - leaks),
-        lastLeakedAt: currentTime
+        lastLeakedAt: currentTime,
       });
     }
   }
@@ -26,7 +29,7 @@ class LeakyBucket {
     if (!this.bucket.has(ip)) {
       this.bucket.set(ip, {
         totalRequests: 1,
-        lastLeakedAt: Date.now()
+        lastLeakedAt: Date.now(),
       });
 
       return true;
@@ -40,7 +43,7 @@ class LeakyBucket {
     if (ipRequests.totalRequests < this.capacity) {
       this.bucket.set(ip, {
         totalRequests: ipRequests.totalRequests + 1,
-        lastLeakedAt: ipRequests.lastLeakedAt
+        lastLeakedAt: ipRequests.lastLeakedAt,
       });
       return true;
     }
@@ -49,12 +52,4 @@ class LeakyBucket {
   }
 }
 
-const limiter = new LeakyBucket(8, 1);
-const ip = "1.2.3.4";
-
-let i = 1;
-const id = setInterval(() => {
-  if (i > 20) clearInterval(id);
-  console.log(`Request ${i}:`, limiter.isAllowed(ip));
-  i++;
-}, 500);
+module.exports = LeakyBucket;

@@ -1,10 +1,13 @@
-class SlidingWindowLog {
+const RateLimiterStrategy = require('./RateLimiterStrategy');
+
+class SlidingWindowLog extends RateLimiterStrategy {
   limit = 0;
   windowMs = 0;
   requests = new Map();
   windowStart = Date.now();
 
   constructor(limit, windowMs) {
+    super();
     this.limit = limit;
     this.windowMs = windowMs;
     this.windowStart = Date.now();
@@ -22,10 +25,12 @@ class SlidingWindowLog {
     }
 
     let oldRequests = this.requests.get(ip);
-    oldRequests = oldRequests.filter(req => currentTime - req.time < this.windowMs);
+    oldRequests = oldRequests.filter(
+      (req) => currentTime - req.time < this.windowMs,
+    );
 
     if (oldRequests.length < this.limit) {
-      this.requests.set(ip, [ ...oldRequests, { time: currentTime } ]);
+      this.requests.set(ip, [...oldRequests, { time: currentTime }]);
       return true;
     }
 
@@ -33,12 +38,4 @@ class SlidingWindowLog {
   }
 }
 
-const limiter = new SlidingWindowLog(8, 10000);
-const ip = "1.2.3.4";
-
-let i = 1;
-const id = setInterval(() => {
-  if (i > 20) clearInterval(id);
-  console.log(`Request ${i}:`, limiter.isAllowed(ip));
-  i++;
-}, 1000);
+module.exports = SlidingWindowLog;

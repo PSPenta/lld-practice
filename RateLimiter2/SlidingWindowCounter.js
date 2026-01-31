@@ -1,5 +1,8 @@
-class SlidingWindowCounter {
+const RateLimiterStrategy = require('./RateLimiterStrategy');
+
+class SlidingWindowCounter extends RateLimiterStrategy {
   constructor(limit, windowMs) {
+    super();
     this.limit = limit;
     this.windowMs = windowMs;
     this.requests = new Map();
@@ -13,7 +16,7 @@ class SlidingWindowCounter {
         previousStart: currentTime - this.windowMs,
         previousCount: 0,
         currentStart: currentTime,
-        currentCount: 0
+        currentCount: 0,
       });
     }
 
@@ -52,12 +55,4 @@ class SlidingWindowCounter {
   }
 }
 
-const limiter = new SlidingWindowCounter(8, 10000);
-const ip = "1.2.3.4";
-
-let i = 1;
-const id = setInterval(() => {
-  if (i > 20) clearInterval(id);
-  console.log(`Request ${i}:`, limiter.isAllowed(ip));
-  i++;
-}, 1000);
+module.exports = SlidingWindowCounter;
