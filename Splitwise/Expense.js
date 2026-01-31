@@ -12,6 +12,16 @@ class Expense {
   validate() {
     throw new Error('Not implemented');
   }
+
+  apply(BalanceSheet) {
+    this.splits.forEach((split) => {
+      if (split.user !== this.paidBy) {
+        BalanceSheet.addBalance(split.user, split.amount);
+      } else {
+        BalanceSheet.addBalance(split.user, -split.amount);
+      }
+    });
+  }
 }
 
 class ExactExpense extends Expense {
@@ -30,7 +40,7 @@ class EqualExpense extends Expense {
   validate() {
     const amount = Number((this.amount / this.splits.length).toFixed(2));
 
-    this.splits.forEach(split => {
+    this.splits.forEach((split) => {
       split.amount = amount;
     });
 
@@ -49,7 +59,7 @@ class PercentageExpense extends Expense {
       throw new Error('Total percentage must be 100');
     }
 
-    this.splits.forEach(split => {
+    this.splits.forEach((split) => {
       split.amount = Number(
         ((this.amount * split.percentage) / 100).toFixed(2),
       );
