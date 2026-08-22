@@ -36,7 +36,7 @@ const limitConcurrency = async (tasks, concurrency = 3) => {
 
   // Create "concurrency" number of workers
   const workers = Array.from({ length: concurrency }, worker);
-console.log(workers);
+  console.log(workers);
   // Wait for all workers to finish
   await Promise.all(workers);
 };
