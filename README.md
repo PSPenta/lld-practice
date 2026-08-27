@@ -14,8 +14,8 @@
 5. [The standard approach (memorize this)](#5-the-standard-approach-memorize-this)
 6. [Clarifying questions checklist](#6-clarifying-questions-checklist)
 7. [OOP building blocks](#7-oop-building-blocks)
-8. [SOLID principles (with examples)](#8-solid-principles-with-examples)
-9. [Design patterns that actually matter](#9-design-patterns-that-actually-matter)
+8. [Design principles (SOLID + DRY / KISS / YAGNI / PoLK)](#8-design-principles-solid--dry--kiss--yagni--polk)
+9. [Design patterns (Creational · Behavioural · Structural)](#9-design-patterns-creational--behavioural--structural)
 10. [API design for LLD](#10-api-design-for-lld)
 11. [Data modeling & state](#11-data-modeling--state)
 12. [Concurrency, idempotency & failure](#12-concurrency-idempotency--failure)
@@ -197,85 +197,395 @@ Not: `OrderService extends DatabaseHelper extends Logger...`
 
 ---
 
-## 8. SOLID principles (with examples)
+## 8. Design principles (SOLID + DRY / KISS / YAGNI / PoLK)
 
-### S — Single Responsibility Principle
-A class should have **one reason to change**.
-
-Bad: `UserService` that registers users, sends email, and writes billing.
-
-Good:
-- `UserService` — registration rules  
-- `EmailNotifier` — emails  
-- `BillingService` — charges  
-
-### O — Open/Closed Principle
-Open for **extension**, closed for **modification**.
-
-Add `SlackNotifier` without rewriting `NotificationService` — program to `Notifier` interface.
-
-### L — Liskov Substitution Principle
-Subtypes must be usable wherever the parent/interface is expected, without breaking callers.
-
-If `Notifier.Send` is documented to return errors (not panic), every implementation must honor that.
-
-### I — Interface Segregation Principle
-Prefer small, focused interfaces over fat ones.
-
-Bad: `Worker` with `Read()`, `Write()`, `AdminFlush()`, `RenderPDF()`.  
-Good: separate interfaces per capability.
-
-### D — Dependency Inversion Principle
-High-level modules depend on **abstractions**, not concrete vendors.
-
-```text
-SuggestService → LLMClient (interface)
-                    ↑
-           OpenAIClient / AnthropicClient
-```
-
-This is critical for payments, LLMs, email providers, SMS gateways, etc.
+Principles guide **how you structure code**. Patterns are reusable **shapes**. Learn principles first.
 
 ---
 
-## 9. Design patterns that actually matter
+### SOLID
 
-Use patterns to solve a real variation problem — not to impress.
+#### S — Single Responsibility Principle (SRP)
 
-| Pattern | Intent | Classic LLD use |
-|---------|--------|-----------------|
-| **Strategy** | Swap algorithms | Rate limit algorithms; fare calculation; payment methods |
-| **Factory / Abstract Factory** | Create objects without exposing construction | VehicleFactory; ExpenseFactory |
-| **Adapter** | Make incompatible APIs work together | Wrap bank/UPI/card behind one gateway interface |
-| **Observer / Pub-Sub** | Notify many listeners | Topic publish → multiple subscribers |
-| **Singleton** | One shared instance | Use carefully (config); often DI is better |
-| **Decorator** | Add behavior dynamically | Auth middleware, logging wrapper |
-| **Repository** | Abstract persistence | `TicketRepository` |
-| **Builder** | Construct complex objects step-by-step | Query builder; HTTP request builder |
-| **Command** | Encapsulate an action | Undo/redo; job queue tasks |
-| **State** | Behavior changes with state | Ticket Open/Pending/Closed transitions |
-| **Template Method** | Shared algorithm skeleton | Import pipelines with customizable steps |
+**Meaning:** A class / function / module should have **one reason to change** (one focused responsibility).
 
-### Patterns used in this repository (with reference files)
+| Bad | Good |
+|-----|------|
+| `UserService` registers users, sends email, charges cards | `UserService`, `EmailNotifier`, `BillingService` |
+
+**Interview line:** “If Slack notification logic changes, I shouldn’t have to touch ticket-creation code.”
+
+**In this repo:** RateLimiter2 keeps algorithms in strategy classes; `RateLimiter` only delegates.
+
+#### O — Open/Closed Principle (OCP)
+
+**Meaning:** **Open for extension**, **closed for modification**.
+
+Add behavior by adding new classes, not by editing a giant `if/else` in existing code.
+
+```text
+// Bad: edit Allow() every time you add an algorithm
+if kind == "token" { ... } else if kind == "leaky" { ... }
+
+// Good: new Strategy class; RateLimiter unchanged
+RateLimiter { strategy.Allow(key) }
+```
+
+**In this repo:** `RateLimiter2` — add Sliding Window without rewriting `RateLimiter.js` / `strategy.go`.
+
+#### L — Liskov Substitution Principle (LSP)
+
+**Meaning:** Subclasses (or interface implementations) must be **substitutable** for the base type without breaking callers.
+
+If code expects `Notifier.Send(msg) error`, every notifier must:
+- honor that contract  
+- not panic unexpectedly  
+- not silently no-op when the caller expects delivery or a clear error  
+
+**Bad:** `NullNotifier` that pretends success but drops all messages when the product requires delivery guarantees.
+
+#### I — Interface Segregation Principle (ISP)
+
+**Meaning:** No class should be forced to implement methods it doesn’t use. Prefer **small interfaces**.
+
+```text
+// Bad fat interface
+Device { Read(); Write(); Fax(); Print(); BrewCoffee(); }
+
+// Good
+Reader { Read() }
+Writer { Write() }
+```
+
+**In Go interviews:** “Accept interfaces with 1–2 methods” (`io.Reader`, `LLMClient.Stream`).
+
+#### D — Dependency Inversion Principle (DIP)
+
+**Meaning:** Depend on **abstractions**, not concrete classes.
+
+```text
+High-level: SuggestService / PaymentProcessor
+                ↓ depends on
+Abstract:     LLMClient / BankGateway / PaymentStrategy
+                ↑ implemented by
+Low-level:    OpenAIAdapter / UPIGateway / RazorpayPayment
+```
+
+**In this repo:** `Go/PaymentGateway-go/bank_gateway.go` — `PaymentGateway` depends on `BankGateway` interface, not on a hard-coded UPI struct type in business logic.
+
+---
+
+### DRY — Don’t Repeat Yourself
+
+**Meaning:** Avoid duplication of **logic, configuration, or behavior**. One source of truth.
+
+| Duplicated | Better |
+|------------|--------|
+| Same validation copy-pasted in 4 handlers | Shared `ValidateTicket()` / middleware |
+| Same credit-debit math in 3 services | One `CreditMeter` |
+
+**Caution:** Don’t force unrelated things into one “util” god-object. DRY is about **knowledge**, not merging every two similar lines.
+
+### KISS — Keep It Simple Stupid
+
+**Meaning:** Choose the **simplest solution** that solves the problem. Avoid unnecessary complexity.
+
+- v1: one in-memory cache  
+- Later: Redis, only when multi-instance forces it  
+
+**Interview line:** “I’d start simple and introduce a queue/cache when a requirement justifies it.”
+
+### YAGNI — You Ain’t Gonna Need It
+
+**Meaning:** Don’t build features until they are **actually needed**.
+
+Don’t add Abstract Factory + 5 interfaces for one payment method “just in case.”  
+When the **second** provider arrives → introduce the abstraction.
+
+### PoLK — Principle of Least Knowledge (Law of Demeter)
+
+**Meaning:** Objects talk only to **direct collaborators** — not to “friends of friends.”
+
+```text
+// Bad — reach through internals
+order.customer.address.zipCode
+
+// Better — ask a direct collaborator
+order.ShippingZip()
+// or customer.PrimaryZip()
+```
+
+Reduces coupling: if `Address` structure changes, `Order` callers don’t all break.
+
+---
+
+### Principles cheat card
+
+| Principle | One line |
+|-----------|----------|
+| SRP | One reason to change |
+| OCP | Extend without editing core |
+| LSP | Impls must honor the contract |
+| ISP | Small interfaces |
+| DIP | Depend on abstractions |
+| DRY | Don’t duplicate knowledge |
+| KISS | Simplest workable design |
+| YAGNI | Don’t build unused features |
+| PoLK | Talk only to close friends |
+
+---
+
+## 9. Design patterns (Creational · Behavioural · Structural)
+
+**Rule:** Use a pattern when it solves a real problem (variation, decoupling, reuse). Don’t sprinkle patterns to sound senior.
+
+GoF groups:
+
+| Category | Question it answers |
+|----------|---------------------|
+| **Creational** | How do we **create** objects cleanly? |
+| **Behavioural** | How do objects **communicate / vary behavior**? |
+| **Structural** | How do we **compose** objects for flexibility/scale? |
+
+`*` = useful · `**` = very common in LLD interviews
+
+---
+
+### A) Creational patterns — how to create objects?
+
+#### Singleton `**`
+
+**Intent:** Exactly **one** shared instance (DB pool handle, logger, config).
+
+**Idea:**
+- private constructor (or unexported in Go)
+- static / package-level instance
+- `getInstance()` returns the same object every time
+
+```text
+Database.getInstance() → always same connection manager
+```
+
+**Pros:** Controlled global access.  
+**Cons:** Hidden dependencies, hard to test; in Go prefer **DI** (pass `*sql.DB`) over classic Singleton.
+
+**Interview tip:** Mention thread-safe init (`sync.Once` in Go).
+
+#### Factory `*`
+
+**Intent:** Create objects **without** exposing concrete classes to the caller.
+
+```text
+Vehicle (interface) → Car, Bike, Truck
+car = VehicleFactory.createVehicle("car")  // returns Car
+```
+
+**When:** Many related types; caller shouldn’t `switch` everywhere.
+
+**In this repo:**
+- `ParkingLot2/Vehicle.js`, `Go/ParkingLot2-go/vehicle.go` (`CreateVehicle`)
+- `Splitwise/Expense.js`, `Go/Splitwise-go/expense.go` (`CreateExpense` / `ExpenseFactory`)
+
+#### Builder `*`
+
+**Intent:** Construct a **complex object step-by-step** (optional fields, readable fluent API).
+
+```text
+QueryBuilder
+  .select("id, name")
+  .from("users")
+  .where("active = true")
+  .build()
+```
+
+Default/empty constructor + setters / chained methods for each part.  
+**When:** Many optional params; telescoping constructors get ugly.
+
+#### Abstract Factory
+
+**Intent:** Factory of **families** of related products.
+
+```text
+CarAbstractFactory
+  SportsCarFactory  → Bugatti, Ferrari
+  BudgetCarFactory  → Tata, Mahindra
+```
+
+**When:** Multiple product families must stay consistent (UI theme: LightButton + LightDialog vs Dark*).  
+**YAGNI warning:** Overkill if you only have one family — use a simple Factory first.
+
+#### Prototype
+
+**Intent:** Create new objects by **cloning** an existing one (avoid expensive `new` + setup).
+
+```js
+const obj2 = Object.create(obj1) // JS prototype-style share/clone idea
+// or structuredClone(obj1) for a data copy
+```
+
+**When:** Object setup is costly; many similar instances with small differences (game pieces, document templates).
+
+---
+
+### B) Behavioural patterns — how objects communicate / vary behavior?
+
+#### Observer `**` (Pub-Sub)
+
+**Intent:** When the **Publisher** changes, **notify all Subscribers**.
+
+```text
+Publisher
+  - subscribers[]
+  + subscribe(sub)
+  + unsubscribe(sub)
+  + notify()        // call when state changes
+
+Subscriber
+  + update(event)
+```
+
+**Classic LLD:** Notification service — ticket assigned → email + Slack + analytics.
+
+**In this repo:** `Pub-Sub/`, `Go/Pub-Sub-go/pubsub.go` (and `pubsub_core.go`, `pubsub_event.go`).
+
+#### Strategy `**`
+
+**Intent:** Same job, **different algorithms**, interchangeable at runtime.
+
+```text
+PaymentStrategy (interface)
+  RazorpayPayment implements PaymentStrategy
+  StripePayment implements PaymentStrategy
+
+processor = new PaymentProcessor(new RazorpayPayment(...))
+processor.pay(amount)
+```
+
+**Also:** Rate limit algorithms; expense split types (Equal/Exact/Percentage as strategies + factory).
+
+**In this repo:**
+- **Best example:** `RateLimiter2/` + `Go/RateLimiter2-go/strategy.go`
+- Payment-style: `Go/PaymentGateway-go/bank_gateway.go`
+
+#### Iterator `*`
+
+**Intent:** Traverse a collection **without exposing** internal structure.
+
+Built into JS (`for...of`, generators) and Go (`range` over slices — not a formal Iterator type).  
+**LLD example:** Playlist iterator — `hasNext()` / `next()` over songs.
+
+#### Command `*`
+
+**Intent:** Encapsulate a request as an **object** (execute / undo / queue).
+
+```text
+MigrationCommand
+  up()   → create table, run ops
+  down() → rollback
+```
+
+One command can map to multiple steps: open DB → verify table → run operation.  
+**Also:** remote controls, job queues, undo stacks.
+
+#### State (know for interviews)
+
+Behavior changes when **internal state** changes (ticket Open → Closed; vending machine). Often cleaner than huge `switch(status)`.
+
+#### Template Method (know for interviews)
+
+Skeleton algorithm in a base class; subclasses fill in steps (import CSV vs JSON with same pipeline).
+
+---
+
+### C) Structural patterns — how to compose objects for flexibility?
+
+#### Adapter `**`
+
+**Intent:** **Bridge** between two incompatible interfaces so they work together **without rewriting** either side.
+
+```text
+Your app expects: BankGateway.ProcessPayment(p)
+Vendor SDK has:   razorpay.Charge(card, paise)
+
+Adapter implements BankGateway and translates calls → vendor SDK
+```
+
+**Classic story:** Smart home hub speaking one protocol; each device adapter speaks Zigbee/Wi‑Fi/etc.  
+**In this repo:** payment gateways behind `BankGateway` (`Go/PaymentGateway-go/`).
+
+#### Proxy `**`
+
+**Intent:** A **stand-in** object that controls access to another (caching, auth, rate limit, remote call).
+
+```text
+Client → Nginx reverse proxy → microservice
+Client → RepositoryProxy (cache) → real Repository
+```
+
+**Microservices:** API gateway / reverse proxy in front of services.  
+**App-level:** lazy-loading proxy, protection proxy.
+
+#### Decorator `*`
+
+**Intent:** Add behavior **dynamically** by wrapping objects (same interface).
+
+```text
+Coffee = WhippedCream(Sugar(Milk(BasicCoffee)))
+cost() and description() stack
+```
+
+**Also:** HTTP middleware chain — logging(auth(handler))).  
+Flexible alternative to deep inheritance.
+
+#### Facade `*`
+
+**Intent:** A **simple front door** over a messy subsystem.
+
+```text
+VideoConversionFacade.convert(file, "mp4")
+  // internally: decoder, encoder, bitrate, filesystem...
+```
+
+Callers don’t need to know 15 internal classes.  
+**LLD:** `OrderFacade.placeOrder()` orchestrates inventory + payment + notify.
+
+#### Composite / Bridge (optional extras)
+
+- **Composite:** tree of objects treated uniformly (file/folder UI).  
+- **Bridge:** split abstraction from implementation (Remote ↔ TVBrand) — rarer in short LLD rounds.
+
+---
+
+### Patterns used in this repository (reference files)
 
 | Pattern | LLD in this repo | How it shows up | Reference files |
 |---------|------------------|-----------------|-----------------|
-| **Strategy** | **RateLimiter2** | `RateLimiter` holds a `RateLimiterStrategy`; swap Fixed Window / Token Bucket / Leaky Bucket / Sliding Window without changing the caller | JS: `RateLimiter2/RateLimiterStrategy.js`, `RateLimiter2/RateLimiter.js`, `RateLimiter2/TokenBucket.js`, `RateLimiter2/LeakyBucket.js`, `RateLimiter2/FixedWindowCounter.js`, `RateLimiter2/SlidingWindowLog.js`, `RateLimiter2/SlidingWindowCounter.js` · Go: `Go/RateLimiter2-go/strategy.go`, `Go/RateLimiter2-go/token_bucket.go`, `Go/RateLimiter2-go/leaky_bucket.go`, `Go/RateLimiter2-go/fixed_window_counter.go`, `Go/RateLimiter2-go/sliding_window_log.go`, `Go/RateLimiter2-go/sliding_window_counter.go`, `Go/RateLimiter2-go/main.go` |
-| **Strategy + Adapter-style interface** | **PaymentGateway** | `BankGateway` interface; `UPIGateway` / `CardGateway` / `NetBankingGateway` are interchangeable processors | Go: `Go/PaymentGateway-go/bank_gateway.go`, `Go/PaymentGateway-go/payment_gateway.go`, `Go/PaymentGateway-go/payment.go`, `Go/PaymentGateway-go/main.go` |
-| **Factory** | **Splitwise** | `ExpenseFactory` / `CreateExpense` builds Exact / Equal / Percentage expenses | JS: `Splitwise/Expense.js`, `Splitwise/index.js` · Go: `Go/Splitwise-go/expense.go`, `Go/Splitwise-go/main.go` |
-| **Factory** | **ParkingLot2** | `VehicleFactory` / `CreateVehicle` creates Bike / Car / Truck | JS: `ParkingLot2/Vehicle.js`, `ParkingLot2/index.js` · Go: `Go/ParkingLot2-go/vehicle.go`, `Go/ParkingLot2-go/main.go` |
-| **Observer / Pub-Sub** | **Pub-Sub** | Subscribe handlers to a topic/event; publish fans out to listeners | JS: `Pub-Sub/` · Go: `Go/Pub-Sub-go/pubsub.go`, `Go/Pub-Sub-go/pubsub_core.go`, `Go/Pub-Sub-go/pubsub_event.go`, `Go/Pub-Sub-go/main.go` |
-| **Inheritance / specialization** (not full Strategy) | **Parkinglot** (v1) | `Car` / `Bike` / `Truck` extend `Vehicle` | JS: `Parkinglot/Vehicle.js` · Go: `Go/Parkinglot-go/vehicle.go` |
+| **Strategy** | **RateLimiter2** | Shared strategy interface; swap algorithms | JS: `RateLimiter2/RateLimiterStrategy.js`, `RateLimiter2/RateLimiter.js`, `RateLimiter2/TokenBucket.js`, `RateLimiter2/LeakyBucket.js`, `RateLimiter2/FixedWindowCounter.js`, `RateLimiter2/SlidingWindowLog.js`, `RateLimiter2/SlidingWindowCounter.js` · Go: `Go/RateLimiter2-go/strategy.go`, `token_bucket.go`, `leaky_bucket.go`, `fixed_window_counter.go`, `sliding_window_log.go`, `sliding_window_counter.go`, `main.go` |
+| **Strategy + Adapter-style interface** | **PaymentGateway** | `BankGateway` + UPI/Card/NetBanking | Go: `Go/PaymentGateway-go/bank_gateway.go`, `payment_gateway.go`, `payment.go`, `main.go` |
+| **Factory** | **Splitwise** | Exact / Equal / Percentage expenses | JS: `Splitwise/Expense.js`, `Splitwise/index.js` · Go: `Go/Splitwise-go/expense.go`, `main.go` |
+| **Factory** | **ParkingLot2** | Bike / Car / Truck | JS: `ParkingLot2/Vehicle.js`, `index.js` · Go: `Go/ParkingLot2-go/vehicle.go`, `main.go` |
+| **Observer / Pub-Sub** | **Pub-Sub** | Subscribe + publish fan-out | JS: `Pub-Sub/` · Go: `Go/Pub-Sub-go/pubsub.go`, `pubsub_core.go`, `pubsub_event.go`, `main.go` |
+| **Inheritance** (not full Strategy) | **Parkinglot** v1 | Car/Bike/Truck extend Vehicle | JS: `Parkinglot/Vehicle.js` · Go: `Go/Parkinglot-go/vehicle.go` |
 
-**Not clearly implemented as named patterns in this repo (know them for interviews anyway):** Singleton, Decorator, Repository, Builder, Command, State, Template Method. You can still *discuss* them (e.g. URL shortener HTTP handlers as middleware/decorator-style; ticket status as State) even when the folder does not label them.
+**Know for interviews but not clearly coded as named patterns here:** Singleton, Builder, Abstract Factory, Prototype, Iterator, Command, State, Template Method, Proxy, Decorator, Facade.
 
-**Note:** `Ratelimiter` / `Go/Ratelimiter-go` implement multiple algorithms as **standalone types**, not behind a shared Strategy interface. For Strategy pattern demos, prefer **RateLimiter2**.
+**Note:** `Ratelimiter` / `Go/Ratelimiter-go` = standalone algorithm types, **not** Strategy. Prefer **RateLimiter2** to demo Strategy.
 
 ### How to mention a pattern in interview
 
-> “I’ll use Strategy here because we already have two interchangeable algorithms and may add a third — same idea as `RateLimiter2` in my practice repo.”
+> “I’ll use Strategy because we have interchangeable algorithms — same idea as RateLimiter2: context holds a strategy interface, algorithms are swappable.”
 
-If only one implementation exists and none planned, skip the pattern.
+If only one implementation exists and none is planned → **YAGNI**: skip the pattern.
+
+### Pattern ↔ principle quick links
+
+| You say… | You’re applying… |
+|----------|------------------|
+| New class instead of editing switch | OCP + often Strategy/Factory |
+| Depend on `LLMClient` interface | DIP + Adapter |
+| Split God class | SRP |
+| Don’t build Abstract Factory yet | YAGNI + KISS |
+| Middleware wraps handler | Decorator |
 
 ---
 
@@ -861,19 +1171,22 @@ Clarify → Entities → Classes/Interfaces → Flows → APIs →
 Concurrency/Failure → Extend/Trade-offs
 ```
 
-### SOLID one-liners
+### SOLID + other principles one-liners
 - **S:** one reason to change  
 - **O:** extend without editing core  
 - **L:** subtypes don’t break contracts  
 - **I:** small interfaces  
 - **D:** depend on abstractions  
+- **DRY:** don’t duplicate knowledge  
+- **KISS:** simplest workable design  
+- **YAGNI:** don’t build unused features  
+- **PoLK:** talk only to direct collaborators  
 
 ### Patterns one-liners
-- Strategy = swap algorithm  
-- Factory = create cleanly  
-- Adapter = wrap vendor  
-- Observer = fan-out events  
-- Repository = hide DB  
+**Creational:** Singleton (one instance) · Factory (create by type) · Builder (step-by-step) · Abstract Factory (product families) · Prototype (clone)  
+**Behavioural:** Observer (notify subscribers) · Strategy (swap algorithm) · Iterator (traverse) · Command (request as object) · State · Template Method  
+**Structural:** Adapter (bridge interfaces) · Proxy (stand-in / gateway) · Decorator (wrap behavior) · Facade (simple front door)  
+**Repo demos:** Strategy → RateLimiter2 · Factory → ParkingLot2 / Splitwise · Observer → Pub-Sub · Adapter/Strategy → PaymentGateway  
 
 ### AI LLD one-liners
 - LLM behind `LLMClient` interface (Adapter)  
