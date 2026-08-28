@@ -181,19 +181,168 @@ SlackNotifier implements Notifier
 ### Encapsulation
 Hide internals; expose a small API (`Park`, `Unpark`), not raw fields.
 
-### Composition over inheritance
-Prefer “has-a” over deep “is-a” trees.
+### Inheritance vs composition (read this carefully)
+
+Interviewers often ask for **composition over inheritance**. Both are OOP tools; composition is the default for most LLD designs.
+
+#### Inheritance — “is-a”
+
+One type **is a specialized kind of** another. The child inherits fields and methods from the parent.
 
 ```text
-OrderService has PaymentGateway
-OrderService has InventoryService
+Vehicle
+  ├── Car
+  ├── Bike
+  └── Truck
 ```
-Not: `OrderService extends DatabaseHelper extends Logger...`
+
+`Car` **is a** `Vehicle`. Code that accepts `Vehicle` can use a `Car`.
+
+**Works when:** the relationship is stable, shallow, and truly “is-a” (e.g. `Square` is a `Shape` in a geometry exercise).
+
+**Breaks down when:** you inherit to **reuse code** from unrelated concepts:
+
+```text
+Email
+  └── Ticket
+        └── SupportTicket
+              └── AISupportTicket   ← fragile chain
+```
+
+Change `Email.send()` → every subclass may break, even if it only needed a ticket ID.
+
+#### Composition — “has-a”
+
+Build objects by **combining parts**. Behavior comes from collaborators, not from a parent class.
+
+```text
+Ticket
+  - id, subject, status
+  - assignee: Agent           ← has-a
+  - messages: []Message       ← has-a
+  - tags: []Tag                ← has-a
+
+TicketService
+  - repo: TicketRepository    ← has-a
+  - notifier: Notifier        ← has-a (interface)
+  - suggest: SuggestService   ← has-a
+```
+
+`Ticket` **has** messages and an assignee. It is **not** a subclass of `Email`.
+
+In Go (no classical inheritance):
+
+```go
+type Ticket struct {
+    ID       string
+    Subject  string
+    Assignee *Agent
+    Messages []Message
+}
+
+type TicketService struct {
+    Repo     TicketRepository
+    Notifier Notifier      // SlackNotifier | EmailNotifier at runtime
+    Suggest  SuggestService
+}
+```
+
+**Interface implementation** (`SlackNotifier implements Notifier`) is a **contract**, not inheritance of state — still composition at the design level.
+
+#### Side-by-side
+
+| | Inheritance | Composition |
+|---|-------------|-------------|
+| Relationship | **is-a** | **has-a** / **uses-a** |
+| Coupling | Child tied to parent changes | Parts swappable behind interfaces |
+| Flexibility | Type fixed early | Swap implementations at runtime |
+| Testing | Often need subclasses to mock | Inject mocks via interfaces |
+| LLD default | Rare for business domains | **Preferred** |
+
+#### Why composition is usually better
+
+1. **Single Responsibility (SOLID)** — Each collaborator has one job. `TicketService` creates tickets; `Notifier` sends Slack; `LLMClient` calls AI. Not one mega-class.
+2. **Open/Closed** — Add `SlackNotifier` as a new class implementing `Notifier`. Don’t edit `TicketService` with new `if channel == slack`.
+3. **Runtime flexibility** — Tenant A gets Slack, Tenant B gets email — same `TicketService`, different injected `Notifier`.
+4. **No fragile base class** — Parent changes don’t ripple through a deep tree.
+5. **Easier testing** — Mock `Notifier` or `LLMClient`; no subclass hacks.
+
+**Bad (inheritance thinking):**
+
+```text
+class SupportTicket extends Email extends MessageThread {
+  assign() { ... }
+  suggestReply() { ... }   // AI mixed into email hierarchy
+}
+```
+
+**Good (composition):**
+
+```text
+TicketService
+  - repo: TicketRepository
+  - notifier: Notifier
+  - suggest: SuggestService
+
+Ticket
+  - messages: []Message
+  - assignee: Agent
+```
+
+Add AI later → inject `SuggestService`; don’t subclass `Ticket`.
+
+#### AI / support inbox example (composition)
+
+```text
+SuggestService                         ← orchestrator
+  ├── ticketRepo: TicketRepository
+  ├── retriever: Retriever
+  ├── promptBuilder: PromptBuilder
+  ├── llm: LLMClient                   ← interface, not "extends OpenAI"
+  ├── credits: CreditMeter
+  └── guardrails: Guardrails
+```
+
+Not: `AISuggestTicket extends Ticket extends Email`.
+
+Same pattern as **`PaymentGateway`** in this repo — business logic depends on `BankGateway` interface; concrete gateways are composed in, not inherited.
+
+#### When inheritance is still OK
+
+| OK | Avoid |
+|----|--------|
+| Small, stable **is-a** (Shape → Square) | `Ticket extends Email` because both contain text |
+| Framework lifecycle hooks (rare in LLD) | Deep trees for changing business rules |
+| Implementing a small interface in Go | Inheriting only to reuse unrelated methods |
+
+**Rule for LLD:** If you ask “X **uses** Y” or “X **has** Y” → **composition**. If “X **is a** Y” and it’s stable → inheritance *might* fit; still prefer composition + interface in most product designs.
+
+#### In this repository
+
+| Style | Example | Where |
+|-------|---------|-------|
+| **Composition + interface** | `RateLimiter` **has-a** `RateLimiterStrategy` | `RateLimiter2/`, `Go/RateLimiter2-go/` |
+| **Composition + interface** | `PaymentGateway` **has-a** `BankGateway` | `Go/PaymentGateway-go/bank_gateway.go` |
+| **Composition** | `ParkingLot` **has-a** `Floor` **has-a** `Slot` | `ParkingLot2/`, `Go/ParkingLot2-go/` |
+| **Inheritance (teaching only)** | `Car extends Vehicle` | `Parkinglot/Vehicle.js`, `Go/Parkinglot-go/vehicle.go` — valid for vehicle types, but ParkingLot2 uses composition (floors/slots) for the lot itself |
+
+Prefer the **ParkingLot2 / RateLimiter2 / PaymentGateway** style in interviews.
+
+#### Interview one-liner
+
+> “Inheritance models is-a and couples subclasses to parent changes. Composition models has-a — I build a Ticket from Agent, Messages, and a Notifier interface. Responsibilities stay separate, testing is easy, and I can swap Slack, email, or AI without rewriting the core model.”
 
 ### Association types (useful vocabulary)
-- **Association** — uses  
-- **Aggregation** — has (can exist independently)  
-- **Composition** — owns (lifecycle tied)
+
+These refine **how** objects relate in composition diagrams:
+
+- **Association** — uses (loose; either can exist alone)  
+- **Aggregation** — has (parts can outlive the whole)  
+- **Composition** — owns (lifecycle tied; part dies with whole)
+
+Example: `ParkingLot` **owns** `Floor` **owns** `Slot` (composition). `TicketService` **uses** `Notifier` (association via interface).
+
+Not: `OrderService extends DatabaseHelper extends Logger...`
 
 ---
 
@@ -1177,6 +1326,7 @@ Concurrency/Failure → Extend/Trade-offs
 - **L:** subtypes don’t break contracts  
 - **I:** small interfaces  
 - **D:** depend on abstractions  
+- **Composition:** has-a + interfaces over deep is-a inheritance (default for LLD)  
 - **DRY:** don’t duplicate knowledge  
 - **KISS:** simplest workable design  
 - **YAGNI:** don’t build unused features  
