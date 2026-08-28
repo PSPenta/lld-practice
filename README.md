@@ -1536,12 +1536,22 @@ AssignmentPolicy → CanAssign(ticket, agent)
 - **Adapter:** Slack API wrapper  
 - **Repository:** hide DB  
 
-### Backup: Webhook ingest (idempotent)
+### Backup: Webhook ingest + connector sync (idempotent / async)
 
+**Webhook (inbound events):**
 ```text
 Verify signature → store event_id (dedupe) → enqueue → return 200 fast
 Worker upserts ticket/message — never call LLM inline on webhook path
 ```
+
+**Connector sync (pull files from Slack/Notion/Drive):**
+```text
+Bad:  POST /sync → fetch all files → chunk → embed in request (client waits)
+Good: POST /sync → publish job to SQS/Kafka → 202 { job_id }
+      Worker → fetch → ingest each doc → update last_synced_at (retries, DLQ)
+```
+
+Same rule: **heavy I/O and indexing never block the HTTP handler.**
 
 ---
 
@@ -1584,7 +1594,7 @@ v4: Horizontal scale stateless API + workers
 | Topic | One-liner |
 |-------|-----------|
 | Caching | L1 in-process + L2 Redis; invalidate on KB update |
-| Queue | Webhook: enqueue fast, worker async, DLQ |
+| Queue | Webhook + **connector file sync**: enqueue job (SQS/Kafka), 202 fast, worker ingests; DLQ |
 | Rate limit / credits | Per-tenant 429 + reserve/commit |
 | DB | Index `(tenant_id, inbox_id, status)`; cursor pagination |
 | Scale out | Stateless API; shared DB/Redis/queue |
@@ -1593,7 +1603,7 @@ v4: Horizontal scale stateless API + workers
 
 **3-step answer:** (1) “I’d evolve without rewriting core classes.” (2) One concrete step. (3) Trade-off. Then stop.
 
-**Mini-scenario:** Gmail webhook storm → verify, dedupe `event_id`, enqueue, 200 fast; LLM suggest 15s timeout → release credits; `trace_id` ties flow.
+**Mini-scenario:** Gmail webhook storm → verify, dedupe `event_id`, enqueue, 200 fast. **Connector sync** → don’t fetch Slack/GDrive in HTTP thread; enqueue sync job, return 202, workers chunk+embed. LLM suggest 15s timeout → release credits; `trace_id` ties flow.
 
 ---
 

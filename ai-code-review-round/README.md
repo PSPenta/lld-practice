@@ -13,9 +13,11 @@
 3. [How to review a repo — step by step](#3-how-to-review-a-repo--step-by-step)
 4. [The ragbot example — walkthrough](#4-the-ragbot-example--walkthrough)
 5. [What to highlight (priority order)](#5-what-to-highlight-priority-order)
+5A. [Sync vs async — connector file sync (SQS/Kafka)](#sync-vs-async--connector-file-sync-interviewer-highlight)
 6. [RAG from zero — layman's guide](#6-rag-from-zero--laymans-guide)
 7. [Semantic search — explained simply](#7-semantic-search--explained-simply)
 8. [Vector DB — explained simply](#8-vector-db--explained-simply)
+8A. [LangChain & LangGraph — vs hand-rolled RAG](#8a-langchain--langgraph--vs-hand-rolled-rag)
 9. [Chunking — overlap, strategies, trade-offs](#9-chunking--overlap-strategies-trade-offs)
 10. [Retrieval strategies in RAG](#10-retrieval-strategies-in-rag)
 11. [Review checklist (print this)](#11-review-checklist-print-this)
@@ -72,6 +74,7 @@ Companies like Hiver (AI SDE roles) increasingly use **code review** because:
 - “SQL built with f-strings from user input” → **P0**
 - “This prompt tells the model to guess when context is thin” → **P0 for RAG product**
 - “No connection pool on Postgres” → **valid P1/P2** depending on depth
+- “Connector sync / bulk ingest runs in the HTTP handler” → **valid P1/P2** — should enqueue (SQS/Kafka), return **202 + job_id**, workers do fetch → chunk → embed
 
 ---
 
@@ -100,12 +103,24 @@ POST /api/v1/ask
   → AskResponse + sources
 ```
 
-Then trace **alternate path**:
+Then trace **alternate paths** (same file — where planted bugs live):
 
 ```text
 POST /api/v1/connectors/{id}/ask
-  → connector_routes.py      ← often where planted bugs live
+  → connector_routes.py
+  → loads ALL chunks into prompt (not Retriever.top_k)
+  → raw requests.post to Anthropic     ← bypasses LLMClient adapter
+  → build_connector_prompt()           ← “always confident” / not grounded
+
+POST /api/v1/connectors/{id}/sync
+  → connector_routes.py
+  → delete existing docs (sync)
+  → fetch Slack / Notion / GDrive (sync, no queue)
+  → for each item: ingest → chunk → embed → DB (sync)
+  → return { documents_synced: N }     ← client waited for entire pipeline
 ```
+
+**Why trace `/sync` separately:** It is the **interviewer highlight** — heavy I/O and embedding run **inside the HTTP request** instead of on a worker behind SQS/Kafka.
 
 ---
 
@@ -145,12 +160,14 @@ llm/           → adapter (Anthropic + fake)
 | Hardcoded Slack/Notion/GDrive/Anthropic keys | Like writing your house key on the front door — anyone with repo access owns your accounts |
 | SQL `f"… WHERE title LIKE '%{q}%'"` | Attacker can inject SQL via search query |
 | Prompt: “use your own knowledge, always confident answer” | Opposite of helpdesk RAG — **invites hallucination** |
+| `ask_connector` calls Anthropic via raw `requests.post` | **Bypasses `LLMClient` adapter** — no shared timeout/retry/offline mode; duplicate HTTP path |
 | Loads **all** chunks into one prompt | Like pasting 500 pages into ChatGPT — slow, expensive, misses focus |
 | `while status == 429: retry` with no sleep | Computer spins forever when Google rate-limits you |
 | `except Exception: pass` | Errors disappear — ops team sees “0 synced” with no clue why |
 | `list_connectors` returns `access_token` | Leaking secrets in API response |
 | `/search` re-embeds text, ignores stored vectors | Wasted work; inconsistent with main retriever |
 | `/search` returns random chunks if no match | User thinks bad results are “relevant” |
+| **`POST /connectors/{id}/sync` runs sync work synchronously** | HTTP request waits for Slack/Notion/GDrive fetch + ingest + embed — slow, timeouts, no retries; should use **SQS/Kafka + workers** (see below) |
 
 **Other files:**
 
@@ -178,10 +195,12 @@ Use this order when speaking:
 ### P1 — Correctness & RAG quality
 
 1. Retrieval inconsistent between endpoints  
-2. No dedup on ingest (`content_hash` unused)  
-3. Chunking loses structure (headers stripped, fixed word count)  
-4. Weak / non-semantic embeddings in production path without guardrails  
-5. Sync wipes all docs — no incremental update  
+2. **Connector ask bypasses `LLMClient`** — duplicate raw HTTP, no shared retries/timeouts  
+3. No dedup on ingest (`content_hash` unused)  
+4. Chunking loses structure (headers stripped, fixed word count)  
+5. Weak / non-semantic embeddings in production path without guardrails  
+6. Sync wipes all docs — no incremental update  
+7. **Connector sync is synchronous** — file/API fetch + chunk + embed in the HTTP handler
 
 ### P2 — Production operations
 
@@ -190,7 +209,8 @@ Use this order when speaking:
 3. Timeouts on **all** outbound HTTP (`requests` without timeout in connectors)  
 4. Structured logging, trace_id, metrics  
 5. Sync LLM in request thread — need queue/workers at scale  
-6. Idempotency on POST ingest  
+6. **Connector/document sync should be async** — SQS, Kafka, or similar; not blocking `POST /sync`  
+7. Idempotency on POST ingest  
 
 ### P3 — Code quality
 
@@ -198,6 +218,59 @@ Use this order when speaking:
 2. Duplicate logic (two retrieval implementations)  
 3. Missing tests for connector/search paths  
 4. Naive datetime vs UTC elsewhere  
+
+### Sync vs async — connector file sync (interviewer highlight)
+
+In `connector_routes.py`, `POST /connectors/{id}/sync` does **everything inside the HTTP request**:
+
+```text
+Current (bad for production):
+  Client calls POST /sync
+    → delete old docs (sync)
+    → call Slack / Notion / Google Drive API (sync)
+    → for each file/message: ingest → chunk → embed → DB write (sync)
+    → return { documents_synced: N }   ← client waited for ALL of this
+```
+
+**Layman:** The user clicks “Sync” and the browser/API **holds the connection open** while the server downloads files from Slack, chunks them, and writes to the DB. If there are 500 files or Google is slow, the request **times out** or the server thread is **blocked** — no other syncs can run well.
+
+**What production should do:**
+
+```text
+Better:
+  Client calls POST /sync
+    → validate connector, set sync_in_progress
+    → publish job to queue (SQS / Kafka / Redis stream)
+    → return 202 Accepted { job_id } immediately
+
+  Worker(s) (separate process):
+    → consume job
+    → fetch from Slack/Notion/GDrive
+    → ingest each doc (chunk, embed, store)
+    → update connector.last_synced_at, clear sync_in_progress
+    → on failure: retry with backoff, DLQ for poison messages
+```
+
+| | Synchronous (ragbot) | Async queue (SQS / Kafka) |
+|---|---------------------|----------------------------|
+| **API response** | Waits until all files synced | Returns fast with job id |
+| **Timeouts** | Gateway/client may timeout | Workers can run minutes |
+| **Retries** | Whole request fails | Per-message retry |
+| **Scale** | One thread per sync request | Many workers in parallel |
+| **Backpressure** | Overloads API server | Queue buffers spikes |
+
+**When to say SQS vs Kafka (interview one-liner):**
+- **SQS** — simple job queue, “sync this connector”, few consumers, AWS-native, at-least-once delivery.
+- **Kafka** — high throughput, event log, many consumers, replay indexing pipeline, ordering per partition (e.g. per `tenant_id`).
+
+**Same pattern applies to:**
+- Gmail/webhook ingest (ack fast, process async)
+- Bulk KB re-embedding after doc upload
+- Never run **LLM calls** or **heavy embedding** on the webhook/sync HTTP path
+
+**Interview line (memorize):**
+
+> “The connector sync endpoint does file fetch and ingestion synchronously in the request thread. For production I’d enqueue a sync job to SQS or Kafka, return 202 immediately, and let workers handle fetch-chunk-embed with retries and a DLQ — same pattern as webhook ingest.”
 
 ---
 
@@ -365,6 +438,55 @@ Never search all customers’ docs and hope the top result is right — that’s
 
 ---
 
+## 8A. LangChain & LangGraph — vs hand-rolled RAG
+
+You may hear these names in an AI SDE interview. You **do not** need to memorize their APIs — you need to know **what problem they solve** and how that maps to code like ragbot.
+
+### LangChain (library)
+
+**Layman:** A **toolkit** for building LLM apps — pre-built pieces for loading documents, splitting text, embedding, retrieving, and calling models, wired together in a “chain.”
+
+| Concept in LangChain | ragbot equivalent |
+|----------------------|-------------------|
+| Document loaders | `ingestion/loaders/` (Slack, Notion, file) |
+| Text splitter / chunker | `ingestion/chunker.py` |
+| Embeddings | `retrieval/embedder.py` |
+| Vector store | Postgres + `Chunk.embedding` (pgvector would slot in) |
+| Retriever | `retrieval/retriever.py` → `top_chunks()` |
+| LLM call | `llm/anthropic_client.py` via `LLMClient` interface |
+| Prompt template | `prompts.py` |
+
+**Interview line:** “This repo is a **hand-rolled LangChain-shaped pipeline** — same stages, explicit modules, no framework magic. That’s fine for a small service; LangChain helps when you want standard loaders/retrievers and faster iteration.”
+
+**What to criticize in ragbot:** The **main path** follows the adapter pattern; **`connector_routes.py` breaks it** — raw `requests` to Anthropic instead of `LLMClient`, custom prompt instead of `prompts.py`, no `Retriever`.
+
+### LangGraph (library)
+
+**Layman:** Builds **multi-step AI workflows as a graph** — nodes (steps), edges (flow), optional **cycles** (agent loops: retrieve → think → tool call → retrieve again).
+
+```text
+Simple RAG (ragbot /ask):     ingest → retrieve → generate   (one straight line)
+
+LangGraph-style agent:        retrieve → LLM → call tool → retrieve again → …
+                              (state machine; can loop until done)
+```
+
+ragbot does **not** use LangGraph — `/ask` is a **linear pipeline** (retrieve once, generate once). That is appropriate for a helpdesk Q&A bot. LangGraph shines when you need **tool use, routing, or multi-hop reasoning** (e.g. “search KB → if empty search web → summarize → draft reply”).
+
+**Interview line:** “LangGraph is for **stateful agent flows** with branching and loops. This helpdesk RAG is a single retrieve-then-answer path — a service class is enough; I’d reach for LangGraph if we added tool-calling or multi-step escalation workflows.”
+
+### When frameworks help vs hurt
+
+| Hand-rolled (ragbot core) | Framework (LangChain / LangGraph) |
+|---------------------------|-----------------------------------|
+| Clear files, easy to review in interviews | Faster to prototype |
+| You own every line | Abstraction can hide bugs |
+| Good when team wants minimal deps | Good when pipeline grows (10+ steps, many sources) |
+
+**Red flag either way:** Two paths doing the same thing differently — ragbot’s clean `AnswerService` **and** messy `connector_routes` is exactly that anti-pattern.
+
+---
+
 ## 9. Chunking — overlap, strategies, trade-offs
 
 ### Why chunk at all?
@@ -525,6 +647,7 @@ ragbot: `chunk_size=200` **words**, `overlap=40` words, step = 160 words per sli
 - [ ] Migrations vs create_all  
 - [ ] Transactions on multi-row writes  
 - [ ] N+1 queries (list loads all chunks?)  
+- [ ] **Heavy sync/ingest async** — not in HTTP handler (SQS/Kafka workers)  
 
 ### HTTP / reliability
 
@@ -559,8 +682,8 @@ rg "requests\.(get|post)" .    # check for timeout=
 ### Body (group by severity)
 
 **P0 — Security:** …  
-**P1 — RAG / correctness:** …  
-**P2 — Production:** …  
+**P1 — RAG / correctness:** connector ask **bypasses `LLMClient`**, loads all chunks instead of `Retriever.top_k`, hallucination-friendly prompt …  
+**P2 — Production:** connector **sync should be async** (SQS/Kafka workers, 202 + job id, not blocking HTTP) …  
 
 ### Positive close (10 sec)
 
@@ -577,7 +700,7 @@ rg "requests\.(get|post)" .    # check for timeout=
 | Day | Activity |
 |-----|----------|
 | 1 | Read §6–10 (RAG, semantic, vector DB, chunking, retrieval) — draw pipeline on paper |
-| 2 | Clone ragbot; trace `/ask` and `/connectors/.../ask`; write 10 findings with file names |
+| 2 | Clone ragbot; trace `/ask`, `/connectors/.../ask`, and **`/connectors/.../sync`**; write 10 findings with file names |
 | 3 | Review another small RAG repo or your SuperStocks RAG code with §11 checklist |
 | 4 | Mock: 40 min silent review + 5 min present findings to a friend or recorder |
 
@@ -594,6 +717,8 @@ rg "requests\.(get|post)" .    # check for timeout=
 | **Top-K** | Take the K best matching chunks |
 | **Hallucination** | Model inventing facts — RAG + grounding reduces this |
 | **Grounding** | Force answer to use retrieved context only |
+| **LangChain** | Toolkit library for loaders, chunkers, retrievers, LLM chains |
+| **LangGraph** | Graph/state-machine library for multi-step agent workflows with loops |
 
 ---
 
