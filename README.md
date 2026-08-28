@@ -1,7 +1,8 @@
 # Low-Level Design (LLD) Interview Preparation Guide
 
 > A practical, detailed guide to prepare for **LLD / machine-coding / OOD** interview rounds at product companies.  
-> This repository also contains working implementations (JavaScript + Golang) of common LLD problems — use them for practice after you learn the method.
+> This repository also contains working implementations (JavaScript + Golang) of common LLD problems — use them for practice after you learn the method.  
+> For **AI code review** rounds (clone a repo, find production/RAG bugs), see **[ai-code-review-round/README.md](ai-code-review-round/README.md)**.
 
 ---
 
@@ -23,14 +24,19 @@
 13. [Extensibility & evolution](#13-extensibility--evolution)
 14. [Common LLD problems — how to think](#14-common-lld-problems--how-to-think)
 15. [AI / LLM LLD for beginners](#15-ai--llm-lld-for-beginners)
-16. [Worked example: LRU Cache](#16-worked-example-lru-cache)
-17. [Worked example: Rate Limiter](#17-worked-example-rate-limiter)
-18. [Worked example: Parking Lot](#18-worked-example-parking-lot)
-19. [Worked example: AI Suggest Reply](#19-worked-example-ai-suggest-reply-copilot-draft)
-20. [How to practice (4-week plan)](#20-how-to-practice-4-week-plan)
-21. [Interview day checklist](#21-interview-day-checklist)
-22. [Problems in this repository](#22-problems-in-this-repository)
-23. [Cheat sheet](#23-cheat-sheet)
+16. [Worked example: Cache Client ⭐](#16-worked-example-cache-client-)
+17. [Worked example: LRU Cache](#17-worked-example-lru-cache)
+18. [Worked example: Rate Limiter](#18-worked-example-rate-limiter)
+19. [Worked example: Parking Lot](#19-worked-example-parking-lot)
+20. [Worked example: AI Suggest Reply](#20-worked-example-ai-suggest-reply-copilot-draft)
+21. [Worked example: Ticket assign + notify](#21-worked-example-ticket-assign--notify)
+22. [Redis eviction policies (cache / Redis LLD)](#22-redis-eviction-policies-cache--redis-lld)
+23. [HLD topics that bleed into LLD](#23-hld-topics-that-bleed-into-lld)
+24. [Timed mock + self-score](#24-timed-mock--self-score)
+25. [How to practice (4-week plan)](#25-how-to-practice-4-week-plan)
+26. [Interview day checklist](#26-interview-day-checklist)
+27. [Problems in this repository](#27-problems-in-this-repository)
+28. [Cheat sheet](#28-cheat-sheet)
 
 ---
 
@@ -113,6 +119,16 @@ Suggested time split:
 **Opening line you can use:**
 
 > “I’ll clarify the requirements first, then outline entities and responsibilities, design classes and key workflows, define APIs, and finally discuss concurrency, failure modes, and how the design evolves.”
+
+### Interview round types (know which doc to use)
+
+| Round type | What you do | Prep doc |
+|------------|-------------|----------|
+| **Discussion LLD** (~60 min) | Classes, APIs, flows, trade-offs — no full coding | **This README** (§5–24) |
+| **Machine coding** (90–120 min) | Working code for a small system | This README + repo `*/` implementations |
+| **AI code review** | Clone repo, manual review — security, RAG, production gaps | **[ai-code-review-round/README.md](ai-code-review-round/README.md)** |
+
+Same fundamentals (OOD, patterns, RAG vocabulary). Design rounds = speak structure; review rounds = find bugs with file names.
 
 ---
 
@@ -1031,7 +1047,7 @@ For each problem: actors → use cases → entities → classes → APIs → con
 
 ### AI-era LLD variants (increasingly asked)
 
-Classic LLD skills still apply. AI rounds add **provider abstraction, RAG, credits, streaming, and unsafe model output**. See **[§15. AI / LLM LLD for beginners](#15-ai--llm-lld-for-beginners)** and **[§19. Worked example: AI Suggest Reply](#19-worked-example-ai-suggest-reply)**.
+Classic LLD skills still apply. AI rounds add **provider abstraction, RAG, credits, streaming, and unsafe model output**. See **[§15](#15-ai--llm-lld-for-beginners)**, **[§16 Cache Client](#16-worked-example-cache-client-)**, and **[§20 AI Suggest Reply](#20-worked-example-ai-suggest-reply-copilot-draft)**.
 
 ---
 
@@ -1139,7 +1155,7 @@ Don’t call a slow LLM inside a DB transaction. Don’t do heavy embedding on t
 1. **LLM provider abstraction** — `LLMClient` + 2 adapters + router  
 2. **RAG retriever** — chunk metadata, top-K, tenant filter  
 3. **AI credit meter** — reserve/commit (like wallet) + rate limit  
-4. **Suggest-reply / copilot** — full orchestration (see §19)  
+4. **Suggest-reply / copilot** — full orchestration (see §20)  
 5. **Tool-calling agent (basic)** — model returns tool name → your code runs tool → continue  
 
 ### What “good enough for a noob” looks like in the interview
@@ -1153,9 +1169,106 @@ You can draw the boxes, name interfaces, walk the happy path, then say:
 
 You do **not** need to implement a vector DB.
 
+### Five AI LLD problems — expanded sketches
+
+Practice **Suggest Reply (§20)** and **LLM abstraction** deeply; sketch the rest.
+
+**A — LLM provider abstraction:** `LLMClient` interface with `Complete` / `Stream`; `OpenAIAdapter`, `AnthropicAdapter`; `LLMRouter` (Strategy) by plan/cost; failover on timeout.
+
+**B — RAG retriever:** Offline: chunk → embed → store with `{ tenant_id, doc_id }`. Online: embed query → vector search **filtered by tenant** → top-K → prompt. Never cross-tenant retrieval.
+
+**C — AI credit meter:** `Reserve` → `Commit` / `Release` (wallet-like, not just `Allow()`). DB ledger is source of truth; not cache alone.
+
+**D — Suggest reply:** Full flow in §20.
+
+**E — Tool-calling agent:** Loop: LLM → tool call → your code runs tool → append result → LLM again; cap max iterations; AuthZ per tool.
+
+### Evaluation & AI prep drill
+
+**Offline eval:** Golden tickets + expected facts. **Online:** thumbs, edit distance to sent reply, latency, cost. Store `prompt_version` + model on each suggestion.
+
+**15-min drill:** Draw architecture → Suggest happy path → timeout/release credits → RAG + tenant filter → new vendor = new Adapter only.
+
+For **RAG/code review depth** (chunking, retrieval, vector DB, reviewing repos like ragbot), see **[ai-code-review-round/README.md](ai-code-review-round/README.md)**.
+
 ---
 
-## 16. Worked example: LRU Cache
+## 16. Worked example: Cache Client ⭐
+
+> **Very common at product companies** (including helpdesk/SaaS interviews): *“Design a Cache Client that caches frequent queries.”*
+
+### Step 1 — Clarifying questions (ask 6–8)
+
+1. Library or HTTP service?
+2. In-memory only, or Redis/shared cache?
+3. Single machine or many servers?
+4. TTL (expire after time)?
+5. Max capacity? Eviction policy (LRU)?
+6. Thread-safe? (multiple goroutines)
+7. On miss — return error, or load from DB (`GetOrLoad`)?
+8. Cache stampede: 100 concurrent misses on same key — all hit DB?
+9. Metrics needed (hit/miss rate)?
+
+**State assumptions if they say “your call”:** in-memory v1, TTL + LRU, thread-safe, `GetOrLoad` with loader.
+
+### Step 2 — Entities & classes
+
+```text
+CacheEntry: key, value, expiresAt
+
+interface Cache {
+  Get(key) (value, found)
+  Set(key, value, ttl)
+  Delete(key)
+}
+
+CacheClient implements Cache
+  - store: map[string]*CacheEntry
+  - order: doubly linked list (LRU)
+  - capacity, defaultTTL
+  - mu: Mutex
+
+  GetOrLoad(key, loader func() (value, error))
+```
+
+Repo references: `LRU/`, `Redis/`, `Go/LRU-go/`, `Go/Redis-go/`.
+
+### Step 3 — Flows
+
+**Get:** lock → miss/expired → return miss → else move to MRU → unlock → return value  
+
+**Set:** lock → update or insert → evict LRU tail if over capacity → unlock  
+
+**GetOrLoad:** on miss, call loader — use **singleflight** so 50 concurrent misses → one DB call.
+
+### Step 4 — API (if HTTP service)
+
+```http
+GET    /v1/cache/{key}
+PUT    /v1/cache/{key}   body: { "value": "...", "ttl_sec": 60 }
+DELETE /v1/cache/{key}
+```
+
+Often a **library** — ask first.
+
+### Step 5 — Trade-offs / evolve
+
+| Question | Answer |
+|----------|--------|
+| Traffic ↑ | Redis L2; local L1 |
+| Memory ↑ | Capacity cap + TTL |
+| Redis down | Fallback to DB (degraded) |
+| Extend | `Cache` interface → Memory / Redis (Adapter) |
+| Eviction | Strategy: LRU, LFU (see §22 for Redis policies) |
+| Monitor | hit_rate, miss_rate, eviction_count, p99 |
+
+**Patterns:** Strategy/Adapter for backends; SRP — cache does not know SQL (loader injected).
+
+**Practice:** Explain in 20 minutes out loud without notes.
+
+---
+
+## 17. Worked example: LRU Cache
 
 ### Clarify
 - Capacity?  
@@ -1194,7 +1307,7 @@ Wrap `Get`/`Put` with mutex if multi-threaded.
 
 ---
 
-## 17. Worked example: Rate Limiter
+## 18. Worked example: Rate Limiter
 
 ### Clarify
 - Per user / IP / API key?  
@@ -1227,7 +1340,7 @@ Store counters/tokens in Redis; accept approximate limits under race, or use Lua
 
 ---
 
-## 18. Worked example: Parking Lot
+## 19. Worked example: Parking Lot
 
 ### Clarify
 - Multiple floors?  
@@ -1260,7 +1373,7 @@ New pricing → new `PricingStrategy`.
 
 ---
 
-## 19. Worked example: AI Suggest Reply (copilot draft)
+## 20. Worked example: AI Suggest Reply (copilot draft)
 
 Use this as your **AI LLD template**. Same structure as LRU/Parking Lot interviews.
 
@@ -1384,7 +1497,130 @@ Close the doc. Draw boxes from memory. Hit: tenant RAG filter, credits, timeout,
 
 ---
 
-## 20. How to practice (4-week plan)
+## 21. Worked example: Ticket assign + notify
+
+Helpdesk / shared-inbox classic (assign owner, notify team).
+
+### Clarify
+
+- Single assignee or multiple?
+- Notify which channels (Slack, email, in-app)?
+- Concurrent assign allowed?
+
+### Classes
+
+```text
+TicketService
+  - Assign(ticketID, agentID) error
+  - Get(ticketID)
+
+TicketRepository
+Notifier (interface) → SlackNotifier | EmailNotifier | InAppNotifier
+AssignmentPolicy → CanAssign(ticket, agent)
+```
+
+### Assign flow
+
+```text
+1. Load ticket (tenant-scoped)
+2. Policy: agent in same tenant/inbox?
+3. Optimistic lock: UPDATE ... WHERE version=?
+   → 0 rows → 409 Conflict ("already assigned")
+4. Save ticket, version++
+5. Publish TicketAssigned event → Notifiers (Observer)
+```
+
+### Patterns
+
+- **Observer:** one event, many notifiers  
+- **Adapter:** Slack API wrapper  
+- **Repository:** hide DB  
+
+### Backup: Webhook ingest (idempotent)
+
+```text
+Verify signature → store event_id (dedupe) → enqueue → return 200 fast
+Worker upserts ticket/message — never call LLM inline on webhook path
+```
+
+---
+
+## 22. Redis eviction policies (cache / Redis LLD)
+
+When Redis hits `maxmemory`, it evicts keys per `maxmemory-policy`:
+
+| Policy | Evicts |
+|--------|--------|
+| `noeviction` | Nothing — writes fail when full |
+| `allkeys-lru` | Any key — least recently used (approximate) |
+| `allkeys-lfu` | Any key — least frequently used |
+| `volatile-lru` | Only keys **with TTL** — LRU among those |
+| `volatile-ttl` | Keys with TTL — shortest remaining TTL first |
+| `allkeys-random` / `volatile-random` | Random key |
+
+**Interview lines:**
+- Pure cache → `allkeys-lru` or `allkeys-lfu`
+- Mix permanent + cache keys → `volatile-lru` + TTL on cache only
+- Real Redis uses **approximate** LRU (samples keys), not exact linked-list LRU like `LRU/` in this repo
+- **Eviction** (memory full) ≠ **expiration** (TTL) — related but different
+
+---
+
+## 23. HLD topics that bleed into LLD
+
+Some **HLD** appears in LLD as *“how would you evolve?”* — not full multi-region design.
+
+### Evolution template
+
+```text
+v1: Sync API → service → DB → LLM
+v2: Add Redis (tenant config, hot retrieval)
+v3: Queue (webhooks, bulk embed KB)
+v4: Horizontal scale stateless API + workers
+```
+
+### Common bleed-in topics
+
+| Topic | One-liner |
+|-------|-----------|
+| Caching | L1 in-process + L2 Redis; invalidate on KB update |
+| Queue | Webhook: enqueue fast, worker async, DLQ |
+| Rate limit / credits | Per-tenant 429 + reserve/commit |
+| DB | Index `(tenant_id, inbox_id, status)`; cursor pagination |
+| Scale out | Stateless API; shared DB/Redis/queue |
+| Observability | `trace_id` across services; p99 per step |
+| Multi-tenant | Every query/filter includes `tenant_id` |
+
+**3-step answer:** (1) “I’d evolve without rewriting core classes.” (2) One concrete step. (3) Trade-off. Then stop.
+
+**Mini-scenario:** Gmail webhook storm → verify, dedupe `event_id`, enqueue, 200 fast; LLM suggest 15s timeout → release credits; `trace_id` ties flow.
+
+---
+
+## 24. Timed mock + self-score
+
+**Timer: 40 minutes.** Pick **Cache Client (§16)** or **Rate Limiter (§18)**. Speak out loud; no notes for first 30 min.
+
+After time, score 0–2 each (target ≥ 16/20):
+
+1. Clarified requirements  
+2. Stated assumptions  
+3. Named entities and classes  
+4. Drew simple diagram  
+5. Walked main flows (Get/Set or Allow)  
+6. Mentioned mutex / thread safety  
+7. Mentioned failure case (DB/Redis/LLM down)  
+8. Showed evolution (interface, Redis, queue)  
+9. Named 1 pattern with reason  
+10. Explained trade-offs plainly  
+
+**Opening (memorize):** “I’ll clarify requirements first, then entities, classes, flows, APIs, concurrency, failures, and how the design evolves.”
+
+**Closing:** “I kept v1 simple and showed how it evolves under load and failures. Happy to deep-dive any part.”
+
+---
+
+## 25. How to practice (4-week plan)
 
 ### Week 1 — Foundations
 - SOLID + 5 patterns with your own examples  
@@ -1398,7 +1634,7 @@ Implement or redesign:
 
 ### Week 3 — More problems + AI + concurrency
 - Splitwise, Notification system, Cache client  
-- **AI:** LLM interface + RAG sketch + Suggest Reply (§19) once on paper  
+- **AI:** LLM interface + RAG sketch + Suggest Reply (§20) once on paper  
 - Add mutex/idempotency discussion every time  
 - One machine-coding simulation (90 min timer)  
 
@@ -1417,30 +1653,47 @@ Implement or redesign:
 
 ---
 
-## 21. Interview day checklist
+## 26. Interview day checklist
 
 **Before**
 - [ ] Paper / shared editor ready  
-- [ ] Know your opening script  
+- [ ] Know opening + closing lines (§24)  
+- [ ] Know round type: **LLD design** (this doc) vs **code review** ([ai-code-review-round](ai-code-review-round/README.md))  
+- [ ] Skim company product (helpdesk/SaaS: shared inbox, AI copilot, multi-tenant) — honest if you didn’t use the product  
 - [ ] Sleep; don’t cram 10 new patterns  
 
-**During**
+**During (LLD design)**
 - [ ] Ask questions first  
 - [ ] State assumptions  
 - [ ] Drive use-case by use-case  
 - [ ] Prefer composition + interfaces  
 - [ ] Mention concurrency & failure at least once  
-- [ ] Show how design evolves  
+- [ ] Show how design evolves (§23)  
+
+**During (code review)**
+- [ ] Trace main happy path, then untested routes  
+- [ ] Prioritize: security → RAG correctness → production ops  
+- [ ] Cite file names; group findings P0/P1/P2  
 
 **Avoid**
 - Jumping to Kafka/microservices immediately  
 - Pattern-dropping without need  
 - Coding before the model is clear (discussion rounds)  
 - Ignoring edge cases (null, empty, capacity full)  
+- Fake deep product usage  
+
+### Company research template (helpdesk / AI SaaS)
+
+If they ask *“What do you know about us?”*:
+
+1. **One sentence:** AI-powered customer support — shared inbox + workflows + copilot/agents.  
+2. **Problem:** Teams sharing support@ without chaos; knowledge for agents; draft replies grounded in docs.  
+3. **Your fit:** Multi-tenant APIs, RAG, streaming, credits, reliability — same design space.  
+4. **Honest product use:** Website/docs reviewed; trial if offered.
 
 ---
 
-## 22. Problems in this repository
+## 27. Problems in this repository
 
 Use these as **hands-on practice** after designing on paper.
 
@@ -1467,9 +1720,9 @@ Full cross-reference → **[§7A](#7a-repository-map--oop-principles--patterns-b
 ### Golang (`Go/*-go`)
 
 Same problems ported to Go — good for Go interviews (interfaces, mutexes, errors).  
-Also see `Go/README.md` for Go concurrency interview prep. For a slower, ultra-beginner AI walkthrough used in company-specific prep, see `Go/hiver-lld-prep-simple.md` (same ideas as §15–§19).
+Also see `Go/README.md` for Go concurrency interview prep. For **AI code review** rounds, see **[ai-code-review-round/README.md](ai-code-review-round/README.md)**.
 
-**Note:** This repo’s coded LLDs are classic systems (cache, parking, rate limit, etc.). **AI LLD is covered in this README as design guidance (§15, §19)** — practice it on paper/whiteboard; there is no separate `AI-Suggest-go` folder yet.
+**Note:** This repo’s coded LLDs are classic systems (cache, parking, rate limit, etc.). **AI LLD is covered in this README (§15–§20)** and **code review in ai-code-review-round/** — practice on paper/whiteboard; there is no separate `AI-Suggest-go` folder yet.
 
 ### Suggested workflow with this repo
 
@@ -1480,7 +1733,7 @@ Also see `Go/README.md` for Go concurrency interview prep. For a slower, ultra-b
 
 ---
 
-## 23. Cheat sheet
+## 28. Cheat sheet
 
 ### Structure
 ```text
@@ -1514,6 +1767,14 @@ Concurrency/Failure → Extend/Trade-offs
 - Never trust model output — validate  
 - Timeout LLM calls; ticket must work if AI is down  
 - Stream (SSE) for UX; queue for bulk/offline jobs  
+- **Code review:** secrets, SQL injection, grounded RAG → [ai-code-review-round](ai-code-review-round/README.md)
+
+### HLD bleed-in (when asked “scale?”)
+- v1 simple → Redis → queue → stateless scale → indexes + `trace_id`  
+- Multi-tenant: filter every query by `tenant_id`
+
+### Must-practice designs
+- **Cache Client (§16)** · Rate Limiter (§18) · AI Suggest (§20)
 
 ### Production questions (ask yourself)
 - What if traffic ×10?  
@@ -1532,6 +1793,6 @@ Concurrency/Failure → Extend/Trade-offs
 
 LLD mastery is not memorizing 50 class diagrams. It is building a **repeatable thinking process**, practicing it on 10–15 problems out loud, and explaining **why** your design is good enough for v1 and how it will evolve.
 
-Start with **LRU → Rate Limiter → Parking Lot → Splitwise → Pub-Sub**, then **AI Suggest Reply (§19)**, then branch into domain problems for your target company (payments, inbox, copilots, etc.).
+Start with **Cache Client (§16) → Rate Limiter (§18) → Parking Lot → Splitwise → Pub-Sub**, then **AI Suggest Reply (§20)**, then branch into domain problems. For **code review** prep, use **ai-code-review-round/README.md**.
 
 Good luck.
