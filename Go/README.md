@@ -40,9 +40,58 @@ P2 [G4 G5 G6 ...]  →  M2 (OS thread running on CPU core)
 
 ### Scheduling
 - Go uses **M:N scheduling** — many goroutines multiplexed onto few OS threads
-- When a goroutine blocks on I/O or syscall, its M is freed; another M runs other goroutines
+- When a goroutine blocks, it **leaves** P's runnable queue (see below); M usually keeps running other Gs from that P
 - **Work stealing** — idle P steals goroutines from another P's local queue
 - **Preemption** — since Go 1.14, goroutines are preempted at safe points even in CPU-bound loops (no longer cooperative-only)
+
+### When G blocks — lifecycle (common interview question)
+
+**P does not put a blocked G back on its run queue while it is waiting.** The G moves to a wait structure; when unblocked, the runtime marks it **Runnable** and enqueues it again (local or global queue).
+
+| Block reason | Where G waits | What happens to M |
+|--------------|---------------|-------------------|
+| **Network I/O** (netpoller) | Netpoller wait set | Same M immediately runs the **next G** from P's queue |
+| **Channel / mutex / timer** | That object's wait list | Same — M runs another G |
+| **Blocking syscall** (e.g. file I/O) | G tied to syscall; not runnable | M may block in kernel → runtime **detaches P** and binds P to another M |
+
+```text
+Running on P1/M1
+  → G blocks on network read
+  → G parked in netpoller (NOT in P1's [G2 G3 …] queue)
+  → M1 runs G2, G3, … from P1
+  → socket ready → G marked Runnable → run queue → scheduled on some P/M again
+```
+
+**Syscall handoff (why total M can exceed GOMAXPROCS):**
+
+```text
+1. P1 + M7 running G1
+2. G1 enters blocking syscall → M7 stuck in kernel
+3. Runtime detaches P1 from M7, attaches P1 to M8 (new or from pool)
+4. P1 + M8 runs G2, G3, …
+5. Syscall returns on M7 → G1 runnable → queued → runs later
+```
+
+### Multi-core & P–M binding
+
+On an **N-core** machine, default `GOMAXPROCS = N`:
+
+```text
+Core 0:  P0 [G G G] ──M0──► running G_a    ← parallel
+Core 1:  P1 [G G  ] ──M1──► running G_b    ← parallel
+Core 2:  P2 [G    ] ──M2──► running G_c
+...
+```
+
+| Question | Answer |
+|----------|--------|
+| How many Gs run Go code in parallel? | At most **`GOMAXPROCS`** (one active G per P per core) |
+| Multiple M on one P **at the same instant**? | **No** — 1:1 while executing user Go code |
+| Multiple M serving one P **over time**? | **Yes** — when an M blocks in a syscall, P rebinds to another M |
+| Who configures M count? | **Runtime only** — you do not set it; blocked syscall threads + active threads can make **total M > GOMAXPROCS** |
+| What you configure | **`GOMAXPROCS`** only (= number of Ps) |
+
+Idle P with an empty local queue **steals** Gs from another P so cores stay busy.
 
 ### GOMAXPROCS
 ```go
@@ -56,9 +105,9 @@ runtime.GOMAXPROCS(0)          // query current value
 - For I/O-bound workloads, higher values can help
 
 ### Goroutine states
-- **Runnable** — ready to run, waiting for a P
-- **Running** — currently executing on an M
-- **Waiting** — blocked on channel, syscall, mutex, timer
+- **Runnable** — ready to run, sitting in a run queue (local to P or global), waiting for an M
+- **Running** — currently executing on an M bound to a P
+- **Waiting** — blocked on channel, netpoller, syscall, mutex, or timer — **not** in P's runnable queue
 
 ---
 
@@ -1784,9 +1833,11 @@ defer span.End()
 
 ```
 GMP model               → G=goroutine, M=OS thread, P=logical processor
+Blocked G               → NOT on P's run queue; netpoller/channel/syscall wait; re-queued when ready
+P–M binding             → 1 M per P at a time; P rebinds to new M if syscall blocks old M
 Goroutine vs thread     → 2KB vs 1–8MB stack; millions vs thousands
 Work stealing           → idle P steals goroutines from busy P's queue
-GOMAXPROCS              → number of OS threads; default = CPU cores
+GOMAXPROCS              → number of Ps (parallel Go code); default = CPU cores; you don't set M count
 
 defer wg.Done()         → prevents wg.Wait() deadlock; NOT leak prevention
 wg.Wait()               → wait for ALL goroutines; cannot early-return on first success
