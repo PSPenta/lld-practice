@@ -1,5 +1,6 @@
 const RateLimiterStrategy = require('./RateLimiterStrategy');
 
+/** @implements {RateLimiterStrategy} */
 class LeakyBucket extends RateLimiterStrategy {
   constructor(capacity, leakRate) {
     super();

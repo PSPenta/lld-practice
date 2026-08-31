@@ -1,3 +1,13 @@
+/**
+ * @interface Expense (abstract base class)
+ *
+ * JavaScript has no native `interface` keyword. Shared expense logic lives here;
+ * subclasses must implement {@link Expense#validate}.
+ *
+ * @method validate() → boolean
+ *
+ * @see ExactExpense, EqualExpense, PercentageExpense
+ */
 class Expense {
   constructor(paidBy, amount, splits) {
     if (!splits || !splits.length) {
@@ -24,6 +34,7 @@ class Expense {
   }
 }
 
+/** @implements {Expense} */
 class ExactExpense extends Expense {
   validate() {
     const total = this.splits.reduce((sum, split) => sum + split.amount, 0);
@@ -36,6 +47,7 @@ class ExactExpense extends Expense {
   }
 }
 
+/** @implements {Expense} */
 class EqualExpense extends Expense {
   validate() {
     const amount = Number((this.amount / this.splits.length).toFixed(2));
@@ -48,6 +60,7 @@ class EqualExpense extends Expense {
   }
 }
 
+/** @implements {Expense} */
 class PercentageExpense extends Expense {
   validate() {
     const totalPercentage = this.splits.reduce(

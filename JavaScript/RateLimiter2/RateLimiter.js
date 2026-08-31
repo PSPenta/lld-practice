@@ -1,3 +1,6 @@
+/**
+ * Facade over a {@link RateLimiterStrategy} — inject any strategy at runtime.
+ */
 class RateLimiter {
   constructor(strategy) {
     this.strategy = strategy;

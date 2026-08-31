@@ -1,5 +1,6 @@
 const RateLimiterStrategy = require('./RateLimiterStrategy');
 
+/** @implements {RateLimiterStrategy} */
 class SlidingWindowCounter extends RateLimiterStrategy {
   constructor(limit, windowMs) {
     super();

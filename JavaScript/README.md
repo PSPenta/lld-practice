@@ -474,6 +474,32 @@ class Dog extends Animal {
 // Still prototype under the hood: Dog.prototype.__proto__ === Animal.prototype
 ```
 
+### Interfaces in JavaScript (LLD / Strategy pattern)
+
+JavaScript **does not** have a compile-time `interface` keyword like Java or TypeScript. Common ways to express a contract:
+
+| Approach | When to use |
+|----------|-------------|
+| **Abstract base class** | LLD demos in this repo — method throws if not overridden (`RateLimiterStrategy`, `Expense`, `Vehicle`) |
+| **Duck typing** | Any object with `isAllowed(ip)` works; no base class required |
+| **JSDoc `@interface` + `@implements`** | Documents intent in plain `.js` files (used in `RateLimiter2/`, `Splitwise/`, `Parkinglot/`) |
+| **TypeScript `interface`** | Real compile-time checks when you use TS |
+
+```javascript
+// Plain JS — interface-like contract (see JavaScript/RateLimiter2/RateLimiterStrategy.js)
+class RateLimiterStrategy {
+  isAllowed(ip) { throw new Error("abstract"); }
+}
+class TokenBucket extends RateLimiterStrategy {
+  isAllowed(ip) { /* ... */ }
+}
+
+// TypeScript — actual interface
+interface RateLimiterStrategy { isAllowed(ip: string): boolean; }
+```
+
+**Interview line:** “In JS I use an abstract base class or duck typing for Strategy; in TS I'd use an `interface`.”
+
 ---
 
 ## 11. setTimeout, setImmediate, setInterval

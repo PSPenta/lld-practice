@@ -1,5 +1,6 @@
 const RateLimiterStrategy = require('./RateLimiterStrategy');
 
+/** @implements {RateLimiterStrategy} */
 class TokenBucket extends RateLimiterStrategy {
   constructor(capacity, refillRate) {
     super();

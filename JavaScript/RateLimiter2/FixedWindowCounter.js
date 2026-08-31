@@ -1,5 +1,6 @@
 const RateLimiterStrategy = require('./RateLimiterStrategy');
 
+/** @implements {RateLimiterStrategy} */
 class FixedWindowCounter extends RateLimiterStrategy {
   limit = 0;
   windowMs = 0;
