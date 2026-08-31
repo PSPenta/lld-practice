@@ -10,8 +10,10 @@
 |------------|------|--------|
 | **JavaScript & Node.js** | **[JavaScript/README.md](JavaScript/README.md)** | `this`, closures, event loop, Promises, streams, auth, gotchas |
 | **Golang** | **[Go/README.md](Go/README.md)** | GMP, goroutines, channels, context, GC, interfaces, gotchas |
-| **AI code review** | **[ai-code-review-round/README.md](ai-code-review-round/README.md)** | RAG repo review, production bugs (separate round type) |
 | **LLD (this doc)** | Below §1 | Design method, SOLID, patterns, worked examples |
+| **LLD gaps (breadth)** | **[lld-gaps/README.md](lld-gaps/README.md)** | UML, missing problems, patterns not in repo, 12-week plan |
+| **AI code review** | **[ai-code-review-round/README.md](ai-code-review-round/README.md)** | RAG repo review, production bugs (separate round type) |
+| **Vibe coding / AI-assisted build** | **[vibe-coding-round/README.md](vibe-coding-round/README.md)** | Cursor/Copilot rounds — prompt, verify, own the design |
 
 ---
 
@@ -61,7 +63,9 @@
 2. Go/README.md           → if role is Go / polyglot backend (2–3 days)
 3. This README (§1+)      → LLD method, SOLID, patterns, worked examples
 4. Repo folders           → `JavaScript/*/` (JS) · `Go/*-go/` (Go) — after paper design (§27)
-5. ai-code-review-round/  → only if round is code review, not whiteboard LLD
+5. lld-gaps/              → paper-design missing problems (Elevator, Notification, UML, …)
+6. ai-code-review-round/  → if round is manual code review (not whiteboard LLD)
+7. vibe-coding-round/     → if round allows Cursor/Copilot — design first, AI second
 ```
 
 ### Which guide to prioritize?
@@ -172,7 +176,9 @@ Suggested time split:
 | **Golang Q&A** | GMP, goroutines, channels, context, GC | **[Go/README.md](Go/README.md)** — do **before** LLD if Go role |
 | **Discussion LLD** (~60 min) | Classes, APIs, flows, trade-offs — no full coding | **This README** (§5–24) — after §0 language prep |
 | **Machine coding** (90–120 min) | Working code for a small system | §0 guides + this README + **`JavaScript/*/`** + **`Go/*-go/`** |
+| **Vibe coding / AI-assisted build** | Cursor/Copilot allowed; build + verify + narrate | **[vibe-coding-round/README.md](vibe-coding-round/README.md)** + this README §5 for design |
 | **AI code review** | Clone repo, manual review — security, RAG, production gaps | **[ai-code-review-round/README.md](ai-code-review-round/README.md)** |
+| **LLD breadth (paper only)** | Elevator, Chess, Logger, UML, extra patterns | **[lld-gaps/README.md](lld-gaps/README.md)** |
 
 Same fundamentals (OOD, patterns, RAG vocabulary). **Language/runtime first (§0), then design.** Design rounds = speak structure; review rounds = find bugs with file names.
 
@@ -535,7 +541,7 @@ Use this section to **point at real code** in interviews. Paths are relative to 
 | **UrlShortener** | Minimal OOP | YAGNI ( ⚠️ SRP gap) | Base-62 util; Express middleware |
 | **PollingSystem** | Actor classes | S ( ⚠️ static stores) | Repository-like static store |
 | **Queue** | Single class | KISS, YAGNI | Circular buffer FIFO |
-| **PaymentGateway** | — (Node folder empty) | O, D, S | **Strategy** via `BankGateway` — **Go only** |
+| **PaymentGateway** | `JavaScript/PaymentGateway/` stub · **`Go/PaymentGateway-go/`** full impl | O, D, S | **Strategy** via `BankGateway` |
 
 ---
 
@@ -1705,6 +1711,8 @@ Implement or redesign:
 - 4 timed discussion LLDs (45 min each) — include **one AI** problem  
 - Record yourself; check structure adherence  
 - Prepare 2 stories linking designs to past work  
+- Optional: one **vibe coding** mock ([vibe-coding-round/README.md](vibe-coding-round/README.md))  
+- Paper-design 2 **gap** problems from [lld-gaps/README.md](lld-gaps/README.md)
 
 ### Practice method (every problem)
 1. 5 min questions  
@@ -1777,7 +1785,7 @@ Use these as **hands-on practice** after designing on paper. **JavaScript implem
 | **`JavaScript/PollingSystem/`** | Polls & votes | Actor classes | S ( ⚠️ static store) | Repository-like |
 | **`JavaScript/Queue/`** | FIFO mechanics | Single class | KISS, YAGNI | Circular buffer |
 | **`JavaScript/UrlShortener/`** | HTTP + short codes | Minimal | YAGNI ( ⚠️ SRP) | Encoding util |
-| **PaymentGateway** | — | — | — | **Go only:** `Go/PaymentGateway-go/` |
+| **`JavaScript/PaymentGateway/`** | Stub only (empty files) | — | — | **Full impl:** `Go/PaymentGateway-go/` — Strategy via `BankGateway` |
 
 Full cross-reference → **[§7A](#7a-repository-map--oop-principles--patterns-by-lld)**.
 

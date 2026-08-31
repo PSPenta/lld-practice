@@ -2,6 +2,7 @@
 
 > **Based on:** AI SDE / full-stack interviews where you clone a repo (e.g. [pranavgupta96/ragbot](https://github.com/pranavgupta96/ragbot)), read the code **manually**, and find what is wrong or not production-ready.  
 > **For design / LLD discussion rounds** (classes, APIs, Cache Client, AI Suggest Reply on whiteboard), see **[../README.md](../README.md)** (§4 round types, §16–§24).  
+> **For AI-assisted build rounds** (Cursor/Copilot allowed), see **[../vibe-coding-round/README.md](../vibe-coding-round/README.md)**.  
 > **Audience:** Beginners — every concept explained in plain language first, then interview application.
 
 ---
@@ -33,7 +34,10 @@
 | Round type | What you do | Example |
 |------------|-------------|---------|
 | **Design LLD** | Draw classes, APIs, flows on board | “Design Cache Client” / “Design AI Suggest Reply” |
+| **Vibe coding / AI build** | AI tools allowed; you design, verify, own output | “Build rate limiter with Cursor in 60 min” |
 | **Code review** (this doc) | Clone repo, read code, list bugs & production gaps | “Review this RAG helpdesk service” |
+
+> **Other round types:** whiteboard LLD → [../README.md](../README.md) · AI-assisted build → [../vibe-coding-round/README.md](../vibe-coding-round/README.md) · LLD breadth gaps → [../lld-gaps/README.md](../lld-gaps/README.md)
 
 Companies like Hiver (AI SDE roles) increasingly use **code review** because:
 

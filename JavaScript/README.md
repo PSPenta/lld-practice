@@ -80,8 +80,9 @@ JavaScript **machine-coding / LLD** solutions (design on paper first — see [..
 | `PollingSystem/` | Polls & votes |
 | `Queue/` | FIFO queue |
 | `UrlShortener/` | Short URLs + Express |
+| `PaymentGateway/` | **Stub only** (empty placeholders) — study **`../Go/PaymentGateway-go/`** for full Strategy + `BankGateway` |
 
-Go ports of the same problems: **`../Go/*-go/`**.
+Go ports of the same problems: **`../Go/*-go/`** (PaymentGateway is **complete in Go only**).
 
 ---
 
