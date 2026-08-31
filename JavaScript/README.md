@@ -77,7 +77,11 @@ JavaScript **machine-coding / LLD** solutions (design on paper first — see [..
 | `Pub-Sub/` | Observer / event bus |
 | `Database/` | In-memory DB, tables |
 | `Redis/` / `LRU/` | Cache + eviction |
-| `PollingSystem/` | Polls & votes — `PollService` + repositories |
+| `PollingSystem/` | Polls & votes — **service + repositories** (preferred layering demo) |
+| | Entities: `User.js`, `Poll.js`, `Vote.js` |
+| | Use-cases: `PollService.js` (create, assign voter, `submitVote`, stats) |
+| | Stores: `UserRepository.js`, `PollRepository.js`, `VoteRepository.js` |
+| | Rules: assign-before-vote · one vote per user · **cannot vote on own poll** (no separate Admin) |
 | `Queue/` | FIFO queue |
 | `UrlShortener/` | Short URLs + Express |
 | `PaymentGateway/` | **Stub only** (empty placeholders) — study **`../Go/PaymentGateway-go/`** for full Strategy + `BankGateway` |
