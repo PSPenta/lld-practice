@@ -1,13 +1,23 @@
 # Low-Level Design (LLD) Interview Preparation Guide
 
 > A practical, detailed guide to prepare for **LLD / machine-coding / OOD** interview rounds at product companies.  
-> This repository also contains working implementations (JavaScript + Golang) of common LLD problems — use them for practice after you learn the method.  
+> This repository also contains working **JavaScript** implementations under **`JavaScript/`** and **Golang** ports under **`Go/`** — use them for practice after you learn the method.  
 > For **AI code review** rounds (clone a repo, find production/RAG bugs), see **[ai-code-review-round/README.md](ai-code-review-round/README.md)**.
+
+> **Start here (language & runtime first):** Before LLD design and repo problems, revise **JavaScript/Node.js** and **Go** fundamentals using the dedicated guides below. Most full-stack interviews test language/runtime knowledge alongside or before LLD.
+
+| Prep guide | Path | Covers |
+|------------|------|--------|
+| **JavaScript & Node.js** | **[JavaScript/README.md](JavaScript/README.md)** | `this`, closures, event loop, Promises, streams, auth, gotchas |
+| **Golang** | **[Go/README.md](Go/README.md)** | GMP, goroutines, channels, context, GC, interfaces, gotchas |
+| **AI code review** | **[ai-code-review-round/README.md](ai-code-review-round/README.md)** | RAG repo review, production bugs (separate round type) |
+| **LLD (this doc)** | Below §1 | Design method, SOLID, patterns, worked examples |
 
 ---
 
 ## Table of contents
 
+0. [Before you start — JavaScript & Go prep](#0-before-you-start--javascript--go-prep)
 1. [What is LLD?](#1-what-is-lld)
 2. [What interviewers evaluate](#2-what-interviewers-evaluate)
 3. [LLD vs HLD vs DSA](#3-lld-vs-hld-vs-dsa)
@@ -37,6 +47,40 @@
 26. [Interview day checklist](#26-interview-day-checklist)
 27. [Problems in this repository](#27-problems-in-this-repository)
 28. [Cheat sheet](#28-cheat-sheet)
+
+---
+
+## 0. Before you start — JavaScript & Go prep
+
+**Do not jump straight into LLD.** Product interviews (especially full-stack / backend) usually expect solid **JavaScript/Node.js** and/or **Go** knowledge in addition to design. Complete these guides first, then return here for LLD method and repo problems.
+
+### Recommended order
+
+```text
+1. JavaScript/README.md   → language + Node event loop + async (2–3 days)
+2. Go/README.md           → if role is Go / polyglot backend (2–3 days)
+3. This README (§1+)      → LLD method, SOLID, patterns, worked examples
+4. Repo folders           → `JavaScript/*/` (JS) · `Go/*-go/` (Go) — after paper design (§27)
+5. ai-code-review-round/  → only if round is code review, not whiteboard LLD
+```
+
+### Which guide to prioritize?
+
+| Your interview focus | Read first |
+|----------------------|------------|
+| Node / full-stack JS | **[JavaScript/README.md](JavaScript/README.md)** — then this doc |
+| Go backend | **[Go/README.md](Go/README.md)** — then this doc |
+| Both / unclear | **JavaScript** (§0–§12) + **Node** (§13–§26), then **Go** §1–§5 if time |
+| LLD-only discussion (rare) | Skim §29 cheat sheets; still know event loop / goroutines basics |
+
+### What each guide gives you
+
+| Guide | Quick win sections |
+|-------|-------------------|
+| **[JavaScript/README.md](JavaScript/README.md)** | §15 Event loop · §19–§20 Promises · §27 gotchas · §29 cheat sheet |
+| **[Go/README.md](Go/README.md)** | §1 GMP · §2–§4 concurrency · §18 gotchas · §20 cheat sheet |
+
+**Extended JS Q&A:** [sudheerj/javascript-interview-questions](https://github.com/sudheerj/javascript-interview-questions) — use after this repo’s JavaScript guide, not instead of it.
 
 ---
 
@@ -124,11 +168,13 @@ Suggested time split:
 
 | Round type | What you do | Prep doc |
 |------------|-------------|----------|
-| **Discussion LLD** (~60 min) | Classes, APIs, flows, trade-offs — no full coding | **This README** (§5–24) |
-| **Machine coding** (90–120 min) | Working code for a small system | This README + repo `*/` implementations |
+| **JavaScript / Node.js Q&A** | Language, event loop, Promises, closures, Node APIs | **[JavaScript/README.md](JavaScript/README.md)** — do **before** LLD if full-stack |
+| **Golang Q&A** | GMP, goroutines, channels, context, GC | **[Go/README.md](Go/README.md)** — do **before** LLD if Go role |
+| **Discussion LLD** (~60 min) | Classes, APIs, flows, trade-offs — no full coding | **This README** (§5–24) — after §0 language prep |
+| **Machine coding** (90–120 min) | Working code for a small system | §0 guides + this README + **`JavaScript/*/`** + **`Go/*-go/`** |
 | **AI code review** | Clone repo, manual review — security, RAG, production gaps | **[ai-code-review-round/README.md](ai-code-review-round/README.md)** |
 
-Same fundamentals (OOD, patterns, RAG vocabulary). Design rounds = speak structure; review rounds = find bugs with file names.
+Same fundamentals (OOD, patterns, RAG vocabulary). **Language/runtime first (§0), then design.** Design rounds = speak structure; review rounds = find bugs with file names.
 
 ---
 
@@ -187,7 +233,7 @@ Blueprint for objects — data + behavior.
 ### Encapsulation
 Hide internals; expose a small API (`Park`, `Unpark`), not raw fields.
 
-**In this repo:** `LRU/index.js` — private `#removeNode`, `#addNode`; `Redis/index.js` — private `#evict`; `Database/Table.js` — rows/indexes behind methods; `Go/Redis-go/main.go` — `sync.Mutex` + unexported helpers; `Go/Splitwise-go/balance_sheet.go` — unexported balances map.
+**In this repo:** `JavaScript/LRU/index.js` — private `#removeNode`, `#addNode`; `JavaScript/Redis/index.js` — private `#evict`; `JavaScript/Database/Table.js` — rows/indexes behind methods; `Go/Redis-go/main.go` — `sync.Mutex` + unexported helpers; `Go/Splitwise-go/balance_sheet.go` — unexported balances map.
 
 ### Abstraction
 Contract without implementation. Callers depend on the contract, not concrete types.
@@ -200,12 +246,12 @@ EmailNotifier implements Notifier
 SlackNotifier implements Notifier
 ```
 
-**In this repo:** `RateLimiter2/RateLimiterStrategy.js` · `Go/RateLimiter2-go/strategy.go` · `Go/PaymentGateway-go/bank_gateway.go` · abstract `Expense.validate()` in `Splitwise/Expense.js` · `Parkinglot/Vehicle.js` — base class throws if instantiated directly.
+**In this repo:** `JavaScript/RateLimiter2/RateLimiterStrategy.js` · `Go/RateLimiter2-go/strategy.go` · `Go/PaymentGateway-go/bank_gateway.go` · abstract `Expense.validate()` in `JavaScript/Splitwise/Expense.js` · `JavaScript/Parkinglot/Vehicle.js` — base class throws if instantiated directly.
 
 ### Polymorphism
 Same interface, different behavior at runtime — via inheritance overrides or interface implementations.
 
-**In this repo:** `RateLimiter.isAllowed()` → `strategy.isAllowed()` (`RateLimiter2/RateLimiter.js`) · `Slot.canFit(vehicle)` with `instanceof` (`Parkinglot/Slot.js`) · `ExactExpense` / `EqualExpense` / `PercentageExpense.validate()` (`Splitwise/Expense.js`) · `BankGateway.ProcessPayment` (`Go/PaymentGateway-go/bank_gateway.go`).
+**In this repo:** `RateLimiter.isAllowed()` → `strategy.isAllowed()` (`JavaScript/RateLimiter2/RateLimiter.js`) · `Slot.canFit(vehicle)` with `instanceof` (`JavaScript/Parkinglot/Slot.js`) · `ExactExpense` / `EqualExpense` / `PercentageExpense.validate()` (`JavaScript/Splitwise/Expense.js`) · `BankGateway.ProcessPayment` (`Go/PaymentGateway-go/bank_gateway.go`).
 
 See **[§7A](#7a-repository-map--oop-principles--patterns-by-lld)** for the full cross-reference map.
 
@@ -351,15 +397,15 @@ Same pattern as **`PaymentGateway`** in this repo — business logic depends on 
 
 | Style | Has-a relationship | Node.js (primary) | Go port |
 |-------|------------------|-------------------|---------|
-| **Composition + Strategy** | `RateLimiter` **has-a** `RateLimiterStrategy` | `RateLimiter2/RateLimiter.js` injects strategy in constructor · strategies: `TokenBucket.js`, `FixedWindowCounter.js`, `LeakyBucket.js`, `SlidingWindowLog.js`, `SlidingWindowCounter.js` · base: `RateLimiterStrategy.js` | `Go/RateLimiter2-go/rate_limiter.go`, `strategy.go`, `token_bucket.go`, … |
+| **Composition + Strategy** | `RateLimiter` **has-a** `RateLimiterStrategy` | `JavaScript/RateLimiter2/RateLimiter.js` injects strategy in constructor · strategies: `TokenBucket.js`, `FixedWindowCounter.js`, `LeakyBucket.js`, `SlidingWindowLog.js`, `SlidingWindowCounter.js` · base: `RateLimiterStrategy.js` | `Go/RateLimiter2-go/rate_limiter.go`, `strategy.go`, `token_bucket.go`, … |
 | **Composition + Adapter-style interface** | `PaymentGateway` **has-a** `BankGateway` | *(Go only in this repo)* | `Go/PaymentGateway-go/payment_gateway.go`, `bank_gateway.go`, `payment.go` |
-| **Composition (ownership chain)** | `ParkingLot` **has-a** `Floor[]` **has-a** `Slot[]` | `ParkingLot2/ParkingLot.js`, `Floor.js`, `Slot.js`, `Ticket.js` | `Go/ParkingLot2-go/parkinglot.go`, `floor.go`, `slot.go` |
-| **Composition (pipeline)** | `SearchEngine` **has-a** `Tokenizer`, `Trie`, `InvertedIndex`, `Ranker` | `SearchEngine/SearchEngine.js` · parts: `Tokenizer.js`, `Trie.js`, `InvertedIndex.js`, `Ranker.js` | — |
-| **Composition (aggregate)** | `Database` **has-a** `Table` map | `Database/Database.js`, `Database/Table.js` | `Go/Database-go/database.go`, `table.go` |
-| **Composition (internal structure)** | `Redis` / `LRUCache` **has-a** map + linked `Node` list | `Redis/index.js`, `LRU/index.js` | `Go/Redis-go/main.go`, `Go/LRU-go/main.go` |
-| **Composition (event map)** | `PubSub` **has-a** `Map<event, callbacks[]>` | `Pub-Sub/index.js` | `Go/Pub-Sub-go/pubsub.go`, `pubsub_core.go` |
-| **Hybrid: composition + inheritance** | `ExpenseFactory` creates types; `Expense` **has-a** splits · subclasses for exact/equal/percent | `Splitwise/Expense.js`, `Splitwise/index.js` | `Go/Splitwise-go/expense.go` |
-| **Inheritance (is-a, teaching)** | `Car` / `Bike` / `Truck` **extends** `Vehicle` | `Parkinglot/Vehicle.js`, `ParkingLot2/Vehicle.js` | `Go/Parkinglot-go/vehicle.go`, `Go/ParkingLot2-go/vehicle.go` |
+| **Composition (ownership chain)** | `ParkingLot` **has-a** `Floor[]` **has-a** `Slot[]` | `JavaScript/ParkingLot2/ParkingLot.js`, `Floor.js`, `Slot.js`, `Ticket.js` | `Go/ParkingLot2-go/parkinglot.go`, `floor.go`, `slot.go` |
+| **Composition (pipeline)** | `SearchEngine` **has-a** `Tokenizer`, `Trie`, `InvertedIndex`, `Ranker` | `JavaScript/SearchEngine/SearchEngine.js` · parts: `Tokenizer.js`, `Trie.js`, `InvertedIndex.js`, `Ranker.js` | — |
+| **Composition (aggregate)** | `Database` **has-a** `Table` map | `JavaScript/Database/Database.js`, `JavaScript/Database/Table.js` | `Go/Database-go/database.go`, `table.go` |
+| **Composition (internal structure)** | `Redis` / `LRUCache` **has-a** map + linked `Node` list | `JavaScript/Redis/index.js`, `JavaScript/LRU/index.js` | `Go/Redis-go/main.go`, `Go/LRU-go/main.go` |
+| **Composition (event map)** | `PubSub` **has-a** `Map<event, callbacks[]>` | `JavaScript/Pub-Sub/index.js` | `Go/Pub-Sub-go/pubsub.go`, `pubsub_core.go` |
+| **Hybrid: composition + inheritance** | `ExpenseFactory` creates types; `Expense` **has-a** splits · subclasses for exact/equal/percent | `JavaScript/Splitwise/Expense.js`, `JavaScript/Splitwise/index.js` | `Go/Splitwise-go/expense.go` |
+| **Inheritance (is-a, teaching)** | `Car` / `Bike` / `Truck` **extends** `Vehicle` | `JavaScript/Parkinglot/Vehicle.js`, `JavaScript/ParkingLot2/Vehicle.js` | `Go/Parkinglot-go/vehicle.go`, `Go/ParkingLot2-go/vehicle.go` |
 
 **How to read the hybrid rows:** inheritance is used for **polymorphism** (vehicle type, expense algorithm). The **orchestrator** still **composes** parts — e.g. `RateLimiter` does not extend `TokenBucket`; it holds a strategy. Same for `ParkingLot2`: the lot composes floors; only `Vehicle` uses is-a.
 
@@ -367,7 +413,7 @@ Same pattern as **`PaymentGateway`** in this repo — business logic depends on 
 
 **Quick code reference — RateLimiter2 composition:**
 
-```1:4:c:\Users\user\Downloads\lld-practice\RateLimiter2\RateLimiter.js
+```1:4:c:\Users\user\Downloads\lld-practice\JavaScript\RateLimiter2\RateLimiter.js
 class RateLimiter {
   constructor(strategy) {
     this.strategy = strategy;
@@ -376,7 +422,7 @@ class RateLimiter {
 
 **Quick code reference — SearchEngine composition:**
 
-```6:11:c:\Users\user\Downloads\lld-practice\SearchEngine\SearchEngine.js
+```6:11:c:\Users\user\Downloads\lld-practice\JavaScript\SearchEngine\SearchEngine.js
 class SearchEngine {
   constructor() {
     this.tokenizer = new Tokenizer();
@@ -417,11 +463,11 @@ Use this section to **point at real code** in interviews. Paths are relative to 
 
 | OOP concept | What it means | Best repo examples (Node.js) | Go port |
 |-------------|---------------|------------------------------|---------|
-| **Encapsulation** | Hide state; small public API | `LRU/index.js` (`#` private methods) · `Redis/index.js` · `Database/Table.js` · `Splitwise/BalanceSheet.js` | `Go/Redis-go/main.go` · `Go/Splitwise-go/balance_sheet.go` |
-| **Abstraction** | Contract without implementation | `RateLimiter2/RateLimiterStrategy.js` · `Splitwise/Expense.js` (`validate()` hook) · `Parkinglot/Vehicle.js` | `Go/RateLimiter2-go/strategy.go` · `Go/PaymentGateway-go/bank_gateway.go` |
-| **Inheritance (is-a)** | Specialized subtype extends base | `RateLimiter2/TokenBucket.js` extends `RateLimiterStrategy` · `Splitwise/Expense.js` subclasses · `ParkingLot2/Vehicle.js` · `Parkinglot/Vehicle.js` | Go uses **interfaces / embedding** instead (e.g. `Go/Splitwise-go/expense.go`) |
-| **Composition (has-a)** | Build from parts | `RateLimiter2/RateLimiter.js` · `ParkingLot2/ParkingLot.js` → `Floor.js` → `Slot.js` · `SearchEngine/SearchEngine.js` · `Database/Database.js` | Same folders under `Go/*-go/` |
-| **Polymorphism** | Same call, different behavior | Strategy dispatch in `RateLimiter2/RateLimiter.js` · `Parkinglot/Slot.js` `canFit()` + `instanceof` · `Splitwise/Expense.js` overridden `validate()` | `Go/PaymentGateway-go/payment_gateway.go` → `BankGateway` |
+| **Encapsulation** | Hide state; small public API | `JavaScript/LRU/index.js` (`#` private methods) · `JavaScript/Redis/index.js` · `JavaScript/Database/Table.js` · `JavaScript/Splitwise/BalanceSheet.js` | `Go/Redis-go/main.go` · `Go/Splitwise-go/balance_sheet.go` |
+| **Abstraction** | Contract without implementation | `JavaScript/RateLimiter2/RateLimiterStrategy.js` · `JavaScript/Splitwise/Expense.js` (`validate()` hook) · `JavaScript/Parkinglot/Vehicle.js` | `Go/RateLimiter2-go/strategy.go` · `Go/PaymentGateway-go/bank_gateway.go` |
+| **Inheritance (is-a)** | Specialized subtype extends base | `JavaScript/RateLimiter2/TokenBucket.js` extends `RateLimiterStrategy` · `JavaScript/Splitwise/Expense.js` subclasses · `JavaScript/ParkingLot2/Vehicle.js` · `JavaScript/Parkinglot/Vehicle.js` | Go uses **interfaces / embedding** instead (e.g. `Go/Splitwise-go/expense.go`) |
+| **Composition (has-a)** | Build from parts | `JavaScript/RateLimiter2/RateLimiter.js` · `JavaScript/ParkingLot2/ParkingLot.js` → `Floor.js` → `Slot.js` · `JavaScript/SearchEngine/SearchEngine.js` · `JavaScript/Database/Database.js` | Same folders under `Go/*-go/` |
+| **Polymorphism** | Same call, different behavior | Strategy dispatch in `JavaScript/RateLimiter2/RateLimiter.js` · `JavaScript/Parkinglot/Slot.js` `canFit()` + `instanceof` · `JavaScript/Splitwise/Expense.js` overridden `validate()` | `Go/PaymentGateway-go/payment_gateway.go` → `BankGateway` |
 
 **Interview line:** “We demonstrate composition in RateLimiter2 and ParkingLot2, inheritance only where is-a is real (vehicles, expense types), and abstraction via Strategy interfaces.”
 
@@ -431,11 +477,11 @@ Use this section to **point at real code** in interviews. Paths are relative to 
 
 | Principle | Meaning (one line) | Repo examples |
 |-----------|-------------------|---------------|
-| **S — Single Responsibility** | One reason to change per class | `RateLimiter2` — context vs algorithm files · `SearchEngine/` — `Tokenizer.js`, `InvertedIndex.js`, `Ranker.js` each one job · `ParkingLot2/` — lot / floor / slot / ticket split · **Gap:** `UrlShortener/index.js` mixes HTTP + storage (anti-example) |
-| **O — Open/Closed** | Extend with new classes, not editing core | `RateLimiter2/` — new strategy file, `RateLimiter.js` unchanged · `Splitwise/ExpenseFactory` + new expense subclass · `Go/PaymentGateway-go/` — new `BankGateway` impl in map |
-| **L — Liskov Substitution** | Subtypes honor base contract | All `RateLimiter2/*` strategies implement `isAllowed()` · `Parkinglot/Slot.js` — `Bike`/`Car`/`Truck` used via `instanceof` · **Bad example to avoid:** notifier that silently drops messages |
+| **S — Single Responsibility** | One reason to change per class | `RateLimiter2` — context vs algorithm files · `JavaScript/SearchEngine/` — `Tokenizer.js`, `InvertedIndex.js`, `Ranker.js` each one job · `JavaScript/ParkingLot2/` — lot / floor / slot / ticket split · **Gap:** `JavaScript/UrlShortener/index.js` mixes HTTP + storage (anti-example) |
+| **O — Open/Closed** | Extend with new classes, not editing core | `JavaScript/RateLimiter2/` — new strategy file, `RateLimiter.js` unchanged · `JavaScript/Splitwise/Expense.js` (`ExpenseFactory`) + new expense subclass · `Go/PaymentGateway-go/` — new `BankGateway` impl in map |
+| **L — Liskov Substitution** | Subtypes honor base contract | All `JavaScript/RateLimiter2/*` strategies implement `isAllowed()` · `JavaScript/Parkinglot/Slot.js` — `Bike`/`Car`/`Truck` used via `instanceof` · **Bad example to avoid:** notifier that silently drops messages |
 | **I — Interface Segregation** | Small focused interfaces | `RateLimiterStrategy` — single method · `BankGateway` — `ProcessPayment` only · **Gap:** `SearchEngine` uses concrete deps (no slim interfaces) |
-| **D — Dependency Inversion** | High-level depends on abstraction | `RateLimiter2/RateLimiter.js` → `RateLimiterStrategy` · `Go/PaymentGateway-go/payment_gateway.go` → `BankGateway` · **Gap:** `SearchEngine/SearchEngine.js` → concrete `Ranker`, `InvertedIndex` |
+| **D — Dependency Inversion** | High-level depends on abstraction | `JavaScript/RateLimiter2/RateLimiter.js` → `RateLimiterStrategy` · `Go/PaymentGateway-go/payment_gateway.go` → `BankGateway` · **Gap:** `JavaScript/SearchEngine/SearchEngine.js` → concrete `Ranker`, `InvertedIndex` |
 
 ---
 
@@ -443,10 +489,10 @@ Use this section to **point at real code** in interviews. Paths are relative to 
 
 | Principle | Repo — good example | Repo — gap / lesson |
 |-----------|---------------------|---------------------|
-| **DRY** | `Splitwise/ExpenseFactory` · `ParkingLot2/VehicleFactory` — one place to create variants | Per-IP bucket logic repeated across `RateLimiter2/*` strategies; parking fallback loops in `ParkingLot2/ParkingLot.js` |
-| **KISS** | `Queue/index.js` — single `FIFOQueue` · `LRU/index.js` — map + list only · `Ratelimiter/` v1 — teaching algorithms without Strategy ceremony | Prefer simple v1 before RateLimiter2-level abstraction in interviews |
+| **DRY** | `JavaScript/Splitwise/Expense.js` (`ExpenseFactory`) · `JavaScript/ParkingLot2/Vehicle.js` (`VehicleFactory`) — one place to create variants | Per-IP bucket logic repeated across `JavaScript/RateLimiter2/*` strategies; parking fallback loops in `JavaScript/ParkingLot2/ParkingLot.js` |
+| **KISS** | `JavaScript/Queue/index.js` — single `FIFOQueue` · `JavaScript/LRU/index.js` — map + list only · `JavaScript/Ratelimiter/` v1 — teaching algorithms without Strategy ceremony | Prefer simple v1 before RateLimiter2-level abstraction in interviews |
 | **YAGNI** | No Singleton/Builder/Decorator coded — patterns added only where needed | README lists patterns **not** in repo; don’t invent them in design unless requirement asks |
-| **PoLK** | `ParkingLot2/ParkingLot.js` calls `floor.findAvailableSlot()` — not `floor.slots[0].vehicle...` | Avoid handlers reaching deep into another module’s internals |
+| **PoLK** | `JavaScript/ParkingLot2/ParkingLot.js` calls `floor.findAvailableSlot()` — not `floor.slots[0].vehicle...` | Avoid handlers reaching deep into another module’s internals |
 
 ---
 
@@ -454,22 +500,22 @@ Use this section to **point at real code** in interviews. Paths are relative to 
 
 | Pattern | Category | LLD / files (Node.js) | Go port | Notes |
 |---------|----------|----------------------|---------|-------|
-| **Strategy** | Behavioural | `RateLimiter2/RateLimiter.js` + `RateLimiterStrategy.js`, `TokenBucket.js`, `LeakyBucket.js`, `FixedWindowCounter.js`, `SlidingWindowLog.js`, `SlidingWindowCounter.js` | `Go/RateLimiter2-go/` | **Best demo in repo.** Context composes strategy. |
+| **Strategy** | Behavioural | `JavaScript/RateLimiter2/RateLimiter.js` + `RateLimiterStrategy.js`, `TokenBucket.js`, `LeakyBucket.js`, `FixedWindowCounter.js`, `SlidingWindowLog.js`, `SlidingWindowCounter.js` | `Go/RateLimiter2-go/` | **Best demo in repo.** Context composes strategy. |
 | **Strategy + interface** | Behavioural | — | `Go/PaymentGateway-go/bank_gateway.go`, `payment_gateway.go` | `PaymentGateway` maps method → `BankGateway` |
-| **Factory** | Creational | `Splitwise/Expense.js` (`ExpenseFactory`) · `ParkingLot2/Vehicle.js` (`VehicleFactory`) | `Go/Splitwise-go/expense.go` · `Go/ParkingLot2-go/vehicle.go` | Creates concrete type without caller knowing class |
-| **Observer / Pub-Sub** | Behavioural | `Pub-Sub/index.js` | `Go/Pub-Sub-go/pubsub.go`, `pubsub_core.go`, `pubsub_event.go` | Go has **3 variants** — good “evolution” discussion |
-| **Composition / ownership** | Structural | `ParkingLot2/`, `Parkinglot/`, `Database/`, `SearchEngine/` | Matching `Go/*-go/` | has-a chains, not deep inheritance |
-| **Facade / pipeline** | Structural | `SearchEngine/SearchEngine.js` orchestrates tokenizer, index, trie, ranker | `Go/SearchEngine-go/search_engine.go` | Facade-like; not named “Facade” in code |
-| **Template Method** | Behavioural | `Splitwise/Expense.js` — shared `apply()`, subclasses override `validate()` | `Go/Splitwise-go/expense.go` | Informal hook method on base |
-| **Middleware** | (web) | `Ratelimiter/leakyBucket.js` · `UrlShortener/index.js` (Express validators) | `Go/Ratelimiter-go/` | Request pipeline, not GoF |
-| **Worker pool / concurrency limit** | (concurrency) | `Ratelimiter/serverRequestThrottler.js` | `Go/Ratelimiter-go/server_request_throttler.go` | Limits parallel work, not rate algorithms |
-| **Hybrid inheritance + composition** | Mixed | `Splitwise/` · `ParkingLot2/` · `RateLimiter2/` | Go ports use interfaces/embedding | Orchestrator composes; variants may inherit |
-| **Repository-like store** | (data) | `Database/Database.js`, `Table.js` · `PollingSystem/Results.js`, `Polls.js` | `Go/Database-go/` · `Go/PollingSystem-go/results.go` | In-memory aggregate, not formal Repository interface |
-| **Inheritance (teaching)** | OOP | `Parkinglot/Vehicle.js` · `ParkingLot2/Vehicle.js` · `RateLimiter2/RateLimiterStrategy.js` subclasses | Go: enum/constructors instead in several ports | Use when is-a is genuine |
+| **Factory** | Creational | `JavaScript/Splitwise/Expense.js` (`ExpenseFactory`) · `JavaScript/ParkingLot2/Vehicle.js` (`VehicleFactory`) | `Go/Splitwise-go/expense.go` · `Go/ParkingLot2-go/vehicle.go` | Creates concrete type without caller knowing class |
+| **Observer / Pub-Sub** | Behavioural | `JavaScript/Pub-Sub/index.js` | `Go/Pub-Sub-go/pubsub.go`, `pubsub_core.go`, `pubsub_event.go` | Go has **3 variants** — good “evolution” discussion |
+| **Composition / ownership** | Structural | `JavaScript/ParkingLot2/`, `JavaScript/Parkinglot/`, `JavaScript/Database/`, `JavaScript/SearchEngine/` | Matching `Go/*-go/` | has-a chains, not deep inheritance |
+| **Facade / pipeline** | Structural | `JavaScript/SearchEngine/SearchEngine.js` orchestrates tokenizer, index, trie, ranker | `Go/SearchEngine-go/search_engine.go` | Facade-like; not named “Facade” in code |
+| **Template Method** | Behavioural | `JavaScript/Splitwise/Expense.js` — shared `apply()`, subclasses override `validate()` | `Go/Splitwise-go/expense.go` | Informal hook method on base |
+| **Middleware** | (web) | `JavaScript/Ratelimiter/leakyBucket.js` · `JavaScript/UrlShortener/index.js` (Express validators) | `Go/Ratelimiter-go/` | Request pipeline, not GoF |
+| **Worker pool / concurrency limit** | (concurrency) | `JavaScript/Ratelimiter/serverRequestThrottler.js` | `Go/Ratelimiter-go/server_request_throttler.go` | Limits parallel work, not rate algorithms |
+| **Hybrid inheritance + composition** | Mixed | `JavaScript/Splitwise/` · `JavaScript/ParkingLot2/` · `JavaScript/RateLimiter2/` | Go ports use interfaces/embedding | Orchestrator composes; variants may inherit |
+| **Repository-like store** | (data) | `JavaScript/Database/Database.js`, `Table.js` · `JavaScript/PollingSystem/Results.js`, `Polls.js` | `Go/Database-go/` · `Go/PollingSystem-go/results.go` | In-memory aggregate, not formal Repository interface |
+| **Inheritance (teaching)** | OOP | `JavaScript/Parkinglot/Vehicle.js` · `JavaScript/ParkingLot2/Vehicle.js` · `JavaScript/RateLimiter2/RateLimiterStrategy.js` subclasses | Go: enum/constructors instead in several ports | Use when is-a is genuine |
 
-**Not implemented as named patterns in this repo:** Singleton, Builder, Abstract Factory, Prototype, Iterator (use language built-ins), Command, State, Proxy, Decorator, Adapter (PaymentGateway is Strategy-style interface, not classic Adapter), Bridge, Composite (except data-structure composites in LRU/Redis).
+**Not implemented as named patterns in this repo:** Singleton, Builder, Abstract Factory, Prototype, Iterator (use language built-ins), Command, State, Proxy, Decorator, Adapter (PaymentGateway is Strategy-style interface, not classic Adapter), Bridge, Composite (except data-structure composites in JavaScript/LRU/Redis).
 
-**Compare:** `Ratelimiter/` (v1) = algorithms **without** Strategy · `RateLimiter2/` = Strategy + composition — **prefer v2 in interviews.**
+**Compare:** `JavaScript/Ratelimiter/` (v1) = algorithms **without** Strategy · `JavaScript/RateLimiter2/` = Strategy + composition — **prefer v2 in interviews.**
 
 ---
 
@@ -497,16 +543,16 @@ Use this section to **point at real code** in interviews. Paths are relative to 
 
 | Topic | Say this + point to |
 |-------|---------------------|
-| **Composition** | “RateLimiter composes a strategy; ParkingLot2 composes floors and slots.” → `RateLimiter2/RateLimiter.js`, `ParkingLot2/ParkingLot.js` |
-| **Strategy / OCP** | “New token bucket without editing RateLimiter.” → `RateLimiter2/TokenBucket.js` |
-| **Factory** | “ExpenseFactory picks exact/equal/percent.” → `Splitwise/Expense.js` |
-| **Observer** | “PubSub map of event → callbacks.” → `Pub-Sub/index.js` |
+| **Composition** | “RateLimiter composes a strategy; ParkingLot2 composes floors and slots.” → `JavaScript/RateLimiter2/RateLimiter.js`, `JavaScript/ParkingLot2/ParkingLot.js` |
+| **Strategy / OCP** | “New token bucket without editing RateLimiter.” → `JavaScript/RateLimiter2/TokenBucket.js` |
+| **Factory** | “ExpenseFactory picks exact/equal/percent.” → `JavaScript/Splitwise/Expense.js` |
+| **Observer** | “PubSub map of event → callbacks.” → `JavaScript/Pub-Sub/index.js` |
 | **DIP** | “PaymentGateway depends on BankGateway interface.” → `Go/PaymentGateway-go/` |
-| **SRP** | “SearchEngine splits tokenizer, index, ranker.” → `SearchEngine/SearchEngine.js` |
-| **Encapsulation** | “LRU hides list mutations in private methods.” → `LRU/index.js` |
-| **Polymorphism** | “Slot.canFit uses vehicle subtype.” → `Parkinglot/Slot.js` |
-| **KISS / YAGNI** | “Queue is one FIFO class — no extra patterns until needed.” → `Queue/index.js` |
-| **Anti-pattern** | “UrlShortener mixes routes and storage — I’d split in production.” → `UrlShortener/index.js` |
+| **SRP** | “SearchEngine splits tokenizer, index, ranker.” → `JavaScript/SearchEngine/SearchEngine.js` |
+| **Encapsulation** | “LRU hides list mutations in private methods.” → `JavaScript/LRU/index.js` |
+| **Polymorphism** | “Slot.canFit uses vehicle subtype.” → `JavaScript/Parkinglot/Slot.js` |
+| **KISS / YAGNI** | “Queue is one FIFO class — no extra patterns until needed.” → `JavaScript/Queue/index.js` |
+| **Anti-pattern** | “UrlShortener mixes routes and storage — I’d split in production.” → `JavaScript/UrlShortener/index.js` |
 
 ---
 
@@ -528,7 +574,7 @@ Principles guide **how you structure code**. Patterns are reusable **shapes**. L
 
 **Interview line:** “If Slack notification logic changes, I shouldn’t have to touch ticket-creation code.”
 
-**In this repo:** RateLimiter2 keeps algorithms in strategy classes; `RateLimiter` only delegates. Also: `SearchEngine/` splits tokenizer, index, ranker; `ParkingLot2/` splits lot, floor, slot, ticket. Full map → **[§7A](#7a-repository-map--oop-principles--patterns-by-lld)**.
+**In this repo:** RateLimiter2 keeps algorithms in strategy classes; `RateLimiter` only delegates. Also: `JavaScript/SearchEngine/` splits tokenizer, index, ranker; `JavaScript/ParkingLot2/` splits lot, floor, slot, ticket. Full map → **[§7A](#7a-repository-map--oop-principles--patterns-by-lld)**.
 
 #### O — Open/Closed Principle (OCP)
 
@@ -544,7 +590,7 @@ if kind == "token" { ... } else if kind == "leaky" { ... }
 RateLimiter { strategy.Allow(key) }
 ```
 
-**In this repo:** `RateLimiter2/` — add Sliding Window without rewriting `RateLimiter.js` · `Splitwise/ExpenseFactory` + new expense class · `Go/PaymentGateway-go/` — register new `BankGateway`. Full map → **§7A**.
+**In this repo:** `JavaScript/RateLimiter2/` — add Sliding Window without rewriting `RateLimiter.js` · `JavaScript/Splitwise/Expense.js` + new expense class · `Go/PaymentGateway-go/` — register new `BankGateway`. Full map → **§7A**.
 
 #### L — Liskov Substitution Principle (LSP)
 
@@ -557,7 +603,7 @@ If code expects `Notifier.Send(msg) error`, every notifier must:
 
 **Bad:** `NullNotifier` that pretends success but drops all messages when the product requires delivery guarantees.
 
-**In this repo:** Every `RateLimiter2/*` strategy must implement `isAllowed()` correctly · `Parkinglot/Slot.js` — `canFit()` behavior for `Bike`/`Car`/`Truck` subtypes · all `BankGateway` impls must honor `ProcessPayment` contract (`Go/PaymentGateway-go/`).
+**In this repo:** Every `JavaScript/RateLimiter2/*` strategy must implement `isAllowed()` correctly · `JavaScript/Parkinglot/Slot.js` — `canFit()` behavior for `Bike`/`Car`/`Truck` subtypes · all `BankGateway` impls must honor `ProcessPayment` contract (`Go/PaymentGateway-go/`).
 
 #### I — Interface Segregation Principle (ISP)
 
@@ -588,7 +634,7 @@ Abstract:     LLMClient / BankGateway / PaymentStrategy
 Low-level:    OpenAIAdapter / UPIGateway / RazorpayPayment
 ```
 
-**In this repo:** `RateLimiter2/RateLimiter.js` → `RateLimiterStrategy` · `Go/PaymentGateway-go/payment_gateway.go` → `BankGateway` interface. **Gap to mention:** `SearchEngine/SearchEngine.js` uses concrete `Ranker`/`InvertedIndex` — good trade-off discussion (YAGNI vs DIP).
+**In this repo:** `JavaScript/RateLimiter2/RateLimiter.js` → `RateLimiterStrategy` · `Go/PaymentGateway-go/payment_gateway.go` → `BankGateway` interface. **Gap to mention:** `JavaScript/SearchEngine/SearchEngine.js` uses concrete `Ranker`/`InvertedIndex` — good trade-off discussion (YAGNI vs DIP).
 
 ---
 
@@ -600,9 +646,9 @@ Low-level:    OpenAIAdapter / UPIGateway / RazorpayPayment
 |------------|--------|
 | Same validation copy-pasted in 4 handlers | Shared `ValidateTicket()` / middleware |
 | Same credit-debit math in 3 services | One `CreditMeter` |
-| Vehicle creation `switch` in many places | `VehicleFactory` / `ExpenseFactory` once (`ParkingLot2/Vehicle.js`, `Splitwise/Expense.js`) |
+| Vehicle creation `switch` in many places | `VehicleFactory` / `ExpenseFactory` once (`JavaScript/ParkingLot2/Vehicle.js`, `JavaScript/Splitwise/Expense.js`) |
 
-**Caution:** Don’t force unrelated things into one “util” god-object. DRY is about **knowledge**, not merging every two similar lines. **Gap in repo:** per-IP logic duplicated across `RateLimiter2/*` strategy files — acceptable for teaching, would extract in production.
+**Caution:** Don’t force unrelated things into one “util” god-object. DRY is about **knowledge**, not merging every two similar lines. **Gap in repo:** per-IP logic duplicated across `JavaScript/RateLimiter2/*` strategy files — acceptable for teaching, would extract in production.
 
 ### KISS — Keep It Simple Stupid
 
@@ -611,9 +657,9 @@ Low-level:    OpenAIAdapter / UPIGateway / RazorpayPayment
 - v1: one in-memory cache  
 - Later: Redis, only when multi-instance forces it  
 
-**In this repo:** `Queue/index.js` — one FIFO class, no extra layers · `Ratelimiter/` v1 before `RateLimiter2/` Strategy · `LRU/` — map + list only.
+**In this repo:** `JavaScript/Queue/index.js` — one FIFO class, no extra layers · `JavaScript/Ratelimiter/` v1 before `JavaScript/RateLimiter2/` Strategy · `JavaScript/LRU/` — map + list only.
 
-**Interview line:** “I’d start simple and introduce a queue/cache when a requirement justifies it.”
+**Interview line:** “I’d start simple and introduce a JavaScript/Queue/cache when a requirement justifies it.”
 
 ### YAGNI — You Ain’t Gonna Need It
 
@@ -622,7 +668,7 @@ Low-level:    OpenAIAdapter / UPIGateway / RazorpayPayment
 Don’t add Abstract Factory + 5 interfaces for one payment method “just in case.”  
 When the **second** provider arrives → introduce the abstraction.
 
-**In this repo:** No Singleton/Builder/Decorator in code — patterns appear only where variation exists (`RateLimiter2`, `Splitwise`, `PaymentGateway-go`). Compare `Ratelimiter/` (no Strategy) vs `RateLimiter2/` (Strategy when algorithms multiply).
+**In this repo:** No Singleton/Builder/Decorator in code — patterns appear only where variation exists (`RateLimiter2`, `Splitwise`, `PaymentGateway-go`). Compare `JavaScript/Ratelimiter/` (no Strategy) vs `JavaScript/RateLimiter2/` (Strategy when algorithms multiply).
 
 ### PoLK — Principle of Least Knowledge (Law of Demeter)
 
@@ -639,7 +685,7 @@ order.ShippingZip()
 
 Reduces coupling: if `Address` structure changes, `Order` callers don’t all break.
 
-**In this repo:** `ParkingLot2/ParkingLot.js` asks `floor.findAvailableSlot()` — does not reach into `floor.slots[i].vehicle` directly. Prefer module-level APIs over deep field chains.
+**In this repo:** `JavaScript/ParkingLot2/ParkingLot.js` asks `floor.findAvailableSlot()` — does not reach into `floor.slots[i].vehicle` directly. Prefer module-level APIs over deep field chains.
 
 ---
 
@@ -707,8 +753,8 @@ car = VehicleFactory.createVehicle("car")  // returns Car
 **When:** Many related types; caller shouldn’t `switch` everywhere.
 
 **In this repo:**
-- `ParkingLot2/Vehicle.js`, `Go/ParkingLot2-go/vehicle.go` (`CreateVehicle`)
-- `Splitwise/Expense.js`, `Go/Splitwise-go/expense.go` (`CreateExpense` / `ExpenseFactory`)
+- `JavaScript/ParkingLot2/Vehicle.js`, `Go/ParkingLot2-go/vehicle.go` (`CreateVehicle`)
+- `JavaScript/Splitwise/Expense.js`, `Go/Splitwise-go/expense.go` (`CreateExpense` / `ExpenseFactory`)
 
 #### Builder `*`
 
@@ -770,7 +816,7 @@ Subscriber
 
 **Classic LLD:** Notification service — ticket assigned → email + Slack + analytics.
 
-**In this repo:** `Pub-Sub/`, `Go/Pub-Sub-go/pubsub.go` (and `pubsub_core.go`, `pubsub_event.go`).
+**In this repo:** `JavaScript/Pub-Sub/`, `Go/Pub-Sub-go/pubsub.go` (and `pubsub_core.go`, `pubsub_event.go`).
 
 #### Strategy `**`
 
@@ -788,7 +834,7 @@ processor.pay(amount)
 **Also:** Rate limit algorithms; expense split types (Equal/Exact/Percentage as strategies + factory).
 
 **In this repo:**
-- **Best example:** `RateLimiter2/` + `Go/RateLimiter2-go/strategy.go`
+- **Best example:** `JavaScript/RateLimiter2/` + `Go/RateLimiter2-go/strategy.go`
 - Payment-style: `Go/PaymentGateway-go/bank_gateway.go`
 
 #### Iterator `*`
@@ -884,16 +930,16 @@ Callers don’t need to know 15 internal classes.
 
 | Pattern | LLD in this repo | How it shows up | Reference files |
 |---------|------------------|-----------------|-----------------|
-| **Strategy + composition** | **RateLimiter2** | `RateLimiter` **has-a** strategy; algorithms swappable at runtime | JS: `RateLimiter2/RateLimiter.js`, `RateLimiterStrategy.js`, `TokenBucket.js`, `LeakyBucket.js`, `FixedWindowCounter.js`, `SlidingWindowLog.js`, `SlidingWindowCounter.js` · Go: `Go/RateLimiter2-go/rate_limiter.go`, `strategy.go`, `token_bucket.go`, `leaky_bucket.go`, `fixed_window_counter.go`, `sliding_window_log.go`, `sliding_window_counter.go` |
+| **Strategy + composition** | **RateLimiter2** | `RateLimiter` **has-a** strategy; algorithms swappable at runtime | JS: `JavaScript/RateLimiter2/RateLimiter.js`, `RateLimiterStrategy.js`, `TokenBucket.js`, `LeakyBucket.js`, `FixedWindowCounter.js`, `SlidingWindowLog.js`, `SlidingWindowCounter.js` · Go: `Go/RateLimiter2-go/rate_limiter.go`, `strategy.go`, `token_bucket.go`, `leaky_bucket.go`, `fixed_window_counter.go`, `sliding_window_log.go`, `sliding_window_counter.go` |
 | **Strategy + Adapter + composition** | **PaymentGateway** | `PaymentGateway` **has-a** `BankGateway` interface | Go: `Go/PaymentGateway-go/payment_gateway.go`, `bank_gateway.go`, `payment.go`, `main.go` |
-| **Composition (ownership)** | **ParkingLot2** | `ParkingLot` → `Floor` → `Slot`; uses `Ticket` | JS: `ParkingLot2/ParkingLot.js`, `Floor.js`, `Slot.js`, `Ticket.js` · Go: `Go/ParkingLot2-go/parkinglot.go`, `floor.go`, `slot.go` |
-| **Composition (pipeline)** | **SearchEngine** | `SearchEngine` **has-a** tokenizer, trie, index, ranker | JS: `SearchEngine/SearchEngine.js`, `Tokenizer.js`, `Trie.js`, `InvertedIndex.js`, `Ranker.js` |
-| **Composition (aggregate)** | **Database** | `Database` **has-a** map of `Table` | JS: `Database/Database.js`, `Table.js` · Go: `Go/Database-go/database.go`, `table.go` |
-| **Factory + inheritance (hybrid)** | **Splitwise** | `ExpenseFactory` + `ExactExpense`/`EqualExpense`/`PercentageExpense` extend `Expense` | JS: `Splitwise/Expense.js`, `Splitwise/index.js` · Go: `Go/Splitwise-go/expense.go`, `main.go` |
-| **Factory + inheritance (hybrid)** | **ParkingLot2** | Vehicle factory pattern + `Car`/`Bike`/`Truck` extend `Vehicle` | JS: `ParkingLot2/Vehicle.js`, `index.js` · Go: `Go/ParkingLot2-go/vehicle.go`, `main.go` |
-| **Observer / Pub-Sub + composition** | **Pub-Sub** | `PubSub` **has-a** event → callbacks map | JS: `Pub-Sub/index.js` · Go: `Go/Pub-Sub-go/pubsub.go`, `pubsub_core.go`, `pubsub_event.go` |
-| **Composition (cache internals)** | **Redis**, **LRU** | map + doubly linked `Node` list | JS: `Redis/index.js`, `LRU/index.js` · Go: `Go/Redis-go/main.go`, `Go/LRU-go/main.go` |
-| **Inheritance only (v1 teaching)** | **Parkinglot** | Car/Bike/Truck extend Vehicle — lot itself is simpler | JS: `Parkinglot/Vehicle.js` · Go: `Go/Parkinglot-go/vehicle.go` |
+| **Composition (ownership)** | **ParkingLot2** | `ParkingLot` → `Floor` → `Slot`; uses `Ticket` | JS: `JavaScript/ParkingLot2/ParkingLot.js`, `Floor.js`, `Slot.js`, `Ticket.js` · Go: `Go/ParkingLot2-go/parkinglot.go`, `floor.go`, `slot.go` |
+| **Composition (pipeline)** | **SearchEngine** | `SearchEngine` **has-a** tokenizer, trie, index, ranker | JS: `JavaScript/SearchEngine/SearchEngine.js`, `Tokenizer.js`, `Trie.js`, `InvertedIndex.js`, `Ranker.js` |
+| **Composition (aggregate)** | **Database** | `Database` **has-a** map of `Table` | JS: `JavaScript/Database/Database.js`, `Table.js` · Go: `Go/Database-go/database.go`, `table.go` |
+| **Factory + inheritance (hybrid)** | **Splitwise** | `ExpenseFactory` + `ExactExpense`/`EqualExpense`/`PercentageExpense` extend `Expense` | JS: `JavaScript/Splitwise/Expense.js`, `JavaScript/Splitwise/index.js` · Go: `Go/Splitwise-go/expense.go`, `main.go` |
+| **Factory + inheritance (hybrid)** | **ParkingLot2** | Vehicle factory pattern + `Car`/`Bike`/`Truck` extend `Vehicle` | JS: `JavaScript/ParkingLot2/Vehicle.js`, `index.js` · Go: `Go/ParkingLot2-go/vehicle.go`, `main.go` |
+| **Observer / Pub-Sub + composition** | **Pub-Sub** | `PubSub` **has-a** event → callbacks map | JS: `JavaScript/Pub-Sub/index.js` · Go: `Go/Pub-Sub-go/pubsub.go`, `pubsub_core.go`, `pubsub_event.go` |
+| **Composition (cache internals)** | **Redis**, **LRU** | map + doubly linked `Node` list | JS: `JavaScript/Redis/index.js`, `JavaScript/LRU/index.js` · Go: `Go/Redis-go/main.go`, `Go/LRU-go/main.go` |
+| **Inheritance only (v1 teaching)** | **Parkinglot** | Car/Bike/Truck extend Vehicle — lot itself is simpler | JS: `JavaScript/Parkinglot/Vehicle.js` · Go: `Go/Parkinglot-go/vehicle.go` |
 
 **Know for interviews but not clearly coded as named patterns here:** Singleton, Builder, Abstract Factory, Prototype, Iterator, Command, State, Template Method, Proxy, Decorator, Facade.
 
@@ -1112,7 +1158,7 @@ Almost every AI feature LLD uses some of these:
 | **Repository** | TicketStore, ChunkStore, SuggestionStore |
 
 Repo references for the same ideas (non-AI, but same patterns):
-- Strategy: `RateLimiter2/`, `Go/RateLimiter2-go/`
+- Strategy: `JavaScript/RateLimiter2/`, `Go/RateLimiter2-go/`
 - Adapter-style interface: `Go/PaymentGateway-go/bank_gateway.go`
 - Factory: `Go/Splitwise-go/expense.go`, `Go/ParkingLot2-go/vehicle.go`
 
@@ -1200,7 +1246,7 @@ For **RAG/code review depth** (chunking, retrieval, vector DB, reviewing repos l
 ### Step 1 — Clarifying questions (ask 6–8)
 
 1. Library or HTTP service?
-2. In-memory only, or Redis/shared cache?
+2. In-memory only, or JavaScript/Redis/shared cache?
 3. Single machine or many servers?
 4. TTL (expire after time)?
 5. Max capacity? Eviction policy (LRU)?
@@ -1231,7 +1277,7 @@ CacheClient implements Cache
   GetOrLoad(key, loader func() (value, error))
 ```
 
-Repo references: `LRU/`, `Redis/`, `Go/LRU-go/`, `Go/Redis-go/`.
+Repo references: `JavaScript/LRU/`, `JavaScript/Redis/`, `Go/LRU-go/`, `Go/Redis-go/`.
 
 ### Step 3 — Flows
 
@@ -1375,7 +1421,7 @@ New pricing → new `PricingStrategy`.
 
 ## 20. Worked example: AI Suggest Reply (copilot draft)
 
-Use this as your **AI LLD template**. Same structure as LRU/Parking Lot interviews.
+Use this as your **AI LLD template**. Same structure as JavaScript/LRU/Parking Lot interviews.
 
 ### Clarify (ask first!)
 
@@ -1571,7 +1617,7 @@ When Redis hits `maxmemory`, it evicts keys per `maxmemory-policy`:
 **Interview lines:**
 - Pure cache → `allkeys-lru` or `allkeys-lfu`
 - Mix permanent + cache keys → `volatile-lru` + TTL on cache only
-- Real Redis uses **approximate** LRU (samples keys), not exact linked-list LRU like `LRU/` in this repo
+- Real Redis uses **approximate** LRU (samples keys), not exact linked-list LRU like `JavaScript/LRU/` in this repo
 - **Eviction** (memory full) ≠ **expiration** (TTL) — related but different
 
 ---
@@ -1632,6 +1678,13 @@ After time, score 0–2 each (target ≥ 16/20):
 
 ## 25. How to practice (4-week plan)
 
+> **Prerequisite:** Finish **[JavaScript/README.md](JavaScript/README.md)** (and **[Go/README.md](Go/README.md)** if applicable) before Week 2 repo coding — see **[§0](#0-before-you-start--javascript--go-prep)**.
+
+### Week 0 — Language & runtime (before LLD coding)
+- **[JavaScript/README.md](JavaScript/README.md):** event loop, Promises, closures, §27 gotchas, §29 cheat sheet  
+- **[Go/README.md](Go/README.md)** (if Go role): GMP, goroutines, channels, context, §18 gotchas  
+- Answer §28 checklists in each guide aloud  
+
 ### Week 1 — Foundations
 - SOLID + 5 patterns with your own examples  
 - Draw class diagrams for LRU + Parking Lot on paper  
@@ -1666,6 +1719,7 @@ Implement or redesign:
 ## 26. Interview day checklist
 
 **Before**
+- [ ] **Language prep done:** [JavaScript/README.md](JavaScript/README.md) · [Go/README.md](Go/README.md) if Go role — see **§0**  
 - [ ] Paper / shared editor ready  
 - [ ] Know opening + closing lines (§24)  
 - [ ] Know round type: **LLD design** (this doc) vs **code review** ([ai-code-review-round](ai-code-review-round/README.md))  
@@ -1705,24 +1759,24 @@ If they ask *“What do you know about us?”*:
 
 ## 27. Problems in this repository
 
-Use these as **hands-on practice** after designing on paper.
+Use these as **hands-on practice** after designing on paper. **JavaScript implementations** live under **`JavaScript/`**; Go ports under **`Go/`**.
 
-### JavaScript (machine-coding style)
+### JavaScript (`JavaScript/*/` — machine-coding style)
 
-| Folder | Focus | OOP | Principles | Patterns |
-|--------|--------|-----|------------|----------|
-| **RateLimiter2** | Strategy, swappable algorithms | Abstraction, composition, polymorphism | S, O, D, I, L | **Strategy** |
-| **ParkingLot2** | Multi-floor parking | Composition chain + vehicle is-a | S | **Factory**, composition |
-| **Splitwise** | Expense splitting | Inheritance + polymorphic `validate()` | S, O | **Factory**, Template Method–like |
-| **SearchEngine** | Index, rank, autocomplete | Composition pipeline | S ( ⚠️ DIP) | Facade-like pipeline |
-| **Pub-Sub** | Eventing | Encapsulated map | S | **Observer** |
-| **Database** | Schema, CRUD | Aggregate composition | S | Aggregate store |
-| **Redis** / **LRU** | Cache eviction | Encapsulation | KISS | Map + DLL |
-| **Parkinglot** | Simple parking v1 | Inheritance-heavy vehicles | S, L | is-a + composition |
-| **Ratelimiter** | Standalone algorithms | Per-file encapsulation | KISS, YAGNI | Middleware; worker pool |
-| **PollingSystem** | Polls & votes | Actor classes | S ( ⚠️ static store) | Repository-like |
-| **Queue** | FIFO mechanics | Single class | KISS, YAGNI | Circular buffer |
-| **UrlShortener** | HTTP + short codes | Minimal | YAGNI ( ⚠️ SRP) | Encoding util |
+| Path | Focus | OOP | Principles | Patterns |
+|------|--------|-----|------------|----------|
+| **`JavaScript/RateLimiter2/`** | Strategy, swappable algorithms | Abstraction, composition, polymorphism | S, O, D, I, L | **Strategy** |
+| **`JavaScript/ParkingLot2/`** | Multi-floor parking | Composition chain + vehicle is-a | S | **Factory**, composition |
+| **`JavaScript/Splitwise/`** | Expense splitting | Inheritance + polymorphic `validate()` | S, O | **Factory**, Template Method–like |
+| **`JavaScript/SearchEngine/`** | Index, rank, autocomplete | Composition pipeline | S ( ⚠️ DIP) | Facade-like pipeline |
+| **`JavaScript/Pub-Sub/`** | Eventing | Encapsulated map | S | **Observer** |
+| **`JavaScript/Database/`** | Schema, CRUD | Aggregate composition | S | Aggregate store |
+| **`JavaScript/Redis/`** / **`JavaScript/LRU/`** | Cache eviction | Encapsulation | KISS | Map + DLL |
+| **`JavaScript/Parkinglot/`** | Simple parking v1 | Inheritance-heavy vehicles | S, L | is-a + composition |
+| **`JavaScript/Ratelimiter/`** | Standalone algorithms | Per-file encapsulation | KISS, YAGNI | Middleware; worker pool |
+| **`JavaScript/PollingSystem/`** | Polls & votes | Actor classes | S ( ⚠️ static store) | Repository-like |
+| **`JavaScript/Queue/`** | FIFO mechanics | Single class | KISS, YAGNI | Circular buffer |
+| **`JavaScript/UrlShortener/`** | HTTP + short codes | Minimal | YAGNI ( ⚠️ SRP) | Encoding util |
 | **PaymentGateway** | — | — | — | **Go only:** `Go/PaymentGateway-go/` |
 
 Full cross-reference → **[§7A](#7a-repository-map--oop-principles--patterns-by-lld)**.
@@ -1730,16 +1784,17 @@ Full cross-reference → **[§7A](#7a-repository-map--oop-principles--patterns-b
 ### Golang (`Go/*-go`)
 
 Same problems ported to Go — good for Go interviews (interfaces, mutexes, errors).  
-Also see `Go/README.md` for Go concurrency interview prep. For **AI code review** rounds, see **[ai-code-review-round/README.md](ai-code-review-round/README.md)**.
+**Language prep (do first):** [Go/README.md](Go/README.md) · **JS/Node prep:** [JavaScript/README.md](JavaScript/README.md) · **Code review round:** [ai-code-review-round/README.md](ai-code-review-round/README.md) · **LLD method:** this doc §1+.
 
 **Note:** This repo’s coded LLDs are classic systems (cache, parking, rate limit, etc.). **AI LLD is covered in this README (§15–§20)** and **code review in ai-code-review-round/** — practice on paper/whiteboard; there is no separate `AI-Suggest-go` folder yet.
 
 ### Suggested workflow with this repo
 
-1. Hide the code.  
-2. Design on paper for 30–40 minutes.  
-3. Only then open the folder and compare.  
-4. Re-implement a smaller version from scratch timed.
+1. Complete **[JavaScript/README.md](JavaScript/README.md)** and/or **[Go/README.md](Go/README.md)** (§0).  
+2. Hide the code.  
+3. Design on paper for 30–40 minutes (this doc’s method, §5).  
+4. Only then open the folder and compare.  
+5. Re-implement a smaller version from scratch timed.
 
 ---
 
@@ -1768,7 +1823,7 @@ Concurrency/Failure → Extend/Trade-offs
 **Creational:** Singleton (one instance) · Factory (create by type) · Builder (step-by-step) · Abstract Factory (product families) · Prototype (clone)  
 **Behavioural:** Observer (notify subscribers) · Strategy (swap algorithm) · Iterator (traverse) · Command (request as object) · State · Template Method  
 **Structural:** Adapter (bridge interfaces) · Proxy (stand-in / gateway) · Decorator (wrap behavior) · Facade (simple front door)  
-**Repo demos:** Full map → **§7A**. Quick: Strategy → RateLimiter2 · Factory → Splitwise / ParkingLot2 · Observer → Pub-Sub · DIP → PaymentGateway-go · Pipeline → SearchEngine · KISS → Queue/LRU
+**Repo demos:** Full map → **§7A**. Quick: Strategy → RateLimiter2 · Factory → Splitwise / ParkingLot2 · Observer → Pub-Sub · DIP → PaymentGateway-go · Pipeline → SearchEngine · KISS → JavaScript/Queue/LRU
 
 ### AI LLD one-liners
 - LLM behind `LLMClient` interface (Adapter)  

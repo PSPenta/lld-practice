@@ -5,6 +5,7 @@
 ---
 
 ## Table of Contents
+0. [Why Go, fmt & Interview Topic Map](#0-why-go-fmt--interview-topic-map)
 1. [Go Runtime & Scheduler](#1-go-runtime--scheduler)
 2. [Goroutines](#2-goroutines)
 3. [Channels](#3-channels)
@@ -14,15 +15,107 @@
 7. [Error Handling](#7-error-handling)
 8. [Go Keywords — Complete Reference](#8-go-keywords--complete-reference)
 9. [Interfaces & Type System](#9-interfaces--type-system)
+   - [Reflection](#reflection)
 10. [Data Structures — Map vs Slice](#10-data-structures--map-vs-slice)
 11. [Testing](#11-testing)
 12. [HTTP & Networking](#12-http--networking)
 13. [Database](#13-database)
-14. [Design Patterns in Go](#14-design-patterns-in-go)
-15. [Distributed Systems Concepts](#15-distributed-systems-concepts)
-16. [LLD / System Design](#16-lld--system-design)
-17. [Practice Questions](#17-practice-questions)
-18. [Rapid Revision Cheat Sheet](#18-rapid-revision-cheat-sheet)
+14. [Go Modules & Dependency Management](#14-go-modules--dependency-management)
+15. [Design Patterns in Go](#15-design-patterns-in-go)
+16. [Distributed Systems Concepts](#16-distributed-systems-concepts)
+17. [LLD / System Design](#17-lld--system-design)
+18. [Classic Interview Gotchas — Predict the Output](#18-classic-interview-gotchas--predict-the-output)
+19. [Practice Questions](#19-practice-questions)
+20. [Rapid Revision Cheat Sheet](#20-rapid-revision-cheat-sheet)
+
+---
+
+## 0. Why Go, fmt & Interview Topic Map
+
+### Why Go?
+
+Go tries to combine the **ease of dynamic languages** (simple syntax, fast iteration, garbage collection) with the **efficiency and safety of statically typed compiled languages** (compile-time checks, native performance, single binary).
+
+| Strength | Interview one-liner |
+|----------|---------------------|
+| **Simple language** | Small spec, fast compile, easy onboarding |
+| **Concurrency built-in** | Goroutines + channels, not bolt-on threads |
+| **Static typing** | Catch bugs at compile time; great tooling |
+| **GC + runtime** | No manual memory management; sub-ms GC pauses |
+| **Deployment** | One static binary, cross-compile, containers |
+| **Standard library** | HTTP, JSON, testing, crypto — production-ready |
+
+Trade-offs to mention fairly: no generics until 1.18 (now has them), verbose error handling, less OOP than Java/C#, GC tuning for extreme latency workloads.
+
+### fmt package — formatting & printing
+
+```go
+import "fmt"
+
+name := "Go"
+n := 42
+
+fmt.Print("hello")                    // print with no newline
+fmt.Println(name, n)                  // print values + newline
+fmt.Printf("lang=%s count=%d\n", name, n)
+
+// Verbs you'll use in interviews:
+fmt.Printf("%v\n", n)    // default format → 42
+fmt.Printf("%T\n", n)    // type of variable → int
+fmt.Printf("%d\n", n)    // integer
+fmt.Printf("%s\n", name) // string
+fmt.Printf("%+v\n", u)   // struct with field names
+fmt.Printf("%#v\n", u)   // Go-syntax representation
+
+// Sprintf — same as Printf but RETURNS a string (does not print)
+msg := fmt.Sprintf("user %s has %d items", name, n)
+
+// Error wrapping (see §7)
+err := fmt.Errorf("fetch user %d: %w", id, originalErr)
+```
+
+| Function | Prints? | Returns |
+|----------|---------|---------|
+| `Print` / `Println` / `Printf` | Yes → stdout | — |
+| `Sprint` / `Sprintln` / `Sprintf` | No | `string` |
+| `Fprint` / `Fprintf` | Yes → `io.Writer` | bytes written |
+
+### Interview topic map (your checklist → this doc)
+
+| Topic | Where in this doc |
+|-------|-------------------|
+| Why Go? | **§0** (above) |
+| fmt (`%v`, `%T`, `Sprintf`) | **§0** |
+| Goroutines vs threads, creating/managing | **§1** GMP, **§2** |
+| Channels, communication | **§3** |
+| Mutex vs RWMutex, `sync` package | **§4** |
+| `select`, coordinating goroutines | **§3**, **§8** |
+| Concurrency pitfalls, safe shared data | **§4**, **§18** |
+| Error handling, panic/recover | **§7**, **§8** |
+| Interfaces, polymorphism | **§9** |
+| Garbage collection, memory leaks | **§6** |
+| Reflection | **§9 → Reflection** |
+| Error values vs error types | **§7** |
+| Unit tests, mocking | **§11** |
+| Go Modules vs GOPATH | **§14** |
+| Performance optimization, profiler | **§6** |
+| `context` — timeouts, cancellation | **§5** |
+| Error wrapping | **§7** |
+| Middleware & middleware chains | **§12** |
+
+### How to revise with this doc (interview-ready path)
+
+| Day | Focus | Sections |
+|-----|-------|----------|
+| **1 — Core concurrency** | GMP, goroutines, channels, sync, context | §1–§5, then **§18** gotchas #1–2, #8, #11–12 |
+| **2 — Language + memory** | Errors, interfaces, GC, maps/slices, keywords | §6–§10, **§18** rest of gotchas |
+| **3 — Production + drill** | HTTP, DB, modules, patterns; practice aloud | §11–§17, **§19** Qs, **§20** cheat sheet |
+
+**Before the interview:** run through **§18** (predict output without looking), skim **§20** (30 min), pick 5 **§19** questions and answer out loud.
+
+**What this doc covers well:** concurrency (GMP, channels, mutex, atomics, context), error handling, GC/profiling, interfaces, gotchas, HTTP/DB basics, modules, middleware.
+
+**Pair with hands-on:** run `go test -race` on a small snippet, trace one goroutine leak fix, write a table-driven test — interviewers often follow theory with “what’s wrong with this code?”
 
 ---
 
@@ -114,7 +207,18 @@ runtime.GOMAXPROCS(0)          // query current value
 ## 2. Goroutines
 
 ### Fundamentals
-- Goroutine vs OS thread: 2KB vs 1–8MB stack; millions vs thousands
+
+**Goroutine** = lightweight concurrent task scheduled by the Go runtime (not a 1:1 OS thread).
+
+| | Goroutine | OS thread |
+|---|-----------|-----------|
+| Stack | ~2KB, grows dynamically | ~1–8MB fixed |
+| Cost | Cheap — spawn millions | Expensive — thousands max |
+| Scheduling | Go runtime (GMP) | OS kernel |
+| Creation | `go func()` | `pthread` / platform API |
+
+**Managing goroutines:** you cannot force-kill — use **`context` cancellation**, **closed channels**, or **`WaitGroup`** to coordinate lifecycle. Always give goroutines an exit path.
+
 - Stack grows and shrinks dynamically (up to 1GB max)
 - You cannot force-kill a goroutine — you signal it
 
@@ -123,6 +227,8 @@ runtime.GOMAXPROCS(0)          // query current value
 go func() { doWork() }()           // fire and forget — bad, no exit path
 go worker(ctx, jobs)               // correct — passes context for cancellation
 ```
+
+**Classic trap:** `for i := 0; i < n; i++ { go func() { use(i) }() }` — loop variable capture (see §18). Prefer `go func(i int){...}(i)`.
 
 ### WaitGroup — wait for all to finish
 ```go
@@ -312,10 +418,19 @@ defer goleak.VerifyNone(t)
 
 ## 3. Channels
 
+**Channels** = typed conduits for **communication between goroutines** (CSP model: *"Don't communicate by sharing memory; share memory by communicating."*).
+
+- **Send** `ch <- v` — pass a value (ownership transfer)
+- **Receive** `v := <-ch` — wait for a value
+- **Close** `close(ch)` — signal no more sends; receivers drain and exit
+
+Use channels to pipeline work, fan-out/fan-in, signal completion, and limit concurrency (semaphore).
+
 ### Buffered vs Unbuffered
 - **Unbuffered** `make(chan T)` — send blocks until receiver reads (synchronous)
 - **Buffered** `make(chan T, n)` — send blocks only when buffer is full (decoupled)
 - Use buffered size 1 when goroutine sends exactly once and must exit immediately
+- **Classic trap:** unbuffered `ch <- x` then `<-ch` in the **same** goroutine → **deadlock** (see §18)
 
 ### Core patterns
 
@@ -358,6 +473,9 @@ close(done) // every <-done unblocks simultaneously
 ```
 
 ### select — multiplex channels
+
+**`select`** waits on **multiple channel operations** — whichever is ready first wins. Essential for timeouts, cancellation, and merging event sources.
+
 ```go
 select {
 case msg := <-jobs:
@@ -368,8 +486,12 @@ case <-ctx.Done():
     return ctx.Err()
 case <-time.After(5 * time.Second): // only outside loops — use ticker inside loops
     return errTimeout
+default:
+    // non-blocking branch — optional
 }
 ```
+
+Without `select`, you'd block on one channel only — hard to combine work + timeout + cancel.
 
 ### Channels vs Mutex
 | | Channel | Mutex |
@@ -381,6 +503,53 @@ case <-time.After(5 * time.Second): // only outside loops — use ticker inside 
 ---
 
 ## 4. Mutex, RWMutex, Atomics
+
+### sync package — overview
+
+The standard library `sync` package provides **low-level synchronisation primitives**. Use them when channels are awkward (shared memory, counters, one-time init).
+
+| Primitive | Purpose |
+|-----------|---------|
+| `sync.Mutex` | Exclusive lock — one goroutine in critical section |
+| `sync.RWMutex` | Many readers **or** one writer |
+| `sync.WaitGroup` | Wait until N goroutines finish |
+| `sync.Once` | Run a function exactly once (lazy init) |
+| `sync.Pool` | Reuse objects; reduce GC pressure |
+| `sync.Cond` | Wait for a condition (rare; prefer channels) |
+| `sync/atomic` | Lock-free ops on single words (counters, flags) |
+
+**Mutex vs RWMutex — when to use which:**
+
+| Use **Mutex** | Use **RWMutex** |
+|---------------|-----------------|
+| Reads and writes both mutate state | **Many reads, rare writes** (config cache, registry) |
+| Critical section is short | Read-heavy path must not block other readers |
+| Simpler mental model | Writer excludes everyone; readers share lock |
+
+If writes are frequent, RWMutex offers little benefit — writers still block everyone.
+
+### Concurrency pitfalls & safe shared access
+
+| Pitfall | Symptom | Fix |
+|---------|---------|-----|
+| **Data race** | Wrong counts, flaky tests | Mutex, atomic, or channels; **`go test -race`** |
+| **Goroutine leak** | Memory grows; `NumGoroutine` rises | Exit on `ctx.Done()`; buffered err ch; close channels |
+| **Deadlock** | All goroutines asleep | Unbuffered send/receive mismatch; lock ordering |
+| **Copying mutex** | `go vet` warning; broken exclusion | Pointer receivers; don't copy structs with locks |
+| **Concurrent map write** | Runtime fatal | `Mutex` + map or `sync.Map` |
+| **Lock during I/O** | Throughput collapse | Release lock before network/DB calls |
+| **`WaitGroup` misuse** | Early `Wait`, hang | `Add` before `go`; `defer Done()` in goroutine |
+
+**How to ensure safe concurrent access:**
+
+1. **Prefer message passing** — send ownership via channels when natural (§3).
+2. **Protect shared memory** — `Mutex` / `RWMutex` for maps, slices, struct fields.
+3. **Single-word updates** — `atomic` for metrics counters (§4 atomics).
+4. **Immutability** — copy-on-write, read-only after publish (no lock on read path).
+5. **Detect races in CI** — `go test -race ./...` on every PR.
+6. **Design for cancellation** — `context.Context` so blocked goroutines can exit.
+
+See **§18** for predict-the-output traps (loop variable, channel deadlock, etc.).
 
 ### sync.Mutex
 ```go
@@ -416,19 +585,118 @@ defer rw.Unlock()
 - Never hold a lock during I/O — other goroutines starve
 - Always pair Lock with Unlock via `defer`
 
-### sync/atomic — lock-free operations
+### sync/atomic — lock-free operations (multi-goroutine safe)
+
+**Atomics are not single-threaded.** They exist precisely for **many goroutines** updating the **same memory location** at once — without a mutex.
+
+#### The problem atomics solve
+
+A normal read-modify-write is **not** one indivisible step:
+
+```go
+var counter int64
+
+// WRONG — data race; two goroutines can interleave:
+counter++   // actually: LOAD → ADD 1 → STORE (3 CPU steps)
+```
+
+```text
+G1: LOAD counter (100)
+G2: LOAD counter (100)    ← both read same value
+G1: STORE 101
+G2: STORE 101             ← lost update; expected 102, got 101
+```
+
+`atomic.AddInt64(&counter, 1)` makes that whole update **indivisible** at the hardware level — other goroutines cannot see a half-updated value.
+
+#### How the CPU makes it safe (layman)
+
+The Go runtime delegates to **CPU atomic instructions** (e.g. `LOCK`-prefixed ops on x86, LL/SC or CAS on ARM). The chip guarantees:
+
+- One goroutine's atomic read-modify-write completes **before** another's is visible as a whole
+- No torn reads/writes on supported sizes (`int32`, `int64`, pointers, etc.)
+
+You do **not** get a Go mutex or a dedicated thread. All goroutines still run in parallel on many cores; the **memory operation itself** is serialized for that one word.
+
+```text
+Many goroutines on many cores
+        │
+        ▼
+  atomic.AddInt64(&counter, 1)
+        │
+        ▼
+  CPU ensures each +1 is one atomic step on &counter
+        │
+        ▼
+  Final count = number of successful Add calls (no lost updates)
+```
+
+#### API (Go 1.19+ typed wrappers preferred)
+
 ```go
 import "sync/atomic"
 
-var counter int64
-atomic.AddInt64(&counter, 1)       // atomic increment
-atomic.LoadInt64(&counter)         // atomic read
-atomic.StoreInt64(&counter, 0)     // atomic write
-atomic.CompareAndSwapInt64(&counter, old, new) // CAS
+// Typed wrapper (preferred — harder to misuse)
+var counter atomic.Int64
+counter.Add(1)           // atomic increment — safe from any goroutine
+counter.Load()           // atomic read
+counter.Store(0)         // atomic write
+counter.CompareAndSwap(old, new) // CAS: swap only if current == old
+
+// Legacy pointer form — still common in older code
+var n int64
+atomic.AddInt64(&n, 1)
+atomic.LoadInt64(&n)
+atomic.StoreInt64(&n, 0)
+atomic.CompareAndSwapInt64(&n, old, new)
 ```
-- Faster than mutex for simple counters
-- No context switch overhead
-- Use for: metrics counters, flags, state machines
+
+**Compare-and-swap (CAS)** — the building block for lock-free algorithms:
+
+```go
+// Spin until we successfully increment (illustrative pattern)
+for {
+    old := counter.Load()
+    if counter.CompareAndSwap(old, old+1) {
+        break
+    }
+    // another goroutine changed counter between Load and CAS — retry
+}
+```
+
+#### Atomic vs mutex
+
+| | `sync/atomic` | `sync.Mutex` |
+|---|---------------|--------------|
+| **Protects** | One integer / pointer / flag | A **critical section** (many lines, many vars) |
+| **Mechanism** | CPU atomic instruction | OS-level lock; goroutines may block/sleep |
+| **Parallelism** | All cores keep running; only that one memory op is serialized | Only one goroutine in the section at a time |
+| **Best for** | Counters, metrics, `done` flags, simple state | Maps, slices, multi-field invariants, I/O under lock |
+| **Compound logic** | ❌ `if counter > 10 { counter++ }` still needs mutex or careful CAS loop | ✅ natural fit |
+
+#### What atomics do NOT fix
+
+```go
+// WRONG — Load and Store are each atomic, but the pair is not:
+if atomic.LoadInt64(&n) > 0 {
+    atomic.AddInt64(&n, -1)  // two goroutines can both pass the if
+}
+
+// WRONG — two variables; atomic can't make them consistent together:
+atomic.AddInt64(&sent, 1)
+atomic.AddInt64(&failed, 1)  // need mutex if both must move as one unit
+
+// WRONG — protecting a map/slice:
+// maps and slices need mutex or channels, not atomic
+```
+
+**Rule:** atomic = **one memory location**, **one operation**. Multiple steps or multiple fields → **mutex**.
+
+#### When to use which (interview line)
+
+> Use **atomics** for simple counters and flags where goroutines only touch one `int64`/pointer. Use a **mutex** when you need a multi-line critical section or consistent view of several fields. Atomics are multi-goroutine safe; they are not single-threaded.
+
+`sync/atomic` is also used internally by `sync.Map`, `sync.Once`, and parts of the runtime.
 
 ### sync.Once — run exactly once
 ```go
@@ -458,6 +726,10 @@ func handle() {
 ---
 
 ## 5. Context
+
+The **`context`** package carries **deadlines, cancellation signals, and request-scoped values** across API boundaries and goroutines. Every incoming HTTP request should get a context; pass it to DB calls, downstream HTTP, and worker goroutines.
+
+**Interview uses:** timeout an external call, cancel sibling goroutines when one fails, propagate `request_id` for logging.
 
 ### What it provides
 - **Cancellation** — signal goroutines to stop via `ctx.Done()` channel
@@ -759,7 +1031,53 @@ var pool = sync.Pool{New: func() any { return new(bytes.Buffer) }}
 // pointer → heap allocation; value → stack
 ```
 
-### Profiling
+### Profiling & performance optimization
+
+**Workflow:** measure → profile → fix hotspot → benchmark again. Don't optimize without data.
+
+| Tool / technique | What it finds |
+|------------------|---------------|
+| `go test -bench=. -benchmem` | Hot functions, allocations per op |
+| `go test -race ./...` | Data races (correctness, not speed) |
+| `go build -gcflags='-m'` | Escape analysis — heap vs stack |
+| `net/http/pprof` + `go tool pprof` | CPU, heap, goroutine profiles at runtime |
+| `go tool trace` | Timeline: goroutines, GC, syscalls |
+| `GODEBUG=gctrace=1` | GC frequency and pause times |
+| `GOGC` / `GOMEMLIMIT` | Tune GC vs memory (§6) |
+| `sync.Pool`, preallocate slices | Reduce allocation rate |
+| Avoid `interface{}` boxing in hot loops | Fewer heap allocs |
+
+```bash
+# CPU profile (30s sample while load test runs)
+go tool pprof http://localhost:6060/debug/pprof/profile?seconds=30
+
+# Heap — what's using memory
+go tool pprof http://localhost:6060/debug/pprof/heap
+
+# Inside pprof interactive mode:
+# top10          — hottest functions
+# list MyFunc      — line-level cost
+# web              — call graph (needs graphviz)
+```
+
+**Interview line:** "I'd use benchmarks to set a baseline, pprof CPU/heap to find the top allocators or hot paths, fix those, then re-benchmark. Race detector stays on in CI."
+
+### Avoiding memory leaks in Go
+
+Go has GC, but **leaks still happen** when you hold references to objects that are no longer needed, or goroutines never exit.
+
+| Leak source | Fix |
+|-------------|-----|
+| Goroutine blocked forever | `ctx` cancellation; close channels; timeouts |
+| HTTP `resp.Body` not closed | `defer resp.Body.Close()` |
+| DB `rows` not closed | `defer rows.Close()` |
+| `time.After` in a loop | `time.NewTicker` + `defer Stop()` |
+| Global map/cache growing unbounded | TTL, max size, eviction |
+| Finalizers | Rare; don't rely on them — explicit `Close()` |
+
+Monitor: `runtime.NumGoroutine()`, heap pprof, `goleak` in tests.
+
+### Profiling (quick reference)
 ```bash
 GODEBUG=gctrace=1 ./server                        # GC log in real time
 go tool pprof http://localhost:6060/debug/pprof/heap          # heap profile
@@ -799,6 +1117,7 @@ inner := errors.Unwrap(err)
 ```
 
 ### Sentinel errors vs custom types
+
 ```go
 // sentinel — compare with errors.Is
 var ErrNotFound = errors.New("not found")
@@ -812,6 +1131,32 @@ func (e *ValidationError) Error() string {
     return fmt.Sprintf("%s: %s", e.Field, e.Message)
 }
 ```
+
+### Error values vs error interfaces — pros & cons
+
+In Go, **`error` is an interface** with one method: `Error() string`. Everything below **implements** that interface.
+
+| Approach | Pros | Cons | Use when |
+|----------|------|------|----------|
+| **Plain `error` value** (`errors.New`, `fmt.Errorf`) | Simple, no types | Hard to branch on details | Generic failures, wrapping |
+| **Sentinel errors** (`var ErrX = errors.New(...)`) | Compare with `errors.Is` | Package API surface grows | Stable, known conditions (`ErrNotFound`) |
+| **Custom error types** (structs with fields) | Rich data via `errors.As` | More boilerplate | Validation errors, HTTP status + body |
+| **Wrapped errors** (`fmt.Errorf("%w")`) | Context chain preserved | Must use `Is`/`As`, not `==` | Almost always in production |
+
+```go
+// BAD — breaks wrapped errors
+if err == sql.ErrNoRows { ... }
+
+// GOOD
+if errors.Is(err, sql.ErrNoRows) { ... }
+
+var ve *ValidationError
+if errors.As(err, &ve) {
+    fmt.Println(ve.Field)
+}
+```
+
+**Interview line:** "Return `error` interface values; use sentinels for stable identity, custom types when callers need fields, and `%w` wrapping for context — always inspect with `errors.Is` / `errors.As`."
 
 ### panic vs error
 - `error` — expected, recoverable: DB not found, invalid input, timeout
@@ -1101,6 +1446,63 @@ import _ "net/http/pprof"  // import for side effects only (runs init())
 - Interface value = two pointers: **type pointer** + **data pointer**
 - Empty interface `any` (alias for `interface{}`) — holds any value
 
+**Polymorphism:** functions accept an **interface type**; any concrete type with matching methods works at runtime (duck typing).
+
+```go
+type Logger interface {
+    Log(msg string)
+}
+
+type ConsoleLogger struct{}
+func (c ConsoleLogger) Log(msg string) { fmt.Println(msg) }
+
+type FileLogger struct{ path string }
+func (f FileLogger) Log(msg string) { /* write to file */ }
+
+func Process(l Logger) {  // accepts ANY type with Log(string)
+    l.Log("done")
+}
+
+Process(ConsoleLogger{})           // polymorphic call
+Process(FileLogger{path: "a.log"})
+```
+
+### One type implementing multiple interfaces
+
+```go
+type Reader interface {
+    Read(p []byte) (n int, err error)
+}
+type Writer interface {
+    Write(p []byte) (n int, err error)
+}
+type Closer interface {
+    Close() error
+}
+
+// Compose interfaces by embedding
+type ReadWriteCloser interface {
+    Reader
+    Writer
+    Closer
+}
+
+type File struct{ /* ... */ }
+
+func (f *File) Read(p []byte) (int, error)  { /* ... */ }
+func (f *File) Write(p []byte) (int, error) { /* ... */ }
+func (f *File) Close() error                { /* ... */ }
+
+// *File satisfies Reader, Writer, Closer, and ReadWriteCloser — no explicit declaration
+
+func Copy(dst Writer, src Reader) (int64, error) {
+    // both args accept any matching type — e.g. *File, *bytes.Buffer, net.Conn
+    return io.Copy(dst, src)
+}
+```
+
+Same pattern as `io` package: `io.Reader`, `io.Writer`, `io.ReadWriter`.
+
 ### Nil interface gotcha
 ```go
 var p *MyStruct = nil
@@ -1170,7 +1572,49 @@ func Sum[T Number](nums []T) T {
 
 ---
 
-## 9. Data Structures — Map vs Slice
+### Reflection
+
+**Reflection** = inspect or modify types and values **at runtime** via the `reflect` package.
+
+```go
+import "reflect"
+
+type User struct {
+    Name string `json:"name"`
+    Age  int    `json:"age"`
+}
+
+u := User{Name: "Ada", Age: 36}
+v := reflect.ValueOf(u)
+t := reflect.TypeOf(u)
+
+fmt.Println(t.Name())              // User
+fmt.Println(v.FieldByName("Age"))  // 36
+
+// Iterate struct fields (e.g. build JSON, ORM, validators)
+for i := 0; i < t.NumField(); i++ {
+    f := t.Field(i)
+    fmt.Println(f.Name, f.Tag.Get("json"))
+}
+```
+
+| Use reflection for | Avoid reflection for |
+|--------------------|----------------------|
+| JSON/XML encode-decode (stdlib uses it) | Hot paths — **10–100× slower** than direct calls |
+| Generic containers before Go 1.18 generics | Simple dispatch — use interfaces instead |
+| ORMs, validators, debug tools | Anything you can express with interfaces + codegen |
+
+**Limitations:**
+- Needs **exported** fields for reflection from other packages
+- Loses compile-time type safety — errors at runtime
+- Harder to read and refactor
+- `reflect.Value` must be **addressable** to modify fields (`reflect.ValueOf(&x).Elem()`)
+
+**Interview line:** "Reflection is powerful for frameworks and serialization, but I avoid it in request handlers — interfaces and generics give compile-time checks and better performance."
+
+---
+
+## 10. Data Structures — Map vs Slice
 
 ### Slice — full syntax reference
 
@@ -1361,7 +1805,16 @@ sm.Range(func(k, v any) bool {
 
 ---
 
-## 10. Testing
+## 11. Testing
+
+Go's standard library **`testing`** package — no third-party framework required. Tests live in `*_test.go` files, same package (or `package foo_test` for black-box tests).
+
+```bash
+go test ./...              # run all tests
+go test -v -run TestAdd    # verbose, single test
+go test -cover ./...       # coverage
+go test -race ./...        # race detector
+```
 
 ### Table-driven tests (Go standard)
 ```go
@@ -1387,6 +1840,9 @@ func TestAdd(t *testing.T) {
 ```
 
 ### Mock interfaces with fake structs
+
+**Idiomatic mocking:** depend on **interfaces**; in tests, pass a **fake struct** with the same methods (no code generation required).
+
 ```go
 type UserRepository interface {
     GetUser(id int) (*User, error)
@@ -1449,7 +1905,7 @@ t.Run("subtest", func(t *testing.T) {
 
 ---
 
-## 11. HTTP & Networking
+## 12. HTTP & Networking
 
 ### http.Client — configure timeouts
 ```go
@@ -1501,6 +1957,9 @@ srv.Shutdown(ctx) // waits for in-flight requests to complete
 ```
 
 ### Middleware pattern
+
+**Middleware** = wrapper around an `http.Handler` that runs **before/after** the next handler (logging, auth, metrics, recovery).
+
 ```go
 type Middleware func(http.Handler) http.Handler
 
@@ -1512,14 +1971,52 @@ func Logger(next http.Handler) http.Handler {
     })
 }
 
-// chain: Logger(Auth(RateLimit(handler)))
+func Auth(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        if r.Header.Get("Authorization") == "" {
+            http.Error(w, "unauthorized", http.StatusUnauthorized)
+            return
+        }
+        next.ServeHTTP(w, r)
+    })
+}
 ```
+
+### Middleware chains
+
+Chain middleware so the **first listed runs outermost** (like onion layers):
+
+```go
+// Chain applies m1, then m2, then m3 around final handler
+func Chain(h http.Handler, middlewares ...Middleware) http.Handler {
+    for i := len(middlewares) - 1; i >= 0; i-- {
+        h = middlewares[i](h)
+    }
+    return h
+}
+
+mux := http.NewServeMux()
+mux.Handle("/api/", Chain(apiHandler,
+    Logger,      // outer — logs entire request lifecycle
+    Auth,        // middle — reject before handler
+    RateLimit,   // inner — closest to handler
+))
+
+// Equivalent manual nesting:
+// Logger(Auth(RateLimit(apiHandler)))
+```
+
+**Request flow:** `Logger` → `Auth` → `RateLimit` → `apiHandler` → response unwinds back through wrappers.
+
+Common middleware: request ID, panic recovery, CORS, timeout via `context`, Prometheus metrics.
+
+**With routers:** Chi, Echo, Gin expose `Use(mw)` — same idea, different API.
 
 ---
 
-## 12. Database
+## 13. Database
 
-### database/sql — connection pool
+### JavaScript/Database/sql — connection pool
 ```go
 db, err := sql.Open("postgres", dsn)
 
@@ -1567,7 +2064,53 @@ return tx.Commit()
 
 ---
 
-## 13. Design Patterns in Go
+## 14. Go Modules & Dependency Management
+
+### Go Modules (current standard — Go 1.16+ default)
+
+**Modules** = dependency management with **`go.mod`** at project root. Versioned, reproducible builds.
+
+```go
+// go.mod
+module github.com/you/myapp
+
+go 1.22
+
+require (
+    github.com/lib/pq v1.10.9
+    golang.org/x/sync v0.7.0
+)
+```
+
+| Command | Purpose |
+|---------|---------|
+| `go mod init module/path` | Create new module |
+| `go get pkg@v1.2.3` | Add or upgrade dependency |
+| `go mod tidy` | Add missing, remove unused deps |
+| `go mod vendor` | Copy deps into `vendor/` (offline/air-gapped builds) |
+| `go list -m all` | List all module versions |
+| `go mod download` | Cache modules locally |
+
+**`go.sum`** — cryptographic checksums for reproducible builds. Commit both `go.mod` and `go.sum`.
+
+**Semantic import versioning:** `v2+` modules require `/v2` in import path (e.g. `github.com/foo/bar/v2`).
+
+### GOPATH (legacy)
+
+Before modules, all code lived under **`$GOPATH/src`**. Dependencies were cloned into GOPATH with **no per-project version pinning** — "latest on disk" chaos.
+
+| | **GOPATH** | **Go Modules** |
+|---|------------|----------------|
+| Project location | Must be under `$GOPATH/src` | Anywhere on disk |
+| Version pinning | No (vendor or manual) | `go.mod` with semver |
+| Reproducible builds | Hard | `go.sum` + module cache |
+| Status | Legacy / deprecated for apps | **Use this** |
+
+**Interview line:** "Modules replaced GOPATH with versioned dependencies in `go.mod`, a global module cache, and `go.sum` for integrity. I use `go mod tidy` and commit `go.mod`/`go.sum`."
+
+---
+
+## 15. Design Patterns in Go
 
 ### Functional options — flexible constructors
 ```go
@@ -1701,7 +2244,7 @@ for v := range square(generate(1, 2, 3, 4)) {
 
 ---
 
-## 14. Distributed Systems Concepts
+## 16. Distributed Systems Concepts
 
 ### Idempotency
 > The same operation applied multiple times produces the same result.  
@@ -1745,7 +2288,7 @@ defer span.End()
 
 ---
 
-## 15. LLD / System Design
+## 17. LLD / System Design
 
 ### LLD problems to know (all implemented in this repo as Go)
 | Problem | Key concepts |
@@ -1777,7 +2320,309 @@ defer span.End()
 
 ---
 
-## 16. Practice Questions
+## 18. Classic Interview Gotchas — Predict the Output
+
+> Interviewers love short snippets. Cover these cold. Say: **what happens**, **why**, **how to fix**.
+
+### 1. Unbuffered send + receive in the same goroutine → deadlock
+
+```go
+func main() {
+    ch := make(chan int)
+    ch <- 10              // blocks forever — no other goroutine to receive
+    fmt.Println(<-ch)     // never reached
+}
+```
+
+**Output:** `fatal error: all goroutines are asleep - deadlock`
+
+**Why:** Unbuffered channel needs a **rendezvous**. `main` is stuck on send, so it never reaches the receive.
+
+**Fix:** another goroutine, or buffer: `make(chan int, 1)`.
+
+---
+
+### 2. Loop variable captured by goroutine
+
+```go
+func main() {
+    for i := 0; i < 5; i++ {
+        go func() {
+            fmt.Println(i)
+        }()
+    }
+    time.Sleep(time.Second)
+}
+```
+
+| Go version | Typical output |
+|------------|----------------|
+| **&lt; 1.22** (classic interview answer) | `5 5 5 5 5` (order may vary) |
+| **≥ 1.22** | `0 1 2 3 4` (any order) — each iteration has its own `i` |
+
+**Why (pre-1.22):** all closures share **one** `i`; they usually run after the loop, when `i == 5`.
+
+**Fix (always safe — say this in interviews):**
+
+```go
+for i := 0; i < 5; i++ {
+    i := i                    // shadow: new var per iteration
+    go func() { fmt.Println(i) }()
+}
+// or: go func(i int) { fmt.Println(i) }(i)
+```
+
+Also: prefer `WaitGroup` over `time.Sleep` to wait for goroutines.
+
+---
+
+### 3. Nil interface vs nil pointer
+
+```go
+func returnsError() error {
+    var p *MyError = nil
+    return p              // returns a typed nil
+}
+fmt.Println(returnsError() == nil) // false!
+```
+
+**Why:** Interface = `(type, value)`. Here type is `*MyError`, value is `nil` → interface is **not** nil.
+
+**Fix:** `return nil` (untyped), or check with `errors.As` / typed helpers carefully.
+
+---
+
+### 4. Send / close on closed channel → panic
+
+```go
+ch := make(chan int, 1)
+close(ch)
+ch <- 1        // panic: send on closed channel
+close(ch)      // panic: close of closed channel
+```
+
+Receive on closed channel is **safe** → zero value, `ok == false`.
+
+**Rule:** only the **sender** closes; never close from the receiver; close **once**.
+
+---
+
+### 5. Nil map write → panic
+
+```go
+var m map[string]int   // nil map
+fmt.Println(m["a"])    // 0 — read OK
+m["a"] = 1             // panic: assignment to entry in nil map
+```
+
+**Fix:** `m = make(map[string]int)` or `m := map[string]int{}`.
+
+---
+
+### 6. Slice append shares backing array (unexpected overwrite)
+
+```go
+a := []int{1, 2, 3, 4}
+b := a[:2]           // b = [1 2], same array as a
+b = append(b, 99)    // may overwrite a[2]!
+fmt.Println(a)       // often [1 2 99 4] — surprising
+```
+
+**Why:** `append` reuses capacity when there is room.
+
+**Fix:** `b = append([]int(nil), a[:2]...)` or `slices.Clone`, or `a[:2:2]` (full slice expression — cap=2 forces realloc on append).
+
+---
+
+### 7. `defer` args evaluated immediately; defers run LIFO
+
+```go
+func main() {
+    x := 1
+    defer fmt.Println(x)  // prints 1 — arg snapshotted now
+    x = 2
+    defer fmt.Println("second")
+    defer fmt.Println("first")
+}
+// Output:
+// first
+// second
+// 1
+```
+
+**LIFO:** last `defer` runs first. **Args** of `defer f(x)` are evaluated when `defer` is registered, not when it runs. For late evaluation use `defer func() { fmt.Println(x) }()`.
+
+---
+
+### 8. `WaitGroup.Add` inside the goroutine → race / undercount
+
+```go
+var wg sync.WaitGroup
+for i := 0; i < 5; i++ {
+    go func() {
+        wg.Add(1)       // WRONG — may race with Wait
+        defer wg.Done()
+        work()
+    }()
+}
+wg.Wait()               // may return before all Add(1) calls
+```
+
+**Fix:** `wg.Add(1)` **before** `go`, or `wg.Add(n)` once before the loop.
+
+---
+
+### 9. Copying a mutex (or struct containing one)
+
+```go
+type Counter struct {
+    mu sync.Mutex
+    n  int
+}
+func (c Counter) Inc() {  // value receiver COPIES the mutex
+    c.mu.Lock()
+    c.n++
+    c.mu.Unlock()
+}
+```
+
+**Why:** each call locks a **different** mutex copy → no real exclusion; also `go vet` warns.
+
+**Fix:** pointer receiver `func (c *Counter) Inc()`, never copy mutexes.
+
+---
+
+### 10. Concurrent map write → fatal (not a recover-able panic)
+
+```go
+m := map[int]int{}
+go func() { m[1] = 1 }()
+go func() { m[2] = 2 }()
+// fatal error: concurrent map writes
+```
+
+**Fix:** `sync.Mutex` / `RWMutex`, or `sync.Map`, or shard maps. Always run `go test -race`.
+
+---
+
+### 11. Range over channel without close → hang forever
+
+```go
+ch := make(chan int)
+go func() {
+    ch <- 1
+    ch <- 2
+    // forgot close(ch)
+}()
+for v := range ch {  // waits forever for next value after 2
+    fmt.Println(v)
+}
+```
+
+**Fix:** sender `defer close(ch)` when done (only if no more sends).
+
+---
+
+### 12. `select` on nil channel never fires that case
+
+```go
+var ch chan int  // nil
+select {
+case <-ch:           // never selected — nil chan blocks forever
+default:
+    fmt.Println("ok")
+}
+```
+
+**Useful trick:** set `ch = nil` to **disable** a `select` case dynamically.
+
+---
+
+### 13. Method set — pointer vs value receiver
+
+```go
+type T struct{}
+func (t *T) M() {}
+
+var t T
+var i interface{ M() } = t   // compile error — T does not have M
+var i2 interface{ M() } = &t // OK
+```
+
+**Rule:** `*T` methods are not in `T`'s method set. Prefer pointer receivers for mutating methods.
+
+---
+
+### 14. Shadowing with `:=` hides outer `err`
+
+```go
+err := doA()
+if err != nil { return err }
+if err := doB(); err != nil {  // new err in if scope — OK
+    return err
+}
+// but this is a bug:
+result, err := doC()           // fine if err already declared
+if data, err := doD(); err != nil {
+    return nil                 // returned WITHOUT the doD err if you return wrong var
+}
+_ = result
+```
+
+Prefer clear scopes; don’t reuse `:=` in a way that ignores the outer error you meant to return.
+
+---
+
+### 15. String / range — runes, not bytes
+
+```go
+s := "Go语言"
+fmt.Println(len(s))           // 8 — bytes, not characters
+for i, r := range s {
+    fmt.Println(i, string(r)) // i is byte index; r is rune
+}
+```
+
+Use `utf8.RuneCountInString` or `[]rune(s)` when you mean characters.
+
+---
+
+### 16. Array vs slice — value vs reference-ish
+
+```go
+a := [3]int{1, 2, 3}
+b := a
+b[0] = 99
+fmt.Println(a[0]) // 1 — arrays are copied
+
+s1 := []int{1, 2, 3}
+s2 := s1
+s2[0] = 99
+fmt.Println(s1[0]) // 99 — same backing array
+```
+
+---
+
+### Quick “predict output” drill table
+
+| Snippet gist | Result |
+|--------------|--------|
+| Unbuffered `ch<-` then `<-ch` in `main` | Deadlock |
+| Loop `go func(){ print(i) }` (Go &lt; 1.22) | All `len` / final `i` |
+| `var e error = (*T)(nil)` then `e == nil` | `false` |
+| `close` then send | Panic |
+| Nil map write | Panic |
+| `append` into subslice with spare cap | May mutate original |
+| Multiple `defer` prints | LIFO order |
+| `wg.Add` inside `go` | Race / early `Wait` |
+| Value-receiver method + mutex | Broken locking |
+| Concurrent map write | Fatal crash |
+| `for range ch` without `close` | Hang |
+| `len("世界")` | Byte length (6), not 2 |
+
+---
+
+## 19. Practice Questions
 
 ### Goroutines & Concurrency
 1. Run 10 goroutines, track which failed, retry only the failed ones
@@ -1787,12 +2632,14 @@ defer span.End()
 5. Implement a worker pool with N workers and graceful shutdown via context
 6. What is a goroutine leak? How do you detect and fix it?
 7. Call 3 APIs in parallel; return the first successful response and cancel the rest (`Promise.race` equivalent). Why can't you use `wg.Wait()` for this?
+7a. Predict the output of the loop+goroutine `print(i)` snippet — and the unbuffered channel in `main` only (§18)
 
 ### Channels
 8. What is the difference between buffered and unbuffered channels?
 9. What happens if you send to a closed channel?
 10. Implement a fan-in that merges results from 3 goroutines into one channel
 11. How do you broadcast a stop signal to 10 goroutines simultaneously?
+11a. Why does `for range ch` hang if the sender never closes?
 
 ### Memory & GC
 12. What is escape analysis? How do you inspect it?
@@ -1819,7 +2666,7 @@ defer span.End()
 
 ### HTTP & DB
 27. Why should you not use `http.DefaultClient` in production?
-28. How do you configure connection pool for `database/sql`?
+28. How do you configure connection pool for `JavaScript/Database/sql`?
 29. How does graceful HTTP server shutdown work in Go?
 
 ### Design Patterns
@@ -1827,11 +2674,25 @@ defer span.End()
 31. What is the singleflight pattern and what problem does it solve?
 32. Explain the circuit breaker pattern and its 3 states
 
+### Language & tooling (checklist topics)
+33. Why Go? What problems does it solve?
+34. Explain `fmt.Printf` vs `fmt.Sprintf` and common verbs (`%v`, `%T`)
+35. What is reflection? When would you use it vs interfaces?
+36. Go Modules vs GOPATH — how do you version dependencies?
+37. What middleware is and how do you chain it in HTTP handlers?
+38. Error values vs sentinel vs custom error types — pros and cons?
+39. How do you profile and optimize a Go service (pprof, benchmarks)?
+40. How do you avoid memory leaks despite GC?
+
 ---
 
-## 17. Rapid Revision Cheat Sheet
+## 20. Rapid Revision Cheat Sheet
 
 ```
+Why Go                  → simple, fast compile, goroutines, static types, single binary, GC
+fmt.Printf / Sprintf    → Printf prints; Sprintf returns string; %v value, %T type
+Topic map               → §0 table maps interview checklist to sections
+
 GMP model               → G=goroutine, M=OS thread, P=logical processor
 Blocked G               → NOT on P's run queue; netpoller/channel/syscall wait; re-queued when ready
 P–M binding             → 1 M per P at a time; P rebinds to new M if syscall blocks old M
@@ -1844,19 +2705,26 @@ wg.Wait()               → wait for ALL goroutines; cannot early-return on firs
 First-success race      → wait on <-ch (not wg.Wait); cancel() losers via context
 Promise.race (Node)     → Go: parallel goroutines + buffered results channel + cancel()
 ctx.Done()              → channel closed by cancel(); select on it to exit
-Buffered channel        → sender never blocks; goroutine can always exit
+Buffered channel        → send blocks only when full; size 1 lets single-send goroutine exit
+Unbuffered in main only → ch<- then <-ch in same G = deadlock
 close(ch)               → unblocks all receivers; range ch loop exits
+Loop + go print(i)      → Go <1.22: often all final i; pass i or i:=i; Go 1.22+ per-iter i
 Goroutine leak          → goroutine blocked forever; memory never GC'd
 Detect leak             → runtime.NumGoroutine(); pprof goroutine dump; goleak
+wg.Add                  → BEFORE go; never Add inside the goroutine vs Wait race
 
 time.After in loop      → new timer every iteration; use NewTicker instead
 defer resp.Body.Close() → HTTP connection returned to pool
 defer rows.Close()      → DB connection returned to pool
-
+defer order             → LIFO; defer f(x) snapshots x now
 Mutex.Lock()            → one goroutine at a time (readers + writers)
+Never copy mutex        → pointer receiver; go vet catches copies
 RWMutex.RLock()         → many concurrent readers; writers blocked
 RWMutex.Lock()          → exclusive; blocks all readers and writers
-atomic ops              → lock-free; faster than mutex for simple counters
+atomic ops              → multi-goroutine safe; CPU makes single read/write indivisible; NOT single-threaded
+atomic vs mutex         → atomic = one word/one op; mutex = critical section / many fields
+counter++ without atomic → data race; lost updates under parallel goroutines
+CompareAndSwap (CAS)    → update only if value unchanged; retry loops for lock-free code
 sync.Once               → exactly one execution across all goroutines
 sync.Pool               → reuse objects across requests; reduces GC pressure
 
@@ -1864,25 +2732,37 @@ cancel()                → closes ctx.Done() channel; signals all goroutines
 ctx.Err()               → context.Canceled or context.DeadlineExceeded
 errgroup                → structured goroutines; returns first error; cancels rest
 
+sync package            → Mutex, RWMutex, WaitGroup, Once, Pool, Cond, atomic
+Concurrency pitfalls    → races, leaks, deadlock; -race in CI; §4 table + §18 gotchas
+
 Stack                   → per-goroutine; reclaimed on return; zero GC cost
 Heap                    → shared; GC managed; minimize allocations here
+Memory leaks            → goroutine leaks, unclosed Body/rows, timers; not "GC broken"
 Escape analysis         → go build -gcflags='-m'
+pprof                   → CPU/heap/goroutine profiles; benchmark before/after
 GOGC=100                → default; GC when heap doubles
 GOMEMLIMIT              → hard ceiling; ~90% of container limit (Go 1.19+)
 runtime.GC()            → force GC after large batch or before latency window
 sync.Pool               → bypass GC for reusable objects (buffers, structs)
 
-Interface               → implicit; type pointer + data pointer
+Interface / polymorphism → implicit satisfaction; accept interface, return struct
 nil interface gotcha    → interface{nilConcretePtr} != nil
-Accept interfaces       → return concrete structs
-errors.Is               → sentinel error match anywhere in chain
-errors.As               → extract specific error type from chain
+Multiple interfaces     → one type implements many; compose with embedding
+Reflection              → reflect package; slow; JSON/ORM; prefer interfaces/generics
+Go Modules              → go.mod + go.sum; go mod tidy; replaces GOPATH
+GOPATH                  → legacy; no version pinning; code under $GOPATH/src
+
+Middleware              → func(http.Handler) http.Handler; Chain wraps outer→inner
+errors.Is / errors.As   → sentinel error match anywhere in chain
 fmt.Errorf("%w", err)   → wrap error with context
 
 Map concurrent          → not safe; use RWMutex or sync.Map
+nil map write           → panic; make() first
 sync.Map                → best for write-once-read-many pattern
 Slice append            → always assign back; may reallocate
-Slice sharing           → s[i:j] shares backing array
+Slice sharing           → s[i:j] shares backing array; append may overwrite
+len(string)             → bytes, not runes; range gives runes + byte index
+send on closed ch       → panic; receive on closed → zero, ok=false
 
 http.DefaultClient      → no timeouts; never use in production
 Connection pool (DB)    → SetMaxOpenConns + SetMaxIdleConns + SetConnMaxLifetime
@@ -1896,4 +2776,5 @@ Worker pool             → N goroutines, shared jobs channel, ctx cancellation
 Race detector           → go test -race ./... — always in CI
 Benchmark               → go test -bench=. -benchmem
 Table-driven tests      → Go standard; use t.Run for subtests
+Gotchas drill           → §18 predict-the-output table
 ```

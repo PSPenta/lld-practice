@@ -208,7 +208,7 @@ Use this order when speaking:
 2. Migrations (Alembic) vs `create_all`  
 3. Timeouts on **all** outbound HTTP (`requests` without timeout in connectors)  
 4. Structured logging, trace_id, metrics  
-5. Sync LLM in request thread — need queue/workers at scale  
+5. Sync LLM in request thread — need JavaScript/Queue/workers at scale  
 6. **Connector/document sync should be async** — SQS, Kafka, or similar; not blocking `POST /sync`  
 7. Idempotency on POST ingest  
 
