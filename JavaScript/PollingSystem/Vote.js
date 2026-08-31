@@ -1,11 +1,14 @@
-class Result {
+class Vote {
   pollId = 0;
-  createdBy = 0;
   option = '';
   userId = 0;
-  submittedAt = new Date();
+  submittedAt = 0;
 
   constructor(pollId, option, userId) {
+    if (!pollId || !option || !userId) {
+      throw new Error('Invalid vote parameters!');
+    }
+
     this.pollId = pollId;
     this.option = option;
     this.userId = userId;
@@ -13,4 +16,4 @@ class Result {
   }
 }
 
-module.exports = {Result};
+module.exports = { Vote };

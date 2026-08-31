@@ -77,7 +77,7 @@ JavaScript **machine-coding / LLD** solutions (design on paper first — see [..
 | `Pub-Sub/` | Observer / event bus |
 | `Database/` | In-memory DB, tables |
 | `Redis/` / `LRU/` | Cache + eviction |
-| `PollingSystem/` | Polls & votes |
+| `PollingSystem/` | Polls & votes — `PollService` + repositories |
 | `Queue/` | FIFO queue |
 | `UrlShortener/` | Short URLs + Express |
 | `PaymentGateway/` | **Stub only** (empty placeholders) — study **`../Go/PaymentGateway-go/`** for full Strategy + `BankGateway` |

@@ -516,7 +516,7 @@ Use this section to **point at real code** in interviews. Paths are relative to 
 | **Middleware** | (web) | `JavaScript/Ratelimiter/leakyBucket.js` · `JavaScript/UrlShortener/index.js` (Express validators) | `Go/Ratelimiter-go/` | Request pipeline, not GoF |
 | **Worker pool / concurrency limit** | (concurrency) | `JavaScript/Ratelimiter/serverRequestThrottler.js` | `Go/Ratelimiter-go/server_request_throttler.go` | Limits parallel work, not rate algorithms |
 | **Hybrid inheritance + composition** | Mixed | `JavaScript/Splitwise/` · `JavaScript/ParkingLot2/` · `JavaScript/RateLimiter2/` | Go ports use interfaces/embedding | Orchestrator composes; variants may inherit |
-| **Repository-like store** | (data) | `JavaScript/Database/Database.js`, `Table.js` · `JavaScript/PollingSystem/Results.js`, `Polls.js` | `Go/Database-go/` · `Go/PollingSystem-go/results.go` | In-memory aggregate, not formal Repository interface |
+| **Repository-like store** | (data) | `JavaScript/Database/Database.js`, `Table.js` · `JavaScript/PollingSystem/*Repository.js` | `Go/Database-go/` · `Go/PollingSystem-go/repository.go` | In-memory aggregate, not formal Repository interface |
 | **Inheritance (teaching)** | OOP | `JavaScript/Parkinglot/Vehicle.js` · `JavaScript/ParkingLot2/Vehicle.js` · `JavaScript/RateLimiter2/RateLimiterStrategy.js` subclasses | Go: enum/constructors instead in several ports | Use when is-a is genuine |
 
 **Not implemented as named patterns in this repo:** Singleton, Builder, Abstract Factory, Prototype, Iterator (use language built-ins), Command, State, Proxy, Decorator, Adapter (PaymentGateway is Strategy-style interface, not classic Adapter), Bridge, Composite (except data-structure composites in JavaScript/LRU/Redis).
@@ -539,7 +539,7 @@ Use this section to **point at real code** in interviews. Paths are relative to 
 | **Database** | Aggregate composition | S | Aggregate / index maps |
 | **Redis** / **LRU** | Encapsulation, internal composition | KISS | Map + doubly linked list |
 | **UrlShortener** | Minimal OOP | YAGNI ( ⚠️ SRP gap) | Base-62 util; Express middleware |
-| **PollingSystem** | Actor classes | S ( ⚠️ static stores) | Repository-like static store |
+| **PollingSystem** | Entities + `PollService` | S + service layer | Repositories + use-cases |
 | **Queue** | Single class | KISS, YAGNI | Circular buffer FIFO |
 | **PaymentGateway** | `JavaScript/PaymentGateway/` stub · **`Go/PaymentGateway-go/`** full impl | O, D, S | **Strategy** via `BankGateway` |
 
@@ -1782,7 +1782,7 @@ Use these as **hands-on practice** after designing on paper. **JavaScript implem
 | **`JavaScript/Redis/`** / **`JavaScript/LRU/`** | Cache eviction | Encapsulation | KISS | Map + DLL |
 | **`JavaScript/Parkinglot/`** | Simple parking v1 | Inheritance-heavy vehicles | S, L | is-a + composition |
 | **`JavaScript/Ratelimiter/`** | Standalone algorithms | Per-file encapsulation | KISS, YAGNI | Middleware; worker pool |
-| **`JavaScript/PollingSystem/`** | Polls & votes | Actor classes | S ( ⚠️ static store) | Repository-like |
+| **`JavaScript/PollingSystem/`** | Polls & votes | `User`/`Poll`/`Vote` + `PollService` | Service + repos | `*Repository.js` |
 | **`JavaScript/Queue/`** | FIFO mechanics | Single class | KISS, YAGNI | Circular buffer |
 | **`JavaScript/UrlShortener/`** | HTTP + short codes | Minimal | YAGNI ( ⚠️ SRP) | Encoding util |
 | **`JavaScript/PaymentGateway/`** | Stub only (empty files) | — | — | **Full impl:** `Go/PaymentGateway-go/` — Strategy via `BankGateway` |

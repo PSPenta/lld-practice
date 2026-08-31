@@ -11,18 +11,66 @@ type Poll struct {
 	Options       []string
 	ScheduledTime time.Time
 	ValidTill     time.Time
-	CreateBy      int
+	CreatedBy     int
+	AssignedUsers []int
 }
 
-func NewPoll(question string, options []string, createdBy int) (*Poll, error) {
-	if question == "" || len(options) <= 1 || createdBy == 0 {
+func NewPoll(id int, question string, options []string, createdBy int, duration time.Duration) (*Poll, error) {
+	if id == 0 || question == "" || len(options) <= 1 || createdBy == 0 {
 		return nil, fmt.Errorf("invalid poll parameters!")
 	}
+
+	seen := make(map[string]struct{}, len(options))
+	for _, opt := range options {
+		if _, ok := seen[opt]; ok {
+			return nil, fmt.Errorf("poll options must be unique!")
+		}
+		seen[opt] = struct{}{}
+	}
+
+	if duration <= 0 {
+		duration = 24 * time.Hour
+	}
+
+	now := time.Now()
 	return &Poll{
+		ID:            id,
 		Question:      question,
 		Options:       options,
-		ScheduledTime: time.Now(),
-		ValidTill:     time.Time{},
-		CreateBy:      createdBy,
+		ScheduledTime: now,
+		ValidTill:     now.Add(duration),
+		CreatedBy:     createdBy,
+		AssignedUsers: []int{},
 	}, nil
+}
+
+func (p *Poll) IsCreator(userID int) bool {
+	return p.CreatedBy == userID
+}
+
+func (p *Poll) IsAssigned(userID int) bool {
+	for _, id := range p.AssignedUsers {
+		if id == userID {
+			return true
+		}
+	}
+	return false
+}
+
+func (p *Poll) AssignVoter(userID int) error {
+	if userID == 0 {
+		return fmt.Errorf("invalid user!")
+	}
+	if userID == p.CreatedBy {
+		return fmt.Errorf("you cannot assign yourself to your own poll!")
+	}
+	if p.IsAssigned(userID) {
+		return fmt.Errorf("user already assigned to this poll!")
+	}
+	p.AssignedUsers = append(p.AssignedUsers, userID)
+	return nil
+}
+
+func (p *Poll) IsExpired(now time.Time) bool {
+	return p.ValidTill.Before(now)
 }
