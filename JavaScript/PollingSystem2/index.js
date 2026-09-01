@@ -16,24 +16,28 @@ const alicePoll = pollService.createPoll(
   false,
 );
 
+// Test case 1: Assign voter to self
 try {
   pollService.assignVoter(alice, alicePoll, alice);
 } catch (err) {
-  console.log('Expected error:', err.message);
+  console.log('Expected error TestCase 1:', err.message);
 }
 
+// Test case 2: Submit vote to self-created poll
 try {
   pollService.submitVote(alice, alicePoll, 'Delhi');
 } catch (err) {
-  console.log('Expected error:', err.message);
+  console.log('Expected error TestCase 2:', err.message);
 }
 
+// Test case 3: Submit vote to another user's private poll
 try {
   pollService.submitVote(bob, alicePoll, 'Mumbai');
 } catch (err) {
-  console.log('Expected error:', err.message);
+  console.log('Expected error TestCase 3:', err.message);
 }
 
+// Test case 4: Assign voter to another user
 pollService.assignVoter(alice, alicePoll, bob);
 pollService.submitVote(bob, alicePoll, 'Mumbai');
 
@@ -43,20 +47,22 @@ pollService.submitVote(jane, alicePoll, 'Delhi');
 pollService.assignVoter(alice, alicePoll, jim);
 pollService.submitVote(jim, alicePoll, 'Delhi');
 
+// Test case 5: Close poll
 alicePoll.isClosed = true;
 pollService.updatePoll(alicePoll);
 
+// Test case 6: Assign voter to closed poll
 try {
   pollService.assignVoter(alice, alicePoll, kate);
-  pollService.submitVote(kate, alicePoll, 'Delhi');
 } catch (err) {
-  console.log('Expected error:', err.message);
+  console.log('Expected error TestCase 6:', err.message);
 }
 
+// Test case 7: Submit vote to closed poll
 try {
   pollService.submitVote(jim, alicePoll, 'Delhi');
 } catch (err) {
-  console.log('Expected error:', err.message);
+  console.log('Expected error TestCase 7:', err.message);
 }
 
 console.log(
