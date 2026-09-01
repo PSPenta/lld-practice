@@ -72,12 +72,38 @@ func (r *PollRepository) Add(poll *Poll) error {
 	return nil
 }
 
+func (r *PollRepository) GetByID(id int) *Poll {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, poll := range r.polls {
+		if poll.ID == id {
+			return poll
+		}
+	}
+	return nil
+}
+
+func (r *PollRepository) Update(poll *Poll) error {
+	if poll == nil {
+		return fmt.Errorf("invalid poll!")
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, p := range r.polls {
+		if p.ID == poll.ID {
+			r.polls[i] = poll
+			return nil
+		}
+	}
+	return fmt.Errorf("poll not found!")
+}
+
 func (r *PollRepository) GetActive(now time.Time) []*Poll {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	var active []*Poll
 	for _, poll := range r.polls {
-		if !poll.IsExpired(now) {
+		if !poll.IsCompleted(now) {
 			active = append(active, poll)
 		}
 	}
@@ -89,7 +115,7 @@ func (r *PollRepository) GetCompletedByCreator(creatorID int, now time.Time) []*
 	defer r.mu.RUnlock()
 	var completed []*Poll
 	for _, poll := range r.polls {
-		if poll.CreatedBy == creatorID && poll.IsExpired(now) {
+		if poll.CreatedBy == creatorID && poll.IsCompleted(now) {
 			completed = append(completed, poll)
 		}
 	}

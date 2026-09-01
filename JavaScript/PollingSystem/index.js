@@ -1,65 +1,23 @@
-const { PollService } = require('./PollService');
+const { Admin } = require('./Admin');
+const { Polls } = require('./Polls');
+const { User } = require('./User');
 
-const pollService = new PollService();
+let admin = new Admin(1);
 
-const alice = pollService.createUser('alice@example.com');
-const bob = pollService.createUser('bob@example.com');
-const jane = pollService.createUser('jane@example.com');
-const jim = pollService.createUser('jim@example.com');
+let poll = admin.createPoll('Whats capital of India?', ['Delhi', 'Mumbai']);
+Polls.addPoll(poll);
 
-const alicePoll = pollService.createPoll(
-  alice,
-  'Whats capital of India?',
-  ['Delhi', 'Mumbai'],
-);
+let user = new User(2);
+user.submitPoll(poll, 'Mumbai');
 
-try {
-  pollService.assignVoter(alice, alicePoll, alice);
-} catch (err) {
-  console.log('Expected error:', err.message);
-}
+let user2 = new User(3);
+user2.submitPoll(poll, 'Delhi');
 
-try {
-  pollService.submitVote(alice, alicePoll, 'Delhi');
-} catch (err) {
-  console.log('Expected error:', err.message);
-}
+let user3 = new User(3);
+user3.submitPoll(poll, 'Delhi');
 
-try {
-  pollService.submitVote(bob, alicePoll, 'Mumbai');
-} catch (err) {
-  console.log('Expected error:', err.message);
-}
+let user4 = new User(3);
+user4.submitPoll(poll, 'Delhi');
 
-pollService.assignVoter(alice, alicePoll, bob);
-pollService.submitVote(bob, alicePoll, 'Mumbai');
+admin.showStatistics(poll);
 
-pollService.assignVoter(alice, alicePoll, jane);
-pollService.submitVote(jane, alicePoll, 'Delhi');
-
-pollService.assignVoter(alice, alicePoll, jim);
-pollService.submitVote(jim, alicePoll, 'Delhi');
-
-try {
-  pollService.submitVote(jim, alicePoll, 'Delhi');
-} catch (err) {
-  console.log('Expected error:', err.message);
-}
-
-console.log(
-  'Poll statistics for',
-  alicePoll.id,
-  ':',
-  pollService.getStatistics(alice, alicePoll),
-);
-
-// Alice can vote on Bob's poll (creator rule is per-poll)
-const bobPoll = pollService.createPoll(bob, 'Best language?', ['JavaScript', 'Go']);
-pollService.assignVoter(bob, bobPoll, alice);
-pollService.submitVote(alice, bobPoll, 'JavaScript');
-console.log(
-  'Poll statistics for',
-  bobPoll.id,
-  ':',
-  pollService.getStatistics(bob, bobPoll),
-);

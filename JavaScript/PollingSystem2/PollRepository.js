@@ -25,13 +25,22 @@ class PollRepository {
     return this.polls.find((p) => p.id === id);
   }
 
+  static update(poll) {
+    if (!(poll instanceof Poll)) {
+      throw new Error('Invalid poll!');
+    }
+
+    const index = this.polls.findIndex((p) => p.id === poll.id);
+    this.polls[index] = poll;
+  }
+
   static getActive(now = Date.now()) {
-    return this.polls.filter((poll) => !poll.isExpired(now));
+    return this.polls.filter((poll) => !poll.isCompleted(now));
   }
 
   static getCompletedByCreator(creatorId, now = Date.now()) {
     return this.polls.filter(
-      (poll) => poll.createdBy === creatorId && poll.isExpired(now),
+      (poll) => poll.createdBy === creatorId && poll.isCompleted(now),
     );
   }
 }

@@ -77,11 +77,12 @@ JavaScript **machine-coding / LLD** solutions (design on paper first — see [..
 | `Pub-Sub/` | Observer / event bus |
 | `Database/` | In-memory DB, tables |
 | `Redis/` / `LRU/` | Cache + eviction |
-| `PollingSystem/` | Polls & votes — **service + repositories** (preferred layering demo) |
-| | Entities: `User.js`, `Poll.js`, `Vote.js` |
-| | Use-cases: `PollService.js` (create, assign voter, `submitVote`, stats) |
+| `PollingSystem/` | Polls & votes **v1** — `Admin`, `Polls`, `Results` (teaching / spot-the-bugs) |
+| `PollingSystem2/` | Polls & votes **v2** — **service + repositories** (preferred layering demo) |
+| | Entities: `User.js`, `Poll.js`, `Vote.js` (`isPrivate`, `isClosed`, `assignedUsers`) |
+| | Use-cases: `PollService.js` — `createPoll`, `assignVoter`, `submitVote`, `getStatistics`, `getPoll`, `updatePoll` |
 | | Stores: `UserRepository.js`, `PollRepository.js`, `VoteRepository.js` |
-| | Rules: assign-before-vote · one vote per user · **cannot vote on own poll** (no separate Admin) |
+| | Rules: **private** = assign before vote · **public** = open vote · creator cannot vote on own poll · **`isClosed`** stops new votes · one vote per user |
 | `Queue/` | FIFO queue |
 | `UrlShortener/` | Short URLs + Express |
 | `PaymentGateway/` | **Stub only** (empty placeholders) — study **`../Go/PaymentGateway-go/`** for full Strategy + `BankGateway` |

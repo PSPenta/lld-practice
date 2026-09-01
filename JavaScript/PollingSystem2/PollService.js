@@ -14,7 +14,7 @@ class PollService {
     return UserRepository.create(email);
   }
 
-  createPoll(creator, question, options, durationMs) {
+  createPoll(creator, question, options, isPrivate, isClosed, durationMs) {
     if (!(creator instanceof User)) {
       throw new Error('Invalid creator!');
     }
@@ -24,10 +24,24 @@ class PollService {
       question,
       options,
       creator.id,
+      isPrivate,
+      isClosed,
       durationMs,
     );
     PollRepository.add(poll);
     return poll;
+  }
+
+  getPoll(pollId) {
+    return PollRepository.getById(pollId);
+  }
+
+  updatePoll(poll) {
+    if (!(poll instanceof Poll)) {
+      throw new Error('Invalid poll!');
+    }
+
+    PollRepository.update(poll);
   }
 
   /** Only the poll creator can invite voters. */
@@ -40,8 +54,16 @@ class PollService {
       throw new Error('Only the poll creator can assign voters!');
     }
 
-    if (poll.isExpired()) {
+    if (poll.isCompleted()) {
       throw new Error('Poll has been expired!');
+    }
+
+    if (!poll.isPrivate) {
+      throw new Error('Cannot assign voters to public polls!');
+    }
+
+    if (poll.isClosed) {
+      throw new Error('Poll has been completed!');
     }
 
     poll.assignVoter(voter.id);
@@ -59,7 +81,7 @@ class PollService {
       throw new Error('You cannot vote on your own poll!');
     }
 
-    if (poll.isExpired()) {
+    if (poll.isCompleted()) {
       throw new Error('Poll has been expired!');
     }
 
@@ -67,8 +89,12 @@ class PollService {
       throw new Error('Invalid option!');
     }
 
-    if (!poll.isAssigned(voter.id)) {
+    if (poll.isPrivate && !poll.isAssigned(voter.id)) {
       throw new Error('You are not assigned to this poll!');
+    }
+
+    if (poll.isClosed) {
+      throw new Error('Poll has been completed!');
     }
 
     VoteRepository.add(new Vote(poll.id, option, voter.id));
