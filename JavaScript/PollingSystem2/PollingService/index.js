@@ -1,15 +1,15 @@
-const { User } = require('./User');
-const { Poll } = require('./Poll');
-const { Vote } = require('./Vote');
-const { UserRepository } = require('./UserRepository');
-const { PollRepository } = require('./PollRepository');
-const { VoteRepository } = require('./VoteRepository');
+const { User } = require('./models/User');
+const { Poll } = require('./models/Poll');
+const { Vote } = require('./models/Vote');
+const { UserRepository } = require('./repositories/UserRepository');
+const { PollRepository } = require('./repositories/PollRepository');
+const { VoteRepository } = require('./repositories/VoteRepository');
 
 /**
  * Application / use-case layer for polling.
  * Entities stay thin; authorization + orchestration live here.
  */
-class PollService {
+class PollingService {
   createUser(email) {
     return UserRepository.create(email);
   }
@@ -122,4 +122,4 @@ class PollService {
   }
 }
 
-module.exports = { PollService };
+module.exports = { PollingService };

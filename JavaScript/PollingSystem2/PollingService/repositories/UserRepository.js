@@ -1,4 +1,4 @@
-const { User } = require('./User');
+const { User } = require('../models/User');
 
 /** In-memory stand-in for a user repository. */
 class UserRepository {

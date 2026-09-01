@@ -1,4 +1,4 @@
-package main
+package models
 
 import "time"
 
@@ -11,7 +11,7 @@ type Vote struct {
 
 func NewVote(pollID int, option string, userID int) (*Vote, error) {
 	if pollID == 0 || option == "" || userID == 0 {
-		return nil, errInvalidVote
+		return nil, ErrInvalidVote
 	}
 	return &Vote{
 		PollID:      pollID,

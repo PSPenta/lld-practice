@@ -410,7 +410,7 @@ Same pattern as **`PaymentGateway`** in this repo — business logic depends on 
 | **Composition (aggregate)** | `Database` **has-a** `Table` map | `JavaScript/Database/Database.js`, `JavaScript/Database/Table.js` | `Go/Database-go/database.go`, `table.go` |
 | **Composition (internal structure)** | `Redis` / `LRUCache` **has-a** map + linked `Node` list | `JavaScript/Redis/index.js`, `JavaScript/LRU/index.js` | `Go/Redis-go/main.go`, `Go/LRU-go/main.go` |
 | **Composition (event map)** | `PubSub` **has-a** `Map<event, callbacks[]>` | `JavaScript/Pub-Sub/index.js` | `Go/Pub-Sub-go/pubsub.go`, `pubsub_core.go` |
-| **Service + repositories** | `PollService` orchestrates; `User`/`Poll`/`Vote` stay thin; `*Repository` stores | `JavaScript/PollingSystem2/PollService.js`, `UserRepository.js`, `PollRepository.js`, `VoteRepository.js` | `Go/PollingSystem2-go/poll_service.go`, `repository.go` |
+| **Service + repositories** | `PollingService` orchestrates; models stay thin; `*Repository` stores | `JavaScript/PollingSystem2/PollingService/` (`models/`, `repositories/`, `index.js`) | `Go/PollingSystem2-go/pollingservice/`, `models/`, `repositories/` |
 | **Hybrid: composition + inheritance** | `ExpenseFactory` creates types; `Expense` **has-a** splits · subclasses for exact/equal/percent | `JavaScript/Splitwise/Expense.js`, `JavaScript/Splitwise/index.js` | `Go/Splitwise-go/expense.go` |
 | **Inheritance (is-a, teaching)** | `Car` / `Bike` / `Truck` **extends** `Vehicle` | `JavaScript/Parkinglot/Vehicle.js`, `JavaScript/ParkingLot2/Vehicle.js` | `Go/Parkinglot-go/vehicle.go`, `Go/ParkingLot2-go/vehicle.go` |
 
@@ -517,8 +517,8 @@ Use this section to **point at real code** in interviews. Paths are relative to 
 | **Middleware** | (web) | `JavaScript/Ratelimiter/leakyBucket.js` · `JavaScript/UrlShortener/index.js` (Express validators) | `Go/Ratelimiter-go/` | Request pipeline, not GoF |
 | **Worker pool / concurrency limit** | (concurrency) | `JavaScript/Ratelimiter/serverRequestThrottler.js` | `Go/Ratelimiter-go/server_request_throttler.go` | Limits parallel work, not rate algorithms |
 | **Hybrid inheritance + composition** | Mixed | `JavaScript/Splitwise/` · `JavaScript/ParkingLot2/` · `JavaScript/RateLimiter2/` | Go ports use interfaces/embedding | Orchestrator composes; variants may inherit |
-| **Repository-like store** | (data) | `JavaScript/Database/Database.js`, `Table.js` · `JavaScript/PollingSystem2/UserRepository.js`, `PollRepository.js`, `VoteRepository.js` | `Go/Database-go/` · `Go/PollingSystem2-go/repository.go` | In-memory store; **PollingSystem2** is the clearest **named** repository demo |
-| **Application service** | (layering) | `JavaScript/PollingSystem2/PollService.js` — create poll, assign voter, submit vote, stats | `Go/PollingSystem2-go/poll_service.go` | Use-cases + auth rules; entities stay thin |
+| **Repository-like store** | (data) | `JavaScript/PollingSystem2/PollingService/repositories/` | `Go/PollingSystem2-go/repositories/` | In-memory store; **PollingSystem2** is the clearest **named** repository demo |
+| **Application service** | (layering) | `JavaScript/PollingSystem2/PollingService/index.js` — **PollingService** | `Go/PollingSystem2-go/pollingservice/polling_service.go` | Use-cases + auth rules; models stay thin |
 | **Inheritance (teaching)** | OOP | `JavaScript/Parkinglot/Vehicle.js` · `JavaScript/ParkingLot2/Vehicle.js` · `JavaScript/RateLimiter2/RateLimiterStrategy.js` subclasses | Go: enum/constructors instead in several ports | Use when is-a is genuine |
 
 **Not implemented as named patterns in this repo:** Singleton, Builder, Abstract Factory, Prototype, Iterator (use language built-ins), Command, State, Proxy, Decorator, Adapter (PaymentGateway is Strategy-style interface, not classic Adapter), Bridge, Composite (except data-structure composites in JavaScript/LRU/Redis).
@@ -542,7 +542,7 @@ Use this section to **point at real code** in interviews. Paths are relative to 
 | **Redis** / **LRU** | Encapsulation, internal composition | KISS | Map + doubly linked list |
 | **UrlShortener** | Minimal OOP | YAGNI ( ⚠️ SRP gap) | Base-62 util; Express middleware |
 | **PollingSystem** | `Admin` + static `Polls`/`Results` | S gaps | v1 teaching — spot bugs, refactor to v2 |
-| **PollingSystem2** | Thin `User`/`Poll`/`Vote`; no Admin class | S, layered design | **`PollService`** + repos; public/private; creator ≠ voter; `isClosed` |
+| **PollingSystem2** | `PollingService/models/` + `repositories/` | S, layered design | **PollingService** + repos; public/private; creator ≠ voter; `isClosed` |
 | **Queue** | Single class | KISS, YAGNI | Circular buffer FIFO |
 | **PaymentGateway** | `JavaScript/PaymentGateway/` stub · **`Go/PaymentGateway-go/`** full impl | O, D, S | **Strategy** via `BankGateway` |
 
@@ -557,8 +557,8 @@ Use this section to **point at real code** in interviews. Paths are relative to 
 | **Factory** | “ExpenseFactory picks exact/equal/percent.” → `JavaScript/Splitwise/Expense.js` |
 | **Observer** | “PubSub map of event → callbacks.” → `JavaScript/Pub-Sub/index.js` |
 | **DIP** | “PaymentGateway depends on BankGateway interface.” → `Go/PaymentGateway-go/` |
-| **SRP** | “SearchEngine splits tokenizer, index, ranker.” → `JavaScript/SearchEngine/SearchEngine.js` · “PollingSystem2: entities vs `PollService` vs repos.” → `JavaScript/PollingSystem2/` |
-| **Service + Repository** | “Use-cases on PollService; User/Poll/Vote stay data + small invariants; stores behind repositories.” → `JavaScript/PollingSystem2/PollService.js` |
+| **SRP** | “SearchEngine splits tokenizer, index, ranker.” → `JavaScript/SearchEngine/SearchEngine.js` · “PollingSystem2: models vs `PollingService` vs repos.” → `JavaScript/PollingSystem2/PollingService/` |
+| **Service + Repository** | “Use-cases on PollingService; User/Poll/Vote in `models/`; stores in `repositories/`.” → `JavaScript/PollingSystem2/PollingService/index.js` |
 | **Encapsulation** | “LRU hides list mutations in private methods.” → `JavaScript/LRU/index.js` |
 | **Polymorphism** | “Slot.canFit uses vehicle subtype.” → `JavaScript/Parkinglot/Slot.js` |
 | **KISS / YAGNI** | “Queue is one FIFO class — no extra patterns until needed.” → `JavaScript/Queue/index.js` |
@@ -584,7 +584,7 @@ Principles guide **how you structure code**. Patterns are reusable **shapes**. L
 
 **Interview line:** “If Slack notification logic changes, I shouldn’t have to touch ticket-creation code.”
 
-**In this repo:** RateLimiter2 keeps algorithms in strategy classes; `RateLimiter` only delegates. Also: `JavaScript/SearchEngine/` splits tokenizer, index, ranker; `JavaScript/ParkingLot2/` splits lot, floor, slot, ticket; **`JavaScript/PollingSystem2/`** splits thin entities (`User`/`Poll`/`Vote`), `PollService` (use-cases), and `*Repository` stores. Full map → **[§7A](#7a-repository-map--oop-principles--patterns-by-lld)**.
+**In this repo:** RateLimiter2 keeps algorithms in strategy classes; `RateLimiter` only delegates. Also: `JavaScript/SearchEngine/` splits tokenizer, index, ranker; `JavaScript/ParkingLot2/` splits lot, floor, slot, ticket; **`JavaScript/PollingSystem2/PollingService/`** splits `models/`, `PollingService` (use-cases), and `repositories/`. Full map → **[§7A](#7a-repository-map--oop-principles--patterns-by-lld)**.
 
 #### O — Open/Closed Principle (OCP)
 
@@ -1787,7 +1787,7 @@ Use these as **hands-on practice** after designing on paper. **JavaScript implem
 | **`JavaScript/Parkinglot/`** | Simple parking v1 | Inheritance-heavy vehicles | S, L | is-a + composition |
 | **`JavaScript/Ratelimiter/`** | Standalone algorithms | Per-file encapsulation | KISS, YAGNI | Middleware; worker pool |
 | **`JavaScript/PollingSystem/`** | Polls v1 (Admin, static stores) | Actor classes | S gaps | Refactor drill → `PollingSystem2` |
-| **`JavaScript/PollingSystem2/`** | Polls v2 (public/private, close, one-vote) | Thin `User`/`Poll`/`Vote` | S + service layer | **`PollService`** + repos · Go: **`Go/PollingSystem2-go/`** |
+| **`JavaScript/PollingSystem2/`** | Polls v2 (public/private, close, one-vote) | `PollingService/models/` | S + service layer | **`PollingService/`** + `repositories/` · Go: **`Go/PollingSystem2-go/`** (`models/`, `repositories/`, `pollingservice/`) |
 | **`JavaScript/Queue/`** | FIFO mechanics | Single class | KISS, YAGNI | Circular buffer |
 | **`JavaScript/UrlShortener/`** | HTTP + short codes | Minimal | YAGNI ( ⚠️ SRP) | Encoding util |
 | **`JavaScript/PaymentGateway/`** | Stub only (empty files) | — | — | **Full impl:** `Go/PaymentGateway-go/` — Strategy via `BankGateway` |

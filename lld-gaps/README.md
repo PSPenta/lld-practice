@@ -43,7 +43,7 @@ This doc        → BREADTH you still need on paper / whiteboard
 | LLD method (clarify → entities → APIs) | ✅ §4–§6 | — |
 | OOP, SOLID, DRY/KISS/YAGNI/PoLK | ✅ §7–§8 | — |
 | Strategy, Factory, Observer, Template | ✅ coded + §7A | More patterns §4 |
-| Parking Lot, Rate Limiter, LRU, Splitwise, Pub-Sub, DB, URL, Search, **PollingSystem2** | ✅ `JavaScript/PollingSystem2/` · `PollService` + repos | — |
+| Parking Lot, Rate Limiter, LRU, Splitwise, Pub-Sub, DB, URL, Search, **PollingSystem2** | ✅ `JavaScript/PollingSystem2/PollingService/` · models + repos | — |
 | Payment pluggable gateway | ✅ `Go/PaymentGateway-go/` | — |
 | AI LLD (Cache Client, Suggest Reply, RAG) | ✅ §15–§21 | — |
 | **UML** (class, sequence, state) | ⚠️ light | **§3** |
@@ -53,7 +53,7 @@ This doc        → BREADTH you still need on paper / whiteboard
 | **Singleton, Builder, State, Decorator** (hands-on) | ❌ coded | **§4** |
 | **Testing / mocking for LLD** | ⚠️ Go README | **§7** |
 | **Refactoring god-class drills** | ❌ | **§8** |
-| **Repository / DAO / Unit of Work** | ✅ PollingSystem2 (`*Repository` + `PollService`) | **§9** (generalize + Unit of Work) |
+| **Repository / DAO / Unit of Work** | ✅ PollingSystem2 (`PollingService/repositories/` + service) | **§9** (generalize + Unit of Work) |
 | **12-week breadth timeline** | 4-week in §25 | **§11** |
 
 ---
@@ -318,15 +318,19 @@ Entity / Domain     → business objects
 | **DTO** | API shape ≠ domain shape |
 | **Unit of Work** | One transaction across multiple repos |
 
-**Interview line:** “Persistence is behind `Repository`; service doesn't know if it's Postgres or in-memory — see **`JavaScript/PollingSystem2/`** (`PollService` + `UserRepository` / `PollRepository` / `VoteRepository`) or the `JavaScript/Database/` aggregate.”
+**Interview line:** “Persistence is behind `Repository`; service doesn't know if it's Postgres or in-memory — see **`JavaScript/PollingSystem2/PollingService/`** (`repositories/` + **`PollingService`**) or the `JavaScript/Database/` aggregate.”
 
 **Repo sketch (PollingSystem2):**
 
 ```text
-User / Poll / Vote     ← entities (isPrivate, isClosed, assignedUsers, expiry)
-PollService            ← createPoll, assignVoter (private only), submitVote, getStatistics
-*Repository            ← in-memory stores (swap for DB later)
+index.js               ← demo
+PollingService/
+  index.js             ← PollingService (use-cases)
+  models/              ← User, Poll, Vote
+  repositories/        ← UserRepository, PollRepository, VoteRepository
 ```
+
+Go mirror: `Go/PollingSystem2-go/main.go` · `pollingservice/` · `models/` · `repositories/`
 
 | Poll type | Vote rule | Assign |
 |-----------|-----------|--------|

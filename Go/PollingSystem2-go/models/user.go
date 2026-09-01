@@ -1,4 +1,4 @@
-package main
+package models
 
 type User struct {
 	ID    int
@@ -7,7 +7,7 @@ type User struct {
 
 func NewUser(id int, email string) (*User, error) {
 	if id == 0 || email == "" {
-		return nil, errInvalidUser
+		return nil, ErrInvalidUser
 	}
 	return &User{ID: id, Email: email}, nil
 }

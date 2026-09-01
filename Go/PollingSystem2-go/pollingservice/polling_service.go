@@ -1,29 +1,33 @@
-package main
+package pollingservice
 
 import (
 	"fmt"
 	"time"
+
+	"lld-practice/pollingsystem2-go/models"
+	"lld-practice/pollingsystem2-go/repositories"
 )
 
-type PollService struct {
-	users *UserRepository
-	polls *PollRepository
-	votes *VoteRepository
+// PollingService orchestrates use-cases (mirrors JavaScript/PollingSystem2/PollingService/).
+type PollingService struct {
+	users *repositories.UserRepository
+	polls *repositories.PollRepository
+	votes *repositories.VoteRepository
 }
 
-func NewPollService(users *UserRepository, polls *PollRepository, votes *VoteRepository) *PollService {
-	return &PollService{users: users, polls: polls, votes: votes}
+func New(users *repositories.UserRepository, polls *repositories.PollRepository, votes *repositories.VoteRepository) *PollingService {
+	return &PollingService{users: users, polls: polls, votes: votes}
 }
 
-func (s *PollService) CreateUser(email string) (*User, error) {
+func (s *PollingService) CreateUser(email string) (*models.User, error) {
 	return s.users.Create(email)
 }
 
-func (s *PollService) CreatePoll(creator *User, question string, options []string, isPrivate, isClosed bool, duration time.Duration) (*Poll, error) {
+func (s *PollingService) CreatePoll(creator *models.User, question string, options []string, isPrivate, isClosed bool, duration time.Duration) (*models.Poll, error) {
 	if creator == nil {
 		return nil, fmt.Errorf("invalid creator!")
 	}
-	poll, err := NewPoll(s.polls.NextID(), question, options, creator.ID, isPrivate, isClosed, duration)
+	poll, err := models.NewPoll(s.polls.NextID(), question, options, creator.ID, isPrivate, isClosed, duration)
 	if err != nil {
 		return nil, err
 	}
@@ -33,18 +37,18 @@ func (s *PollService) CreatePoll(creator *User, question string, options []strin
 	return poll, nil
 }
 
-func (s *PollService) GetPoll(pollID int) *Poll {
+func (s *PollingService) GetPoll(pollID int) *models.Poll {
 	return s.polls.GetByID(pollID)
 }
 
-func (s *PollService) UpdatePoll(poll *Poll) error {
+func (s *PollingService) UpdatePoll(poll *models.Poll) error {
 	if poll == nil {
 		return fmt.Errorf("invalid poll!")
 	}
 	return s.polls.Update(poll)
 }
 
-func (s *PollService) AssignVoter(creator *User, poll *Poll, voter *User) error {
+func (s *PollingService) AssignVoter(creator *models.User, poll *models.Poll, voter *models.User) error {
 	if creator == nil || poll == nil || voter == nil {
 		return fmt.Errorf("invalid creator, poll, or voter!")
 	}
@@ -63,7 +67,7 @@ func (s *PollService) AssignVoter(creator *User, poll *Poll, voter *User) error 
 	return poll.AssignVoter(voter.ID)
 }
 
-func (s *PollService) SubmitVote(voter *User, poll *Poll, option string) error {
+func (s *PollingService) SubmitVote(voter *models.User, poll *models.Poll, option string) error {
 	if voter == nil || poll == nil || option == "" {
 		return fmt.Errorf("invalid voter, poll, or option!")
 	}
@@ -89,14 +93,14 @@ func (s *PollService) SubmitVote(voter *User, poll *Poll, option string) error {
 	if poll.IsClosed {
 		return fmt.Errorf("poll has been completed!")
 	}
-	vote, err := NewVote(poll.ID, option, voter.ID)
+	vote, err := models.NewVote(poll.ID, option, voter.ID)
 	if err != nil {
 		return err
 	}
 	return s.votes.Add(vote)
 }
 
-func (s *PollService) GetStatistics(creator *User, poll *Poll) (map[string]any, error) {
+func (s *PollingService) GetStatistics(creator *models.User, poll *models.Poll) (map[string]any, error) {
 	if creator == nil || poll == nil {
 		return nil, fmt.Errorf("invalid creator or poll!")
 	}
@@ -106,10 +110,10 @@ func (s *PollService) GetStatistics(creator *User, poll *Poll) (map[string]any, 
 	return s.votes.GetStatistics(poll), nil
 }
 
-func (s *PollService) GetActivePolls() []*Poll {
+func (s *PollingService) GetActivePolls() []*models.Poll {
 	return s.polls.GetActive(time.Now())
 }
 
-func (s *PollService) GetCompletedPolls(creatorID int) []*Poll {
+func (s *PollingService) GetCompletedPolls(creatorID int) []*models.Poll {
 	return s.polls.GetCompletedByCreator(creatorID, time.Now())
 }

@@ -1,4 +1,4 @@
-const { Poll } = require('./Poll');
+const { Poll } = require('../models/Poll');
 
 /** In-memory stand-in for a poll repository. */
 class PollRepository {

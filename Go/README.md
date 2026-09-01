@@ -2301,7 +2301,7 @@ defer span.End()
 | URL Shortener | base62 encoding, hash collision, redirect |
 | Database (in-memory) | schema, indexing, CRUD |
 | **Polling System v1** | `Admin`, `Polls`, `Results` — teaching / bugs · `JavaScript/PollingSystem/` · `Go/PollingSystem-go/` |
-| **Polling System v2** | `PollService` + repos; public/private; `isClosed`; no self-vote · **`JavaScript/PollingSystem2/`** · **`Go/PollingSystem2-go/`** |
+| **Polling System v2** | **`PollingService`** + `models/` + `repositories/`; public/private; `isClosed` · **`JavaScript/PollingSystem2/`** · **`Go/PollingSystem2-go/`** |
 | Payment Gateway | strategy pattern for payment providers |
 | Search Engine | inverted index, TF-IDF ranking, trie autocomplete |
 

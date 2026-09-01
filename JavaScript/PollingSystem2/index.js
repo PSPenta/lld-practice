@@ -1,6 +1,6 @@
-const { PollService } = require('./PollService');
+const { PollingService } = require('./PollingService');
 
-const pollService = new PollService();
+const pollService = new PollingService();
 
 const alice = pollService.createUser('alice@example.com');
 const bob = pollService.createUser('bob@example.com');

@@ -1,4 +1,4 @@
-const { Vote } = require('./Vote');
+const { Vote } = require('../models/Vote');
 
 /** In-memory stand-in for a vote repository. */
 class VoteRepository {
