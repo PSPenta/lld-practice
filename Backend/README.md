@@ -1,7 +1,7 @@
 # REST API & Backend — Interview Preparation Guide
 
 > **SDE-3 / Staff / Lead** — REST design, HTTP semantics, idempotency, payments, pagination, auth, platform APIs.  
-> **Pair with:** [../Go/README.md](../Go/README.md) (Go HTTP/production) · [../JavaScript/README.md](../JavaScript/README.md) (Node runtime, JWT §26) · [../README.md](../README.md) (LLD method, [Rate Limiter design](../JavaScript/RateLimiter2/README.md), idempotency §12) · [../Go/PaymentGateway-go/](../Go/PaymentGateway-go/) (Strategy + gateway port)
+> **Pair with:** [../Go/README.md](../Go/README.md) (Go HTTP/production) · [../JavaScript/README.md](../JavaScript/README.md) (Node runtime, JWT §26) · [../README.md](../README.md) (LLD method, [Rate Limiter walkthrough](../problems/rate-limiter/README.md), idempotency §12) · [../Go/PaymentGateway-go/](../Go/PaymentGateway-go/) (Strategy + gateway port)
 
 ---
 
@@ -485,7 +485,7 @@ Answer **without notes**:
 ### Cross-stack
 - [ ] JWT vs session ([JS §26](../JavaScript/README.md))
 - [ ] Go graceful shutdown + worker pool ([Go §12, §15](../Go/README.md))
-- [ ] Rate limit algorithms ([RateLimiter2 design](../JavaScript/RateLimiter2/README.md))
+- [ ] Rate limit algorithms ([rate-limiter walkthrough](../problems/rate-limiter/README.md))
 
 ---
 

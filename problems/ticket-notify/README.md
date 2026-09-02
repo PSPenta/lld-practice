@@ -1,19 +1,37 @@
-# Ticket assign + notify — LLD design walkthrough
+# Ticket assign + notify — LLD walkthrough
 
-> **Paper design** — helpdesk / shared-inbox classic (assign owner, notify team).  
-> **Method:** [../../README.md §5](../../README.md) · **Full notification platform:** [../../lld-gaps/README.md §6](../../lld-gaps/README.md)
-
----
-
-## Clarify
-
-- Single assignee or multiple?
-- Notify which channels (Slack, email, in-app)?
-- Concurrent assign allowed?
+> **Round pattern:** [Discussion 60 min · Machine coding 90–120 min](../../docs/method/README.md#4-how-a-typical-lld-round-runs) · [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ❌  
+> Broader **notification platform** patterns: [logging-framework](../logging-framework/README.md) · [webhook-delivery](../webhook-delivery/README.md)
 
 ---
 
-## Classes
+## Step 1 — Clarify
+
+### Questions (ask 6–8)
+1. Single assignee?
+2. Notify channels: Slack, email, in-app?
+3. Concurrent assign allowed?
+4. Multi-tenant?
+5. Template per event?
+
+### v1 expectations (state aloud)
+| | |
+|---|---|
+| **Actors** | Agent, TicketService, Notifier implementations |
+| **Use cases (v1)** | 1. Assign ticket 2. Notify assignee/team 3. Prevent double-assign |
+| **In scope** | Assign + Observer notifiers, tenant scope |
+| **Out of scope** | Full campaign builder, SMS provider billing |
+| **Assumptions** | Single assignee; Slack + email; optimistic lock on assign |
+
+### Confirm understanding
+> "Agent assigns ticket; system persists and fan-out notifies on TicketAssigned."
+
+---
+
+
+---
+
+## Step 2 — Entities & classes
 
 ```text
 TicketService
@@ -27,7 +45,7 @@ AssignmentPolicy → CanAssign(ticket, agent)
 
 ---
 
-## Assign flow
+## Step 3 — Flows
 
 ```text
 1. Load ticket (tenant-scoped)
@@ -40,7 +58,7 @@ AssignmentPolicy → CanAssign(ticket, agent)
 
 ---
 
-## Patterns
+## Step 5 — Deepen (patterns)
 
 - **Observer:** one event, many notifiers  
 - **Adapter:** Slack API wrapper  

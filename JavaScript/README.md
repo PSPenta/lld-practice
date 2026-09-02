@@ -74,26 +74,26 @@ If the job description says **TypeScript**, **NestJS**, or **typed React**, fini
 
 ### LLD implementations in this folder
 
-JavaScript **machine-coding / LLD** solutions — **design on paper first** ([../README.md §16](../README.md#16-worked-examples--design-docs), [../README.md §21 checklist](../README.md#21-lld-problem-checklist)):
+JavaScript **machine-coding / LLD** solutions — **design on paper first** via **[problems/](../README.md#21-lld-problem-checklist)** walkthroughs, then compare code:
 
-| Folder | Problem | Design doc |
-|--------|---------|------------|
-| `RateLimiter2/` | Rate limiter — **Strategy** (preferred) | [RateLimiter2/README.md](RateLimiter2/README.md) |
-| `Ratelimiter/` | Rate algorithms v1 — teaching | — |
-| `ParkingLot2/` | Multi-floor parking | [ParkingLot2/README.md](ParkingLot2/README.md) |
-| `Parkinglot/` | Parking v1 — inheritance-heavy | — |
-| `Splitwise/` | Expense split | — |
-| `SearchEngine/` | Index, rank, trie | — |
-| `Pub-Sub/` | Observer / event bus | — |
-| `Database/` | In-memory DB | — |
-| `Redis/` / `LRU/` | Cache + eviction | [Redis/README.md](Redis/README.md) · [LRU/README.md](LRU/README.md) |
-| `PollingSystem2/` | Polls v2 — **PollingService** + repos | — |
-| `PollingSystem/` | v1 teaching / spot-the-bugs | — |
-| `Queue/` | FIFO queue | — |
-| `UrlShortener/` | Short URLs + Express | — |
-| `PaymentGateway/` | Stub — full impl in **`../Go/PaymentGateway-go/`** | — |
+| Folder | Problem | Walkthrough (design) |
+|--------|---------|----------------------|
+| `RateLimiter2/` | Rate limiter — **Strategy** (preferred) | [problems/rate-limiter](../problems/rate-limiter/README.md) |
+| `Ratelimiter/` | Rate algorithms v1 — teaching | [problems/rate-limiter](../problems/rate-limiter/README.md) |
+| `ParkingLot2/` | Multi-floor parking | [problems/parking-lot](../problems/parking-lot/README.md) |
+| `Parkinglot/` | Parking v1 — inheritance-heavy | [problems/parking-lot](../problems/parking-lot/README.md) |
+| `Splitwise/` | Expense split | [problems/splitwise](../problems/splitwise/README.md) |
+| `SearchEngine/` | Index, rank, trie | [problems/search-engine](../problems/search-engine/README.md) |
+| `Pub-Sub/` | Observer / event bus | [problems/pub-sub](../problems/pub-sub/README.md) |
+| `Database/` | In-memory DB | [problems/in-memory-database](../problems/in-memory-database/README.md) |
+| `Redis/` / `LRU/` | Cache + eviction | [problems/cache-client](../problems/cache-client/README.md) · [problems/lru-cache](../problems/lru-cache/README.md) |
+| `PollingSystem2/` | Polls v2 — **PollingService** + repos | [problems/polling-system](../problems/polling-system/README.md) |
+| `PollingSystem/` | v1 teaching / spot-the-bugs | [problems/polling-system](../problems/polling-system/README.md) |
+| `Queue/` | FIFO queue | [problems/task-queue](../problems/task-queue/README.md) |
+| `UrlShortener/` | Short URLs + Express | [problems/url-shortener](../problems/url-shortener/README.md) |
+| `PaymentGateway/` | Stub — full impl in **`../Go/PaymentGateway-go/`** | [problems/payment-gateway](../problems/payment-gateway/README.md) |
 
-Paper-only designs: [../problems/cache-client](../problems/cache-client/README.md) · [../problems/ai-suggest-reply](../problems/ai-suggest-reply/README.md) · [../problems/ticket-notify](../problems/ticket-notify/README.md)
+Paper-only (no code yet): [problems/ai-suggest-reply](../problems/ai-suggest-reply/README.md) · [problems/ticket-notify](../problems/ticket-notify/README.md)
 
 Go ports of the same problems: **`../Go/*-go/`** (PaymentGateway is **complete in Go only**).
 

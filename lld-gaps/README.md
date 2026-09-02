@@ -1,6 +1,6 @@
 # LLD Gaps — What This Repo Does Not Cover (Yet)
 
-> **Use with:** [../README.md](../README.md) (method + worked examples + implemented problems) · [../JavaScript/README.md](../JavaScript/README.md) · [../Go/README.md](../Go/README.md)  
+> **Use with:** [../docs/method/README.md](../docs/method/README.md) (method) · [../README.md](../README.md) (hub + worked examples) · [../JavaScript/README.md](../JavaScript/README.md) · [../Go/README.md](../Go/README.md)  
 > **Based on:** common FAANG-style LLD syllabi (e.g. [ChatGPT LLD Roadmap share](https://chatgpt.com/share/6a949bd1-856c-83ee-b35b-b1b5badaaa91)) — this doc fills **gaps**, not duplicates what the main README already teaches.  
 > **Audience:** SDE-2+ switching — you know Parking Lot and Rate Limiter from this repo; you still need breadth on paper.
 
@@ -26,13 +26,14 @@
 ## 1. How to use this doc
 
 ```text
-Main README     → HOW to design (method, SOLID, patterns in repo, worked examples)
+docs/method/    → HOW to design (method, clarifying questions, interview flow)
+Main README     → Hub index + design walkthroughs + implemented problems
 JavaScript/Go   → Language + runtime
 Repo code       → ~12 implemented LLDs (depth)
 This doc        → BREADTH you still need on paper / whiteboard
 ```
 
-**Rule:** For each gap item, spend **30–45 min on paper** using [../README.md](../README.md) §5 method — you do **not** need working code for every problem.
+**Rule:** For each gap item, spend **30–45 min on paper** using [../docs/method/README.md](../docs/method/README.md) §5 method — you do **not** need working code for every problem.
 
 ---
 
@@ -209,31 +210,25 @@ See **§10** for how to practice these without coding everything.
 
 ## 6. Paper-design prompts (copy-paste practice)
 
-Use [../README.md](../README.md) §5 for each. **45 min timer.**
+**Prefer structured walkthroughs:** each problem has **Step 1–6** under [hub §21](../README.md#21-lld-problem-checklist) (timed for [§4](../README.md#4-how-a-typical-lld-round-runs)).
+
+Use [../docs/method/README.md](../docs/method/README.md) §5 if you need a blank timer. **45 min** for discussion-style drills.
 
 ### Elevator (45 min)
 
-> Design an elevator system for a building: multiple elevators, multiple floors, up/down requests. Support morning rush. Discuss scheduling strategy.
-
-**Hit:** `ElevatorController`, `Elevator` (state: IDLE/MOVING/DOORS_OPEN), `Request` queue, strategy interface (FCFS vs SCAN).
+→ **[problems/elevator/README.md](../problems/elevator/README.md)**
 
 ### Notification system (45 min)
 
-> Design in-app + email + SMS notifications for a SaaS product. Templates per event. Retry on failure. User opt-out.
-
-**Hit:** `NotificationService`, `Channel` interface, `TemplateRenderer`, `Outbox` or queue, idempotency key.
+→ **[problems/ticket-notify/README.md](../problems/ticket-notify/README.md)**
 
 ### Logging framework (30 min)
 
-> Design a logger with levels DEBUG–ERROR, multiple appenders (console, file), formatters.
-
-**Hit:** Chain of Responsibility or composite appender; don't over-engineer Singleton.
+→ **[problems/logging-framework/README.md](../problems/logging-framework/README.md)**
 
 ### Vending machine (30 min)
 
-> Accept coins, select product, dispense, return change. Handle out-of-stock.
-
-**Hit:** **State pattern** — Idle, HasMoney, Dispensing, ReturnChange.
+→ **[problems/vending-machine/README.md](../problems/vending-machine/README.md)**
 
 ### Workflow engine (60 min — senior)
 
@@ -363,13 +358,13 @@ Use if you want **ChatGPT-roadmap breadth** on top of this repo's **4-week depth
 
 | Weeks | Focus |
 |-------|-------|
-| **1–2** | §0 language prep + main README §7–§8 (OOP/SOLID) + **§3 UML** this doc |
+| **1–2** | Language prep (hub table) + [docs/oop](../docs/oop/README.md) + [docs/principles](../docs/principles/README.md) + **§3 UML** this doc |
 | **3–4** | Main README §9 patterns + **§4 gaps patterns** on paper |
 | **5–6** | **§5 Level 1–2** paper designs (2 per week) |
 | **7–8** | Repo code compare: paper design → open `JavaScript/*/` |
 | **9–10** | **§5 Level 3–4** + concurrency (Go README §1–§4) |
 | **11** | **§7–§8** testing + refactoring drills |
-| **12** | Timed mocks: main README §24 + [vibe-coding-round](../vibe-coding-round/README.md) if AI-assisted |
+| **12** | Timed mocks: [docs/interview-prep](../docs/interview-prep/README.md) + [vibe-coding-round](../vibe-coding-round/README.md) if AI-assisted |
 
 ---
 
@@ -403,7 +398,8 @@ Use if you want **ChatGPT-roadmap breadth** on top of this repo's **4-week depth
 
 | Doc | Purpose |
 |-----|---------|
-| [../README.md](../README.md) | LLD method + implemented problems |
+| [../docs/method/README.md](../docs/method/README.md) | LLD method |
+| [../README.md](../README.md) | Hub index + design walkthroughs + coded problems |
 | [../vibe-coding-round/README.md](../vibe-coding-round/README.md) | AI-assisted coding / build rounds |
 | [../ai-code-review-round/README.md](../ai-code-review-round/README.md) | Manual code review rounds |
 | [ChatGPT LLD Roadmap](https://chatgpt.com/share/6a949bd1-856c-83ee-b35b-b1b5badaaa91) | Full syllabus reference |

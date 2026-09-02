@@ -1,9 +1,9 @@
-# AI Suggest Reply (copilot draft) — LLD design walkthrough
+# AI Suggest Reply (copilot draft) — LLD walkthrough
 
-> **Paper design** — no coded folder yet.  
-> **Method:** [../../README.md §5](../../README.md) · **AI primer:** [../../README.md §15](../../README.md)
+> **Timed steps:** [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ❌  
+> **AI primer:** [Hub §15](../../README.md#15-ai--llm-lld-for-beginners) · [docs/ai-lld/](../../docs/ai-lld/README.md)
 
-Use this as your **AI LLD template**. Same structure as LRU / Parking Lot interviews.
+Use as **AI LLD template** — six steps; match time boxes to discussion vs machine coding.
 
 ---
 
@@ -24,13 +24,17 @@ Use this as your **AI LLD template**. Same structure as LRU / Parking Lot interv
 - RAG over KB + ticket thread
 - Credits required
 
----
+### v1 expectations (state aloud)
+| | |
+|---|---|
+| **Actors** | Support agent, SuggestService, LLM provider |
+| **Use cases (v1)** | 1. Agent clicks Suggest 2. System streams grounded draft 3. Agent edits and sends |
+| **In scope** | RAG retrieve, prompt build, stream, credit check |
+| **Out of scope** | Auto-send to customer, fine-tuning, multi-model routing |
+| **Assumptions** | Draft-only; ticket works if AI down |
 
-## Actors & use cases
-
-- **Agent** clicks Suggest on a ticket  
-- **System** builds grounded draft, streams it, stores it  
-- **Admin** (optional) uploads KB docs (indexing path — mention briefly)
+### Confirm understanding
+> "Agent triggers suggest; we retrieve tenant KB chunks, stream a draft into the composer; human sends."
 
 ---
 
