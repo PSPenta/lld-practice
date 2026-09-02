@@ -32,15 +32,29 @@
 
 ## Table of contents
 
-1. [What is LLD?](#1-what-is-lld) · 2. [What interviewers evaluate](#2-what-interviewers-evaluate) · 3. [LLD vs HLD vs DSA](#3-lld-vs-hld-vs-dsa)  
-4. [How a typical LLD round runs](#4-how-a-typical-lld-round-runs) · 5. [Standard approach](#5-the-standard-approach-memorize-this) · 6. [Clarifying questions](#6-clarifying-questions-checklist)  
-7. [OOP building blocks](#7-oop-building-blocks) · [7A. Repository map](#7a-repository-map--oop-principles--patterns-by-lld)  
-8. [Design principles](#8-design-principles-solid--dry--kiss--yagni--polk) · 9. [Design patterns](#9-design-patterns-creational--behavioural--structural)  
-10. [API design](#10-api-design-for-lld) · 11. [Data modeling & state](#11-data-modeling--state) · 12. [Concurrency, idempotency & failure](#12-concurrency-idempotency--failure)  
-13. [Extensibility & evolution](#13-extensibility--evolution) · 14. [Common LLD problems — how to think](#14-common-lld-problems--how-to-think)  
-15. [AI / LLM LLD](#15-ai--llm-lld-for-beginners) · 16. [Worked examples — design docs](#16-worked-examples--design-docs)  
-17. [HLD bleed-in](#17-hld-topics-that-bleed-into-lld) · 18. [Timed mock](#18-timed-mock--self-score) · 19. [4-week plan](#19-how-to-practice-4-week-plan) · 20. [Interview day](#20-interview-day-checklist)  
-21. [LLD problem checklist (master list)](#21-lld-problem-checklist) · 22. [Cheat sheet](#22-cheat-sheet)
+1. [What is LLD?](#1-what-is-lld)
+2. [What interviewers evaluate](#2-what-interviewers-evaluate)
+3. [LLD vs HLD vs DSA](#3-lld-vs-hld-vs-dsa)
+4. [How a typical LLD round runs](#4-how-a-typical-lld-round-runs)
+5. [Standard approach](#5-the-standard-approach-memorize-this)
+6. [Clarifying questions](#6-clarifying-questions-checklist)
+7. [OOP building blocks](#7-oop-building-blocks)
+7A. [Repository map](#7a-repository-map--oop-principles--patterns-by-lld)
+8. [Design principles](#8-design-principles-solid--dry--kiss--yagni--polk)
+9. [Design patterns](#9-design-patterns-creational--behavioural--structural)
+10. [API design](#10-api-design-for-lld)
+11. [Data modeling & state](#11-data-modeling--state)
+12. [Concurrency, idempotency & failure](#12-concurrency-idempotency--failure)
+13. [Extensibility & evolution](#13-extensibility--evolution)
+14. [Common LLD problems — how to think](#14-common-lld-problems--how-to-think)
+15. [AI / LLM LLD](#15-ai--llm-lld-for-beginners)
+16. [Worked examples — design docs](#16-worked-examples--design-docs)
+17. [HLD bleed-in](#17-hld-topics-that-bleed-into-lld)
+18. [Timed mock](#18-timed-mock--self-score)
+19. [4-week plan](#19-how-to-practice-4-week-plan)
+20. [Interview day](#20-interview-day-checklist)
+21. [LLD problem checklist (master list)](#21-lld-problem-checklist)
+22. [Cheat sheet](#22-cheat-sheet)
 
 ---
 
@@ -48,14 +62,14 @@
 
 **Low-Level Design** = classes, modules, APIs — not AWS topology (HLD).
 
-| Question you answer | |
-|---------------------|---|
-| Main **entities**? | |
-| **Classes / interfaces** and methods? | |
-| **Collaboration** per use case? | |
-| **API** shape? | |
-| **Clean, testable, extensible** structure? | |
-| **Concurrency, failures, growth**? | |
+You answer:
+
+- Main **entities**?
+- **Classes / interfaces** and their **methods**?
+- **Collaboration** per use case?
+- **API** shape?
+- **Clean, testable, extensible** structure?
+- **Concurrency, failures, growth**?
 
 **Discussion LLD** — whiteboard, 60–75 min, trade-offs. **Machine coding** — working code, 90–120 min. Same fundamentals.
 
