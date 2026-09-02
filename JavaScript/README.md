@@ -2,7 +2,9 @@
 
 > Quick-revision doc for JS language + Node.js runtime interviews.  
 > **Extended Q&A bank:** use [sudheerj/javascript-interview-questions](https://github.com/sudheerj/javascript-interview-questions) for hundreds of additional questions — this doc avoids duplicating that list and focuses on **structured answers + one-liners** for fast recall.  
-> **LLD implementations (JS):** working code for Rate Limiter, Parking Lot, LRU, etc. lives in **this folder** — see [LLD implementations](#lld-implementations-in-this-folder) below. **Design method:** [../README.md](../README.md).
+> **LLD implementations (JS):** working code for Rate Limiter, Parking Lot, LRU, etc. lives in **this folder** — see [LLD implementations](#lld-implementations-in-this-folder) below. **Design method:** [../README.md](../README.md).  
+> **TypeScript prep (types, generics, LLD in TS):** [../TypeScript/README.md](../TypeScript/README.md) — read **after** JS language core (§1–§12); runtime behaviour stays in this doc.  
+> **REST / backend / payments API prep:** [../Backend/README.md](../Backend/README.md) — HTTP semantics, idempotency, pagination, OAuth; complements §26 here (JWT).
 
 ---
 
@@ -62,31 +64,36 @@
 
 **Rule:** master concepts here first; use sudheerj for **mock interview volume** on topics you already understand.
 
+### Backend / REST API roles
+
+For **Lead backend**, **fintech**, or **platform API** interviews, read **[../Backend/README.md](../Backend/README.md)** after Node basics (§13–§21). It covers POST vs PUT vs PATCH, idempotent payments, cursor pagination, status codes, OAuth, and developer-platform APIs. **§26 below** stays the quick JWT vs session reference.
+
+### TypeScript roles
+
+If the job description says **TypeScript**, **NestJS**, or **typed React**, finish **§1–§12** here (runtime + language), then switch to **[../TypeScript/README.md](../TypeScript/README.md)** for the type system, generics, `strict` tsconfig, and LLD with `interface` / discriminated unions. Do **not** skip JS — TS interviews still test event loop, Promises, and closures.
+
 ### LLD implementations in this folder
 
-JavaScript **machine-coding / LLD** solutions (design on paper first — see [../README.md](../README.md) §27):
+JavaScript **machine-coding / LLD** solutions — **design on paper first** ([../README.md §16](../README.md#16-worked-examples--design-docs), [../README.md §21 checklist](../README.md#21-lld-problem-checklist)):
 
-| Folder | Problem |
-|--------|---------|
-| `RateLimiter2/` | Rate limiter — **Strategy** pattern (preferred demo) |
-| `Ratelimiter/` | Rate limit algorithms v1 — teaching, no Strategy |
-| `ParkingLot2/` | Multi-floor parking — composition + Factory |
-| `Parkinglot/` | Parking v1 — inheritance-heavy |
-| `Splitwise/` | Expense split — Factory + Template Method–like |
-| `SearchEngine/` | Inverted index, rank, trie |
-| `Pub-Sub/` | Observer / event bus |
-| `Database/` | In-memory DB, tables |
-| `Redis/` / `LRU/` | Cache + eviction |
-| `PollingSystem/` | Polls & votes **v1** — `Admin`, `Polls`, `Results` (teaching / spot-the-bugs) |
-| `PollingSystem2/` | Polls & votes **v2** — layered **PollingService** + repositories (preferred demo) |
-| | `index.js` — demo / test cases |
-| | `PollingService/index.js` — **PollingService** (use-cases) |
-| | `PollingService/models/` — `User.js`, `Poll.js`, `Vote.js` |
-| | `PollingService/repositories/` — `UserRepository.js`, `PollRepository.js`, `VoteRepository.js` |
-| | Rules: **private** = assign before vote · **public** = open vote · creator cannot vote on own poll · **`isClosed`** · one vote per user |
-| `Queue/` | FIFO queue |
-| `UrlShortener/` | Short URLs + Express |
-| `PaymentGateway/` | **Stub only** (empty placeholders) — study **`../Go/PaymentGateway-go/`** for full Strategy + `BankGateway` |
+| Folder | Problem | Design doc |
+|--------|---------|------------|
+| `RateLimiter2/` | Rate limiter — **Strategy** (preferred) | [RateLimiter2/README.md](RateLimiter2/README.md) |
+| `Ratelimiter/` | Rate algorithms v1 — teaching | — |
+| `ParkingLot2/` | Multi-floor parking | [ParkingLot2/README.md](ParkingLot2/README.md) |
+| `Parkinglot/` | Parking v1 — inheritance-heavy | — |
+| `Splitwise/` | Expense split | — |
+| `SearchEngine/` | Index, rank, trie | — |
+| `Pub-Sub/` | Observer / event bus | — |
+| `Database/` | In-memory DB | — |
+| `Redis/` / `LRU/` | Cache + eviction | [Redis/README.md](Redis/README.md) · [LRU/README.md](LRU/README.md) |
+| `PollingSystem2/` | Polls v2 — **PollingService** + repos | — |
+| `PollingSystem/` | v1 teaching / spot-the-bugs | — |
+| `Queue/` | FIFO queue | — |
+| `UrlShortener/` | Short URLs + Express | — |
+| `PaymentGateway/` | Stub — full impl in **`../Go/PaymentGateway-go/`** | — |
+
+Paper-only designs: [../problems/cache-client](../problems/cache-client/README.md) · [../problems/ai-suggest-reply](../problems/ai-suggest-reply/README.md) · [../problems/ticket-notify](../problems/ticket-notify/README.md)
 
 Go ports of the same problems: **`../Go/*-go/`** (PaymentGateway is **complete in Go only**).
 
@@ -956,6 +963,11 @@ Answer aloud without looking:
 - [ ] Stream types + why pipeline
 - [ ] Session vs JWT trade-offs
 
+**Backend / REST** (full guide: [../Backend/README.md](../Backend/README.md))
+- [ ] POST vs PUT vs PATCH + idempotency
+- [ ] Idempotent payment with Idempotency-Key
+- [ ] 401 vs 403 vs 409; cursor vs offset pagination
+
 **Extended drill:** [sudheerj/javascript-interview-questions](https://github.com/sudheerj/javascript-interview-questions)
 
 ---
@@ -1006,6 +1018,7 @@ no DOM in Node          → use JSDOM or browser for DOM
 
 session                 → server state; easy revoke
 JWT                     → stateless; scale; short TTL + refresh pattern
+REST/API depth          → Backend/README.md (POST/PUT/PATCH, payments, pagination)
 
 sudheerj repo           → extra Q&A volume after this doc
 ```

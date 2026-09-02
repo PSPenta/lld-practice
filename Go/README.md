@@ -102,6 +102,9 @@ err := fmt.Errorf("fetch user %d: %w", id, originalErr)
 | `context` — timeouts, cancellation | **§5** |
 | Error wrapping | **§7** |
 | Middleware & middleware chains | **§12** |
+| Slice / map internals | **§10 → Internals** |
+| High-throughput Go API design | **§12 → High-throughput** |
+| REST / idempotency / payments (cross-doc) | **[../Backend/README.md](../Backend/README.md)** |
 
 ### How to revise with this doc (interview-ready path)
 
@@ -113,7 +116,9 @@ err := fmt.Errorf("fetch user %d: %w", id, originalErr)
 
 **Before the interview:** run through **§18** (predict output without looking), skim **§20** (30 min), pick 5 **§19** questions and answer out loud.
 
-**What this doc covers well:** concurrency (GMP, channels, mutex, atomics, context), error handling, GC/profiling, interfaces, gotchas, HTTP/DB basics, modules, middleware.
+**What this doc covers well:** concurrency (GMP, channels, mutex, atomics, context), slice/map internals, error handling, GC/profiling, interfaces, high-throughput HTTP, gotchas, HTTP/DB basics, modules, middleware.
+
+**REST / payments / platform APIs:** **[Backend/README.md](../Backend/README.md)** — idempotency, pagination, status codes (pairs with §12–§16 here).
 
 **Pair with hands-on:** run `go test -race` on a small snippet, trace one goroutine leak fix, write a table-driven test — interviewers often follow theory with “what’s wrong with this code?”
 
@@ -1616,6 +1621,26 @@ for i := 0; i < t.NumField(); i++ {
 
 ## 10. Data Structures — Map vs Slice
 
+### Slice internals (runtime model)
+
+A Go **slice** is a small header pointing at a **backing array** (heap or stack):
+
+```text
+slice header = { pointer, len, cap }
+  pointer → [ e0 | e1 | e2 | ... | e(cap-1) ]  backing array
+  len     → elements visible (0..len-1)
+  cap     → max elements from pointer without realloc
+```
+
+| Operation | What happens |
+|-----------|--------------|
+| `s[i:j]` | New header, **same** backing array — writes alias |
+| `append` beyond `cap` | **New** array allocated, copy, old header abandoned |
+| `copy(dst, src)` | Independent copy of elements |
+| Pass slice to func | Header copied; **mutations visible** to caller (not deep copy) |
+
+**Interview line:** “Slice is a view on an array; sub-slices share memory; append may reallocate — always assign `s = append(s, x)`.”
+
 ### Slice — full syntax reference
 
 ```go
@@ -1696,6 +1721,25 @@ sort.Slice(s, func(i, j int) bool { return s[i] < s[j] })
 | Search (sorted + binary) | O(log n) |
 
 ---
+
+### Map internals (hmap — interview depth)
+
+Runtime type is **`hmap`** — hash table with **buckets**:
+
+```text
+map header → buckets[] → each bucket holds up to 8 key/elem pairs + overflow chain
+```
+
+| Concept | Detail |
+|---------|--------|
+| **Hash** | Key hashed → bucket index |
+| **Load factor** | ~6.5 entries/bucket triggers **growth** (double buckets) |
+| **Evacuation** | On grow, old buckets migrated incrementally during writes |
+| **Iteration order** | **Randomized** — never rely on `range` order |
+| **Nil map** | Read OK (zero value); **write panics** — use `make()` |
+| **Not concurrent** | Parallel write = panic; use `RWMutex` or `sync.Map` |
+
+**Interview line:** “Map is a hash table with bucket overflow chains; growth evacuates buckets; concurrent map writes panic — that's why we use mutex or channels.”
 
 ### Map — full syntax reference
 
@@ -2011,6 +2055,32 @@ mux.Handle("/api/", Chain(apiHandler,
 Common middleware: request ID, panic recovery, CORS, timeout via `context`, Prometheus metrics.
 
 **With routers:** Chi, Echo, Gin expose `Use(mw)` — same idea, different API.
+
+### High-throughput Go API design
+
+Checklist for **Staff / fintech / high-QPS** services:
+
+| Area | Do | Avoid |
+|------|-----|-------|
+| **HTTP client** | One shared `http.Client` + tuned `Transport` pool | New client per request |
+| **Handlers** | Bounded work — semaphore or worker pool for heavy jobs | Unbounded `go` per request |
+| **JSON** | Reuse buffers (`sync.Pool`); consider `jsoniter`/`sonic` if profiled hot | Large allocs per request in hot path |
+| **DB** | Connection pool limits; short transactions; index cursor pagination | Holding locks during external calls |
+| **Context** | Timeouts on every outbound call; propagate `ctx` | Ignoring cancel → goroutine leaks |
+| **Allocations** | Preallocate slices `make([]T, 0, n)`; reduce `interface{}` boxing | Escape to heap in inner loops without measuring |
+| **Observability** | `trace_id` in logs; pprof + RED metrics (rate, errors, duration) | Debug logging in hot path |
+| **Shutdown** | `srv.Shutdown(ctx)` + drain workers | Kill mid-request |
+| **Rate limiting** | Token bucket at edge + per-tenant quota | Unbounded fan-out to DB |
+
+```text
+Request → middleware (auth, trace, limit) → handler (validate)
+       → service (business) → repo (short txn)
+       → async side effects via queue (webhooks, email)
+```
+
+**REST / payments / idempotency:** see **[../Backend/README.md](../Backend/README.md)** §3–§4.
+
+**Interview line:** “Measure first with pprof; bound concurrency; reuse connections; keep critical path short; push slow work async.”
 
 ---
 
@@ -2686,6 +2756,15 @@ fmt.Println(s1[0]) // 99 — same backing array
 39. How do you profile and optimize a Go service (pprof, benchmarks)?
 40. How do you avoid memory leaks despite GC?
 
+### Internals & throughput
+41. What is the slice header (`pointer, len, cap`)? When does append reallocate?
+42. How does a Go map grow? Why is map iteration order random?
+43. How do you design a high-throughput Go HTTP API? (pooling, bounds, pprof)
+
+### REST / backend (cross-doc)
+44. POST vs PUT vs PATCH — idempotency? → **[Backend/README.md](../Backend/README.md)** §2
+45. Design an idempotent payment API → **Backend** §4
+
 ---
 
 ## 20. Rapid Revision Cheat Sheet
@@ -2761,9 +2840,14 @@ fmt.Errorf("%w", err)   → wrap error with context
 Map concurrent          → not safe; use RWMutex or sync.Map
 nil map write           → panic; make() first
 sync.Map                → best for write-once-read-many pattern
-Slice append            → always assign back; may reallocate
+Slice header            → {ptr, len, cap} view on backing array
+Slice append            → always assign back; may reallocate new backing array
 Slice sharing           → s[i:j] shares backing array; append may overwrite
+Map hmap                → buckets + overflow; grow/evacuate; range order random
+Map concurrent write    → panic; RWMutex or sync.Map
 len(string)             → bytes, not runes; range gives runes + byte index
+High-throughput API     → shared Client/DB pool; bounded workers; ctx timeouts; pprof; async side effects
+REST/idempotency        → Backend/README.md §3–§4 (payments, Idempotency-Key)
 send on closed ch       → panic; receive on closed → zero, ok=false
 
 http.DefaultClient      → no timeouts; never use in production

@@ -1,7 +1,7 @@
 # AI Code Review Round — Preparation Guide
 
 > **Based on:** AI SDE / full-stack interviews where you clone a repo (e.g. [pranavgupta96/ragbot](https://github.com/pranavgupta96/ragbot)), read the code **manually**, and find what is wrong or not production-ready.  
-> **For design / LLD discussion rounds** (classes, APIs, Cache Client, AI Suggest Reply on whiteboard), see **[../README.md](../README.md)** (§4 round types, §16–§24).  
+> **For design / LLD discussion rounds** (classes, APIs, Cache Client, AI Suggest Reply on whiteboard), see **[../README.md](../README.md)** (§4 round types, [§16 design docs](../README.md#16-worked-examples--design-docs), §17–§22).  
 > **For AI-assisted build rounds** (Cursor/Copilot allowed), see **[../vibe-coding-round/README.md](../vibe-coding-round/README.md)**.  
 > **Audience:** Beginners — every concept explained in plain language first, then interview application.
 

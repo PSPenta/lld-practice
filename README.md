@@ -1,16 +1,19 @@
-# Low-Level Design (LLD) Interview Preparation Guide
+﻿# Low-Level Design (LLD) Interview Preparation Guide
 
 > A practical, detailed guide to prepare for **LLD / machine-coding / OOD** interview rounds at product companies.  
 > This repository also contains working **JavaScript** implementations under **`JavaScript/`** and **Golang** ports under **`Go/`** — use them for practice after you learn the method.  
 > For **AI code review** rounds (clone a repo, find production/RAG bugs), see **[ai-code-review-round/README.md](ai-code-review-round/README.md)**.
 
-> **Start here (language & runtime first):** Before LLD design and repo problems, revise **JavaScript/Node.js** and **Go** fundamentals using the dedicated guides below. Most full-stack interviews test language/runtime knowledge alongside or before LLD.
+> **Start here (language & runtime first):** Before LLD design and repo problems, revise **JavaScript/Node.js**, **TypeScript**, **Go**, and **REST/backend** fundamentals using the dedicated guides below. Most full-stack and backend interviews test language/runtime and API design alongside or before LLD.
 
 | Prep guide | Path | Covers |
 |------------|------|--------|
 | **JavaScript & Node.js** | **[JavaScript/README.md](JavaScript/README.md)** | `this`, closures, event loop, Promises, streams, auth, gotchas |
-| **Golang** | **[Go/README.md](Go/README.md)** | GMP, goroutines, channels, context, GC, interfaces, gotchas |
-| **LLD (this doc)** | Below §1 | Design method, SOLID, patterns, worked examples |
+| **TypeScript** | **[TypeScript/README.md](TypeScript/README.md)** | type system, generics, unions, `strict` tsconfig, LLD interfaces, Staff patterns |
+| **Golang** | **[Go/README.md](Go/README.md)** | GMP, goroutines, channels, context, GC, interfaces, high-throughput HTTP, gotchas |
+| **REST API & Backend** | **[Backend/README.md](Backend/README.md)** | REST, POST/PUT/PATCH, idempotency, payments, pagination, JWT/OAuth, status codes |
+| **LLD (this doc)** | Below §1 | Design method, SOLID, patterns, [§16 design docs](#16-worked-examples--design-docs) |
+| **LLD design walkthroughs** | **[§16](README.md)** · **[problems/](problems/README.md)** · **`JavaScript/*/README.md`** | Per-problem clarify → classes → flows |
 | **LLD gaps (breadth)** | **[lld-gaps/README.md](lld-gaps/README.md)** | UML, missing problems, patterns not in repo, 12-week plan |
 | **AI code review** | **[ai-code-review-round/README.md](ai-code-review-round/README.md)** | RAG repo review, production bugs (separate round type) |
 | **Vibe coding / AI-assisted build** | **[vibe-coding-round/README.md](vibe-coding-round/README.md)** | Cursor/Copilot rounds — prompt, verify, own the design |
@@ -19,7 +22,7 @@
 
 ## Table of contents
 
-0. [Before you start — JavaScript & Go prep](#0-before-you-start--javascript--go-prep)
+0. [Before you start — language & backend prep](#0-before-you-start--language--backend-prep)
 1. [What is LLD?](#1-what-is-lld)
 2. [What interviewers evaluate](#2-what-interviewers-evaluate)
 3. [LLD vs HLD vs DSA](#3-lld-vs-hld-vs-dsa)
@@ -36,53 +39,53 @@
 13. [Extensibility & evolution](#13-extensibility--evolution)
 14. [Common LLD problems — how to think](#14-common-lld-problems--how-to-think)
 15. [AI / LLM LLD for beginners](#15-ai--llm-lld-for-beginners)
-16. [Worked example: Cache Client ⭐](#16-worked-example-cache-client-)
-17. [Worked example: LRU Cache](#17-worked-example-lru-cache)
-18. [Worked example: Rate Limiter](#18-worked-example-rate-limiter)
-19. [Worked example: Parking Lot](#19-worked-example-parking-lot)
-20. [Worked example: AI Suggest Reply](#20-worked-example-ai-suggest-reply-copilot-draft)
-21. [Worked example: Ticket assign + notify](#21-worked-example-ticket-assign--notify)
-22. [Redis eviction policies (cache / Redis LLD)](#22-redis-eviction-policies-cache--redis-lld)
-23. [HLD topics that bleed into LLD](#23-hld-topics-that-bleed-into-lld)
-24. [Timed mock + self-score](#24-timed-mock--self-score)
-25. [How to practice (4-week plan)](#25-how-to-practice-4-week-plan)
-26. [Interview day checklist](#26-interview-day-checklist)
-27. [Problems in this repository](#27-problems-in-this-repository)
-28. [Cheat sheet](#28-cheat-sheet)
+16. [Worked examples — design docs](#16-worked-examples--design-docs)
+17. [HLD topics that bleed into LLD](#17-hld-topics-that-bleed-into-lld)
+18. [Timed mock + self-score](#18-timed-mock--self-score)
+19. [How to practice (4-week plan)](#19-how-to-practice-4-week-plan)
+20. [Interview day checklist](#20-interview-day-checklist)
+21. [LLD problem checklist](#21-lld-problem-checklist)
+22. [Cheat sheet](#22-cheat-sheet)
 
 ---
 
-## 0. Before you start — JavaScript & Go prep
+## 0. Before you start — language & backend prep
 
-**Do not jump straight into LLD.** Product interviews (especially full-stack / backend) usually expect solid **JavaScript/Node.js** and/or **Go** knowledge in addition to design. Complete these guides first, then return here for LLD method and repo problems.
+**Do not jump straight into LLD.** Product interviews (especially full-stack / backend / fintech) usually expect solid **JavaScript/Node.js**, **TypeScript** (when the stack uses it), **Go**, and **REST/API design** in addition to design. Complete these guides first, then return here for LLD method and repo problems.
 
 ### Recommended order
 
 ```text
 1. JavaScript/README.md   → language + Node event loop + async (2–3 days)
-2. Go/README.md           → if role is Go / polyglot backend (2–3 days)
-3. This README (§1+)      → LLD method, SOLID, patterns, worked examples
-4. Repo folders           → `JavaScript/*/` (JS) · `Go/*-go/` (Go) — after paper design (§27)
-5. lld-gaps/              → paper-design missing problems (Elevator, Notification, UML, …)
-6. ai-code-review-round/  → if round is manual code review (not whiteboard LLD)
-7. vibe-coding-round/     → if round allows Cursor/Copilot — design first, AI second
+2. TypeScript/README.md   → if role is TS / Nest / typed full-stack (2–3 days; after JS §1–§12)
+3. Go/README.md           → if role is Go / polyglot backend (2–3 days)
+4. Backend/README.md      → REST, idempotency, payments, pagination, auth (1–2 days) — fintech/Lead APIs
+5. This README (§1+)      → LLD method, SOLID, patterns, worked examples
+6. Repo folders           → design doc in [§16](#16-worked-examples--design-docs) → then `JavaScript/*/` code
+7. lld-gaps/              → paper-design missing problems (Elevator, Notification, UML, …)
+8. ai-code-review-round/  → if round is manual code review (not whiteboard LLD)
+9. vibe-coding-round/     → if round allows Cursor/Copilot — design first, AI second
 ```
 
 ### Which guide to prioritize?
 
 | Your interview focus | Read first |
 |----------------------|------------|
-| Node / full-stack JS | **[JavaScript/README.md](JavaScript/README.md)** — then this doc |
-| Go backend | **[Go/README.md](Go/README.md)** — then this doc |
-| Both / unclear | **JavaScript** (§0–§12) + **Node** (§13–§26), then **Go** §1–§5 if time |
-| LLD-only discussion (rare) | Skim §29 cheat sheets; still know event loop / goroutines basics |
+| Node / full-stack JS | **[JavaScript/README.md](JavaScript/README.md)** → **[Backend/README.md](Backend/README.md)** → this doc |
+| TypeScript / Nest / React+TS | **[JavaScript/README.md](JavaScript/README.md)** (runtime) → **[TypeScript/README.md](TypeScript/README.md)** → **Backend** |
+| Go backend | **[Go/README.md](Go/README.md)** → **[Backend/README.md](Backend/README.md)** → this doc |
+| Fintech / payments / platform API | **[Backend/README.md](Backend/README.md)** + **Go** §12–§16 + **PaymentGateway-go** |
+| Both / unclear | **JavaScript** (§0–§12) + **Node** (§13–§26), then **Backend** or **Go** §1–§5 |
+| LLD-only discussion (rare) | Skim cheat sheets in JS/Go/Backend; still know event loop + idempotency basics |
 
 ### What each guide gives you
 
 | Guide | Quick win sections |
 |-------|-------------------|
 | **[JavaScript/README.md](JavaScript/README.md)** | §15 Event loop · §19–§20 Promises · §27 gotchas · §29 cheat sheet |
-| **[Go/README.md](Go/README.md)** | §1 GMP · §2–§4 concurrency · §18 gotchas · §20 cheat sheet |
+| **[TypeScript/README.md](TypeScript/README.md)** | §5 unions · §6 generics · §8 LLD interfaces · §13 tsconfig · §23 cheat sheet |
+| **[Go/README.md](Go/README.md)** | §1 GMP · §2–§5 concurrency · §10 internals · §12 high-throughput · §18 gotchas · §20 cheat sheet |
+| **[Backend/README.md](Backend/README.md)** | §2 HTTP methods · §4 idempotent payment · §6 pagination · §12 status codes · §16 cheat sheet |
 
 **Extended JS Q&A:** [sudheerj/javascript-interview-questions](https://github.com/sudheerj/javascript-interview-questions) — use after this repo’s JavaScript guide, not instead of it.
 
@@ -977,16 +980,30 @@ If only one implementation exists and none is planned → **YAGNI**: skip the pa
 
 ## 10. API design for LLD
 
-Whether HTTP or in-process library APIs:
+Whether HTTP or in-process library APIs. **Full REST/backend interview prep:** **[Backend/README.md](Backend/README.md)** (HTTP methods, idempotent payments, pagination, status codes, platform APIs).
 
 ### Good practices
 - Resource-oriented names (`/tickets`, not `/doCreateTicket`)
-- Consistent verbs / method names
+- Correct HTTP verbs — **POST** create, **PUT** full replace, **PATCH** partial update ([Backend §2](Backend/README.md))
 - Versioning for public HTTP (`/v1/...`)
-- Explicit error model
-- Pagination for lists (cursor preferred for large data)
-- Idempotency for unsafe retries (payments, webhooks, creates)
-- Validation at the boundary
+- Explicit error model with stable `code` + `trace_id`
+- Pagination for lists — **cursor** preferred for large data ([Backend §6](Backend/README.md))
+- Idempotency for unsafe retries (payments, webhooks, creates) — `Idempotency-Key` ([Backend §3–§4](Backend/README.md))
+- Validation at the boundary (422 + field errors)
+- Rate limiting → 429 + `Retry-After` ([Backend §7](Backend/README.md); [Rate Limiter design](JavaScript/RateLimiter2/README.md))
+
+### HTTP status codes (quick reference)
+
+| Code | Use |
+|------|-----|
+| 200 / 201 / 202 / 204 | Success (read / created / async accepted / delete) |
+| 400 / 422 | Bad JSON / semantic validation |
+| 401 / 403 | Not authenticated / not authorized |
+| 404 / 409 | Not found / conflict (duplicate, wrong state) |
+| 429 | Rate limited |
+| 502 / 503 / 504 | Upstream failure — retry with backoff |
+
+Full table: **[Backend/README.md §12](Backend/README.md)**.
 
 ### Example error shape
 
@@ -1103,7 +1120,7 @@ For each problem: actors → use cases → entities → classes → APIs → con
 
 ### AI-era LLD variants (increasingly asked)
 
-Classic LLD skills still apply. AI rounds add **provider abstraction, RAG, credits, streaming, and unsafe model output**. See **[§15](#15-ai--llm-lld-for-beginners)**, **[§16 Cache Client](#16-worked-example-cache-client-)**, and **[§20 AI Suggest Reply](#20-worked-example-ai-suggest-reply-copilot-draft)**.
+Classic LLD skills still apply. AI rounds add **provider abstraction, RAG, credits, streaming, and unsafe model output**. See **[§15](#15-ai--llm-lld-for-beginners)**, **[Cache Client design](problems/cache-client/README.md)**, and **[AI Suggest Reply design](problems/ai-suggest-reply/README.md)**.
 
 ---
 
@@ -1211,7 +1228,7 @@ Don’t call a slow LLM inside a DB transaction. Don’t do heavy embedding on t
 1. **LLM provider abstraction** — `LLMClient` + 2 adapters + router  
 2. **RAG retriever** — chunk metadata, top-K, tenant filter  
 3. **AI credit meter** — reserve/commit (like wallet) + rate limit  
-4. **Suggest-reply / copilot** — full orchestration (see §20)  
+4. **Suggest-reply / copilot** — full orchestration → [problems/ai-suggest-reply/README.md](problems/ai-suggest-reply/README.md)  
 5. **Tool-calling agent (basic)** — model returns tool name → your code runs tool → continue  
 
 ### What “good enough for a noob” looks like in the interview
@@ -1227,7 +1244,7 @@ You do **not** need to implement a vector DB.
 
 ### Five AI LLD problems — expanded sketches
 
-Practice **Suggest Reply (§20)** and **LLM abstraction** deeply; sketch the rest.
+Practice **[AI Suggest Reply](problems/ai-suggest-reply/README.md)** and **LLM abstraction** deeply; sketch the rest.
 
 **A — LLM provider abstraction:** `LLMClient` interface with `Complete` / `Stream`; `OpenAIAdapter`, `AnthropicAdapter`; `LLMRouter` (Strategy) by plan/cost; failover on timeout.
 
@@ -1235,7 +1252,7 @@ Practice **Suggest Reply (§20)** and **LLM abstraction** deeply; sketch the res
 
 **C — AI credit meter:** `Reserve` → `Commit` / `Release` (wallet-like, not just `Allow()`). DB ledger is source of truth; not cache alone.
 
-**D — Suggest reply:** Full flow in §20.
+**D — Suggest reply:** Full flow → [problems/ai-suggest-reply/README.md](problems/ai-suggest-reply/README.md).
 
 **E — Tool-calling agent:** Loop: LLM → tool call → your code runs tool → append result → LLM again; cap max iterations; AuthZ per tool.
 
@@ -1249,390 +1266,27 @@ For **RAG/code review depth** (chunking, retrieval, vector DB, reviewing repos l
 
 ---
 
-## 16. Worked example: Cache Client ⭐
+## 16. Worked examples — design docs
 
-> **Very common at product companies** (including helpdesk/SaaS interviews): *“Design a Cache Client that caches frequent queries.”*
+Per-problem **design walkthroughs** live next to code (or under `problems/` for paper-only). Use [§5](#5-the-standard-approach-memorize-this) first, then open the doc, then code.
 
-### Step 1 — Clarifying questions (ask 6–8)
+| Problem | Design doc | Code |
+|---------|------------|------|
+| **Cache Client** ⭐ | [problems/cache-client/README.md](problems/cache-client/README.md) | `JavaScript/LRU/` · `JavaScript/Redis/` · `Go/LRU-go/` · `Go/Redis-go/` |
+| **LRU Cache** | [JavaScript/LRU/README.md](JavaScript/LRU/README.md) | `JavaScript/LRU/` · `Go/LRU-go/` |
+| **Rate Limiter** | [JavaScript/RateLimiter2/README.md](JavaScript/RateLimiter2/README.md) | `JavaScript/RateLimiter2/` · `Go/RateLimiter2-go/` |
+| **Parking Lot** | [JavaScript/ParkingLot2/README.md](JavaScript/ParkingLot2/README.md) | `JavaScript/ParkingLot2/` · `Go/ParkingLot2-go/` |
+| **AI Suggest Reply** | [problems/ai-suggest-reply/README.md](problems/ai-suggest-reply/README.md) | — (paper) |
+| **Ticket assign + notify** | [problems/ticket-notify/README.md](problems/ticket-notify/README.md) | — (paper) |
+| **Redis eviction policies** | [JavaScript/Redis/README.md](JavaScript/Redis/README.md) | `JavaScript/Redis/` · `Go/Redis-go/` |
 
-1. Library or HTTP service?
-2. In-memory only, or JavaScript/Redis/shared cache?
-3. Single machine or many servers?
-4. TTL (expire after time)?
-5. Max capacity? Eviction policy (LRU)?
-6. Thread-safe? (multiple goroutines)
-7. On miss — return error, or load from DB (`GetOrLoad`)?
-8. Cache stampede: 100 concurrent misses on same key — all hit DB?
-9. Metrics needed (hit/miss rate)?
+**Workflow:** hide code → read design doc → whiteboard 30 min → compare with implementation → [§21 checklist](#21-lld-problem-checklist).
 
-**State assumptions if they say “your call”:** in-memory v1, TTL + LRU, thread-safe, `GetOrLoad` with loader.
-
-### Step 2 — Entities & classes
-
-```text
-CacheEntry: key, value, expiresAt
-
-interface Cache {
-  Get(key) (value, found)
-  Set(key, value, ttl)
-  Delete(key)
-}
-
-CacheClient implements Cache
-  - store: map[string]*CacheEntry
-  - order: doubly linked list (LRU)
-  - capacity, defaultTTL
-  - mu: Mutex
-
-  GetOrLoad(key, loader func() (value, error))
-```
-
-Repo references: `JavaScript/LRU/`, `JavaScript/Redis/`, `Go/LRU-go/`, `Go/Redis-go/`.
-
-### Step 3 — Flows
-
-**Get:** lock → miss/expired → return miss → else move to MRU → unlock → return value  
-
-**Set:** lock → update or insert → evict LRU tail if over capacity → unlock  
-
-**GetOrLoad:** on miss, call loader — use **singleflight** so 50 concurrent misses → one DB call.
-
-### Step 4 — API (if HTTP service)
-
-```http
-GET    /v1/cache/{key}
-PUT    /v1/cache/{key}   body: { "value": "...", "ttl_sec": 60 }
-DELETE /v1/cache/{key}
-```
-
-Often a **library** — ask first.
-
-### Step 5 — Trade-offs / evolve
-
-| Question | Answer |
-|----------|--------|
-| Traffic ↑ | Redis L2; local L1 |
-| Memory ↑ | Capacity cap + TTL |
-| Redis down | Fallback to DB (degraded) |
-| Extend | `Cache` interface → Memory / Redis (Adapter) |
-| Eviction | Strategy: LRU, LFU (see §22 for Redis policies) |
-| Monitor | hit_rate, miss_rate, eviction_count, p99 |
-
-**Patterns:** Strategy/Adapter for backends; SRP — cache does not know SQL (loader injected).
-
-**Practice:** Explain in 20 minutes out loud without notes.
+Paper-only index: [problems/README.md](problems/README.md)
 
 ---
 
-## 17. Worked example: LRU Cache
-
-### Clarify
-- Capacity?  
-- TTL needed?  
-- Thread-safe?  
-- `get` updates recency? (yes for LRU)
-
-### Core idea
-- **Map** for O(1) lookup key → node  
-- **Doubly linked list** for recency order (head = most recent, tail = least)
-
-### Classes
-```text
-Node { key, value, prev, next }
-LRUCache {
-  capacity
-  map
-  head, tail
-  Get(key) → value
-  Put(key, value)
-  // private: moveToFront, evictTail, removeNode
-}
-```
-
-### Flows
-**Get hit:** move node to front; return value  
-**Put existing:** update value; move to front  
-**Put new:** insert front; if over capacity, remove tail  
-
-### Concurrency
-Wrap `Get`/`Put` with mutex if multi-threaded.
-
-### Extend
-- TTL field on node + lazy expiry on get  
-- `Cache` interface → MemoryLRU / Redis adapter  
-
----
-
-## 18. Worked example: Rate Limiter
-
-### Clarify
-- Per user / IP / API key?  
-- Limit & window?  
-- Burst allowed?  
-- Single node or distributed?
-
-### Strategies (Strategy pattern)
-
-| Strategy | Idea | Pros | Cons |
-|----------|------|------|------|
-| Fixed window | Count in current minute | Simple | Burst at window edge |
-| Sliding window log | Store timestamps | Accurate | Memory heavy |
-| Token bucket | Tokens refill over time | Smooth + burst | Slightly more logic |
-| Leaky bucket | Steady outflow | Smooth egress | Less burst friendly |
-
-### Classes
-```text
-RateLimiterStrategy { Allow(key) bool }
-RateLimiter { strategy; Allow(key) }
-TokenBucketStrategy { capacity, refillRate, buckets map, mu }
-```
-
-### API
-- Library: `Allow(key string) bool`  
-- HTTP middleware: return `429` when false  
-
-### Evolve to distributed
-Store counters/tokens in Redis; accept approximate limits under race, or use Lua for atomicity.
-
----
-
-## 19. Worked example: Parking Lot
-
-### Clarify
-- Multiple floors?  
-- Vehicle types & slot types?  
-- Pricing?  
-- Entry/exit gates count?
-
-### Entities
-`ParkingLot`, `Floor`, `Slot`, `Vehicle`, `Ticket`
-
-### Responsibilities
-- Find suitable free slot (Strategy: first-fit, type-fit, nearest)  
-- Issue ticket on park  
-- Calculate fee on unpark  
-- Maintain availability counts  
-
-### Classes (sketch)
-```text
-Vehicle { number, type }
-Slot { id, type, isFree, vehicle }
-Floor { id, slots[]; FindSlot(vehicleType) }
-ParkingLot { floors[]; Park(vehicle); Unpark(ticketId) }
-Ticket { id, slotId, entryTime }
-PricingStrategy { Calculate(ticket, exitTime) }
-```
-
-### Extensibility
-New vehicle type → mapping to slot types.  
-New pricing → new `PricingStrategy`.
-
----
-
-## 20. Worked example: AI Suggest Reply (copilot draft)
-
-Use this as your **AI LLD template**. Same structure as JavaScript/LRU/Parking Lot interviews.
-
-### Clarify (ask first!)
-
-1. Draft only or auto-send to customer?  
-2. Streaming to UI (SSE) required?  
-3. Multi-tenant SaaS? (almost always yes)  
-4. One LLM vendor or many?  
-5. Do we have a knowledge base / past tickets for RAG?  
-6. Credits / quotas per plan?  
-7. Approximate QPS of “Suggest” clicks?
-
-**Assumptions to state if they don’t specify:**
-- Draft only (human sends)
-- SSE streaming
-- Multi-tenant
-- RAG over KB + ticket thread
-- Credits required
-
-### Actors & use cases
-
-- **Agent** clicks Suggest on a ticket  
-- **System** builds grounded draft, streams it, stores it  
-- **Admin** (optional) uploads KB docs (indexing path — mention briefly)
-
-### Entities
-
-```text
-Tenant, Ticket, Message
-Suggestion { id, ticket_id, status, model, text, created_by }
-Chunk { id, tenant_id, doc_id, text, embedding }
-CreditAccount / CreditReservation
-IdempotencyRecord
-```
-
-### Classes / interfaces
-
-```text
-SuggestHandler          // HTTP boundary: auth + validation
-SuggestService          // orchestrator (main flow)
-
-TicketRepository        // load ticket + messages
-Retriever               // vector search with tenant filter
-PromptBuilder           // system rules + chunks + thread
-LLMClient (interface)   // Complete / Stream
-  OpenAIAdapter
-  AnthropicAdapter
-OutputValidator         // length / JSON / basic safety
-CreditMeter             // Reserve / Commit / Release
-Guardrails              // max input size, PII redact
-SuggestionRepository    // save draft + status
-```
-
-### Happy path (say this in order)
-
-```text
-1. AuthZ: agent can access ticket (same tenant)
-2. Idempotency-Key → return existing suggestion if replay
-3. Guardrails on input size
-4. CreditMeter.Reserve(units)
-5. Load ticket thread
-6. Retriever.topK(query, tenant_id)
-7. PromptBuilder.build(...)
-8. Save Suggestion(status=streaming)
-9. LLMClient.Stream(ctx) → SSE to client
-10. Validate final text; save; CreditMeter.Commit
-```
-
-### Failure path
-
-```text
-LLM timeout / error
-  → cancel context
-  → CreditMeter.Release
-  → Suggestion status=failed
-  → UI shows retry (same Idempotency-Key OK)
-Ticket itself is unchanged (partial failure is fine)
-```
-
-### APIs
-
-```http
-POST /v1/tickets/{id}/ai/suggestions
-Headers: Authorization, Idempotency-Key
-Body: { "tone": "friendly" }
-→ 201 { "suggestion_id", "stream_url" }
-
-GET /v1/tickets/{id}/ai/suggestions/{sid}/stream
-→ SSE tokens, then done|error
-```
-
-### Concurrency
-
-- Two Suggest clicks: two reservations if credits allow; or limit one in-flight suggestion per ticket  
-- Credit reserve must be atomic (DB row lock / conditional update)  
-- Never hold DB transaction open during LLM HTTP call  
-
-### Patterns used here
-
-| Pattern | Where |
-|---------|--------|
-| Adapter | LLM vendors behind `LLMClient` |
-| Strategy | Model pick by plan / latency |
-| Repository | Ticket / Suggestion / Chunk stores |
-| Middleware | Auth + credit checks |
-
-### Evolve
-
-| Change | Design move |
-|--------|-------------|
-| New model vendor | New Adapter only |
-| 10× traffic | Cache retrieval; queue non-interactive jobs; scale workers |
-| Auto-send | Stronger validator + approval flag |
-| Tool calling | Agent loop: model → tool → observe → model (cap max steps) |
-| Eval | Store prompt version; thumbs-up/down API; golden set offline |
-
-### What to practice aloud (20–30 min)
-
-Close the doc. Draw boxes from memory. Hit: tenant RAG filter, credits, timeout, SSE, new vendor.
-
----
-
-## 21. Worked example: Ticket assign + notify
-
-Helpdesk / shared-inbox classic (assign owner, notify team).
-
-### Clarify
-
-- Single assignee or multiple?
-- Notify which channels (Slack, email, in-app)?
-- Concurrent assign allowed?
-
-### Classes
-
-```text
-TicketService
-  - Assign(ticketID, agentID) error
-  - Get(ticketID)
-
-TicketRepository
-Notifier (interface) → SlackNotifier | EmailNotifier | InAppNotifier
-AssignmentPolicy → CanAssign(ticket, agent)
-```
-
-### Assign flow
-
-```text
-1. Load ticket (tenant-scoped)
-2. Policy: agent in same tenant/inbox?
-3. Optimistic lock: UPDATE ... WHERE version=?
-   → 0 rows → 409 Conflict ("already assigned")
-4. Save ticket, version++
-5. Publish TicketAssigned event → Notifiers (Observer)
-```
-
-### Patterns
-
-- **Observer:** one event, many notifiers  
-- **Adapter:** Slack API wrapper  
-- **Repository:** hide DB  
-
-### Backup: Webhook ingest + connector sync (idempotent / async)
-
-**Webhook (inbound events):**
-```text
-Verify signature → store event_id (dedupe) → enqueue → return 200 fast
-Worker upserts ticket/message — never call LLM inline on webhook path
-```
-
-**Connector sync (pull files from Slack/Notion/Drive):**
-```text
-Bad:  POST /sync → fetch all files → chunk → embed in request (client waits)
-Good: POST /sync → publish job to SQS/Kafka → 202 { job_id }
-      Worker → fetch → ingest each doc → update last_synced_at (retries, DLQ)
-```
-
-Same rule: **heavy I/O and indexing never block the HTTP handler.**
-
----
-
-## 22. Redis eviction policies (cache / Redis LLD)
-
-When Redis hits `maxmemory`, it evicts keys per `maxmemory-policy`:
-
-| Policy | Evicts |
-|--------|--------|
-| `noeviction` | Nothing — writes fail when full |
-| `allkeys-lru` | Any key — least recently used (approximate) |
-| `allkeys-lfu` | Any key — least frequently used |
-| `volatile-lru` | Only keys **with TTL** — LRU among those |
-| `volatile-ttl` | Keys with TTL — shortest remaining TTL first |
-| `allkeys-random` / `volatile-random` | Random key |
-
-**Interview lines:**
-- Pure cache → `allkeys-lru` or `allkeys-lfu`
-- Mix permanent + cache keys → `volatile-lru` + TTL on cache only
-- Real Redis uses **approximate** LRU (samples keys), not exact linked-list LRU like `JavaScript/LRU/` in this repo
-- **Eviction** (memory full) ≠ **expiration** (TTL) — related but different
-
----
-
-## 23. HLD topics that bleed into LLD
+## 17. HLD topics that bleed into LLD
 
 Some **HLD** appears in LLD as *“how would you evolve?”* — not full multi-region design.
 
@@ -1663,9 +1317,9 @@ v4: Horizontal scale stateless API + workers
 
 ---
 
-## 24. Timed mock + self-score
+## 18. Timed mock + self-score
 
-**Timer: 40 minutes.** Pick **Cache Client (§16)** or **Rate Limiter (§18)**. Speak out loud; no notes for first 30 min.
+**Timer: 40 minutes.** Pick **[Cache Client](problems/cache-client/README.md)** or **[Rate Limiter](JavaScript/RateLimiter2/README.md)**. Speak out loud; no notes for first 30 min.
 
 After time, score 0–2 each (target ≥ 16/20):
 
@@ -1686,7 +1340,7 @@ After time, score 0–2 each (target ≥ 16/20):
 
 ---
 
-## 25. How to practice (4-week plan)
+## 19. How to practice (4-week plan)
 
 > **Prerequisite:** Finish **[JavaScript/README.md](JavaScript/README.md)** (and **[Go/README.md](Go/README.md)** if applicable) before Week 2 repo coding — see **[§0](#0-before-you-start--javascript--go-prep)**.
 
@@ -1707,7 +1361,7 @@ Implement or redesign:
 
 ### Week 3 — More problems + AI + concurrency
 - Splitwise, **PollingSystem2** (service + repos), Notification system, Cache client  
-- **AI:** LLM interface + RAG sketch + Suggest Reply (§20) once on paper  
+- **AI:** LLM interface + RAG sketch + [Suggest Reply](problems/ai-suggest-reply/README.md) once on paper  
 - Add mutex/idempotency discussion every time  
 - One machine-coding simulation (90 min timer)  
 
@@ -1728,12 +1382,12 @@ Implement or redesign:
 
 ---
 
-## 26. Interview day checklist
+## 20. Interview day checklist
 
 **Before**
 - [ ] **Language prep done:** [JavaScript/README.md](JavaScript/README.md) · [Go/README.md](Go/README.md) if Go role — see **§0**  
 - [ ] Paper / shared editor ready  
-- [ ] Know opening + closing lines (§24)  
+- [ ] Know opening + closing lines ([§18](#18-timed-mock--self-score))  
 - [ ] Know round type: **LLD design** (this doc) vs **code review** ([ai-code-review-round](ai-code-review-round/README.md))  
 - [ ] Skim company product (helpdesk/SaaS: shared inbox, AI copilot, multi-tenant) — honest if you didn’t use the product  
 - [ ] Sleep; don’t cram 10 new patterns  
@@ -1744,7 +1398,7 @@ Implement or redesign:
 - [ ] Drive use-case by use-case  
 - [ ] Prefer composition + interfaces  
 - [ ] Mention concurrency & failure at least once  
-- [ ] Show how design evolves (§23)  
+- [ ] Show how design evolves ([§17](#17-hld-topics-that-bleed-into-lld))  
 
 **During (code review)**
 - [ ] Trace main happy path, then untested routes  
@@ -1769,11 +1423,82 @@ If they ask *“What do you know about us?”*:
 
 ---
 
-## 27. Problems in this repository
+## 21. LLD problem checklist
 
-Use these as **hands-on practice** after designing on paper. **JavaScript implementations** live under **`JavaScript/`**; Go ports under **`Go/`**.
+**How to use:** Design each problem **on paper first** ([§5](#5-the-standard-approach-memorize-this), 30–45 min), then open code only if ✅. Unsolved items → [lld-gaps/README.md](lld-gaps/README.md) paper prompts.
 
-### JavaScript (`JavaScript/*/` — machine-coding style)
+| Legend | Meaning |
+|--------|---------|
+| ✅ | **Solved in repo** — working code under `JavaScript/` and/or `Go/` |
+| ❌ | **Not coded** — design on paper; see reference for notes or related worked example |
+
+### Master list
+
+| Problem | Solved | Reference |
+|---------|:------:|-----------|
+| **API gateway** | ❌ | [Backend/README.md §10](Backend/README.md) · [§9 Proxy / Facade](#9-design-patterns-creational--behavioural--structural) |
+| **ATM** | ❌ | [lld-gaps/README.md §5 L1](lld-gaps/README.md) |
+| **Cab booking** | ❌ | [lld-gaps/README.md §5 L2](lld-gaps/README.md) |
+| **Cache (TTL + eviction)** | ✅ | `JavaScript/Redis/` · `Go/Redis-go/` · [problems/cache-client/README.md](problems/cache-client/README.md) |
+| **Circuit breaker** | ❌ | Pattern snippet: [Go/README.md §15](Go/README.md) |
+| **Connection pool** | ❌ | [Go/README.md §13](Go/README.md) (DB pool) · [lld-gaps/README.md §5 L3](lld-gaps/README.md) |
+| **Elevator** | ❌ | [lld-gaps/README.md §6](lld-gaps/README.md) |
+| **Expense splitter (Splitwise)** | ✅ | `JavaScript/Splitwise/` · `Go/Splitwise-go/` |
+| **File storage (in-memory FS)** | ❌ | [lld-gaps/README.md §5 L2](lld-gaps/README.md) |
+| **In-memory database** | ✅ | `JavaScript/Database/` · `Go/Database-go/` |
+| **Inventory management** | ❌ | [lld-gaps/README.md §5 L2](lld-gaps/README.md) |
+| **Job scheduler** | ❌ | [§14 Task / Job scheduler](#14-common-lld-problems--how-to-think) · [lld-gaps/README.md §5 L3](lld-gaps/README.md) |
+| **LFU cache** | ❌ | [§14](#14-common-lld-problems--how-to-think) (LRU ✅; LFU variant on paper) |
+| **Load balancer** | ❌ | [§17 HLD bleed-in](#17-hld-topics-that-bleed-into-lld) (mostly HLD) |
+| **Logging framework** | ❌ | [lld-gaps/README.md §6](lld-gaps/README.md) |
+| **LRU cache** | ✅ | `JavaScript/LRU/` · `Go/LRU-go/` · [JavaScript/LRU/README.md](JavaScript/LRU/README.md) |
+| **Message queue (ack, DLQ)** | ❌ | [lld-gaps/README.md §5 L3](lld-gaps/README.md) · basic FIFO: `JavaScript/Queue/` |
+| **Metrics collector** | ❌ | — |
+| **Movie / seat booking** | ❌ | [lld-gaps/README.md §5 L1](lld-gaps/README.md) · idempotency: [§12](#12-concurrency-idempotency--failure) |
+| **Notification service** | ❌ | [problems/ticket-notify/README.md](problems/ticket-notify/README.md) · [lld-gaps/README.md §6](lld-gaps/README.md) |
+| **Order management (OMS)** | ❌ | [lld-gaps/README.md §5 L2](lld-gaps/README.md) |
+| **Parking lot** | ✅ | `JavaScript/ParkingLot2/` · `Go/ParkingLot2-go/` · [JavaScript/ParkingLot2/README.md](JavaScript/ParkingLot2/README.md) |
+| **Payment gateway** | ✅ | `Go/PaymentGateway-go/` · JS stub: `JavaScript/PaymentGateway/` · [Backend §4](Backend/README.md) |
+| **Polling / voting system** | ✅ | `JavaScript/PollingSystem2/` · `Go/PollingSystem2-go/` (v1 teaching: `PollingSystem/`) |
+| **Pub/Sub system** | ✅ | `JavaScript/Pub-Sub/` · `Go/Pub-Sub-go/` |
+| **Rate limiter** | ✅ | `JavaScript/RateLimiter2/` · `Go/RateLimiter2-go/` · [JavaScript/RateLimiter2/README.md](JavaScript/RateLimiter2/README.md) |
+| **Retry scheduler** | ❌ | [§12 Retries + backoff](#12-concurrency-idempotency--failure) · [Go/README.md §2](Go/README.md) |
+| **Search engine** | ✅ | `JavaScript/SearchEngine/` · `Go/SearchEngine-go/` |
+| **Subscription manager** | ❌ | — |
+| **Task queue (FIFO)** | ✅ | `JavaScript/Queue/` · `Go/Queue-go/` (not a full worker/DLQ scheduler) |
+| **URL shortener** | ✅ | `JavaScript/UrlShortener/` · `Go/UrlShortener-go/` |
+| **Vending machine** | ❌ | [lld-gaps/README.md §5 L1](lld-gaps/README.md) |
+| **Wallet / ledger** | ❌ | [lld-gaps/README.md §10](lld-gaps/README.md) · related: Splitwise balances |
+| **Webhook delivery system** | ❌ | [Backend/README.md §14](Backend/README.md) (design) |
+| **AI suggest reply / copilot** | ❌ | [problems/ai-suggest-reply/README.md](problems/ai-suggest-reply/README.md) |
+| **Distributed rate limiter** | ❌ | [lld-gaps/README.md §10](lld-gaps/README.md) · local algo: `RateLimiter2/` |
+| **Chess / board game** | ❌ | [lld-gaps/README.md §5 L3](lld-gaps/README.md) |
+| **Hotel booking** | ❌ | [lld-gaps/README.md §5 L2](lld-gaps/README.md) |
+| **Traffic light / signal** | ❌ | [§14](#14-common-lld-problems--how-to-think) |
+
+**Scorecard:** **12 ✅ coded** · **27 ❌ paper / not yet** (39 problems in checklist). Aim to paper-design all ❌ rows before Staff loops.
+
+### Also worth adding to your personal list
+
+These appear often in syllabi but were not in the original online list — included above where relevant:
+
+| Why add it | Problem |
+|------------|---------|
+| Very common FAANG LLD | **Elevator**, **Chess**, **Vending machine** |
+| Fintech / marketplace | **Wallet / ledger**, **Movie seat booking**, **Distributed rate limiter** |
+| Infra-style LLD | **Connection pool**, **Message queue (DLQ)**, **LFU cache** |
+| In repo already | **Search engine**, **In-memory DB**, **Polling system** |
+| Modern product rounds | **AI suggest reply** ([problems/ai-suggest-reply/README.md](problems/ai-suggest-reply/README.md)) |
+
+Full breadth timeline → [lld-gaps/README.md §11](lld-gaps/README.md).
+
+---
+
+### Implementation details (coded problems)
+
+Use these as **hands-on practice** after designing on paper. **JavaScript** under **`JavaScript/`**; **Go** ports under **`Go/`**.
+
+#### JavaScript (`JavaScript/*/` — machine-coding style)
 
 | Path | Focus | OOP | Principles | Patterns |
 |------|--------|-----|------------|----------|
@@ -1794,12 +1519,12 @@ Use these as **hands-on practice** after designing on paper. **JavaScript implem
 
 Full cross-reference → **[§7A](#7a-repository-map--oop-principles--patterns-by-lld)**.
 
-### Golang (`Go/*-go`)
+#### Golang (`Go/*-go`)
 
 Same problems ported to Go — good for Go interviews (interfaces, mutexes, errors).  
 **Language prep (do first):** [Go/README.md](Go/README.md) · **JS/Node prep:** [JavaScript/README.md](JavaScript/README.md) · **Code review round:** [ai-code-review-round/README.md](ai-code-review-round/README.md) · **LLD method:** this doc §1+.
 
-**Note:** This repo’s coded LLDs are classic systems (cache, parking, rate limit, etc.). **AI LLD is covered in this README (§15–§20)** and **code review in ai-code-review-round/** — practice on paper/whiteboard; there is no separate `AI-Suggest-go` folder yet.
+**Note:** Coded LLDs live under `JavaScript/` and `Go/`. **AI LLD** design docs: [problems/ai-suggest-reply/README.md](problems/ai-suggest-reply/README.md) + [§15](#15-ai--llm-lld-for-beginners). **Code review:** [ai-code-review-round/README.md](ai-code-review-round/README.md).
 
 ### Suggested workflow with this repo
 
@@ -1811,7 +1536,7 @@ Same problems ported to Go — good for Go interviews (interfaces, mutexes, erro
 
 ---
 
-## 28. Cheat sheet
+## 22. Cheat sheet
 
 ### Structure
 ```text
@@ -1852,7 +1577,7 @@ Concurrency/Failure → Extend/Trade-offs
 - Multi-tenant: filter every query by `tenant_id`
 
 ### Must-practice designs
-- **Cache Client (§16)** · Rate Limiter (§18) · AI Suggest (§20)
+- **[Cache Client](problems/cache-client/README.md)** · [Rate Limiter](JavaScript/RateLimiter2/README.md) · [AI Suggest](problems/ai-suggest-reply/README.md)
 
 ### Production questions (ask yourself)
 - What if traffic ×10?  
@@ -1871,6 +1596,6 @@ Concurrency/Failure → Extend/Trade-offs
 
 LLD mastery is not memorizing 50 class diagrams. It is building a **repeatable thinking process**, practicing it on 10–15 problems out loud, and explaining **why** your design is good enough for v1 and how it will evolve.
 
-Start with **Cache Client (§16) → Rate Limiter (§18) → Parking Lot → Splitwise → Pub-Sub**, then **AI Suggest Reply (§20)**, then branch into domain problems. For **code review** prep, use **ai-code-review-round/README.md**.
+Start with **[Cache Client](problems/cache-client/README.md) → [Rate Limiter](JavaScript/RateLimiter2/README.md) → [Parking Lot](JavaScript/ParkingLot2/README.md) → Splitwise → Pub-Sub**, then **[AI Suggest Reply](problems/ai-suggest-reply/README.md)**, then branch into domain problems. For **code review** prep, use **ai-code-review-round/README.md**.
 
 Good luck.

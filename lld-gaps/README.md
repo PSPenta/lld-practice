@@ -45,7 +45,7 @@ This doc        → BREADTH you still need on paper / whiteboard
 | Strategy, Factory, Observer, Template | ✅ coded + §7A | More patterns §4 |
 | Parking Lot, Rate Limiter, LRU, Splitwise, Pub-Sub, DB, URL, Search, **PollingSystem2** | ✅ `JavaScript/PollingSystem2/PollingService/` · models + repos | — |
 | Payment pluggable gateway | ✅ `Go/PaymentGateway-go/` | — |
-| AI LLD (Cache Client, Suggest Reply, RAG) | ✅ §15–§21 | — |
+| AI LLD (Cache Client, Suggest Reply, RAG) | ✅ [problems/](problems/) + §15 | — |
 | **UML** (class, sequence, state) | ⚠️ light | **§3** |
 | **Beginner games** (Chess, TTT, Snake) | ⚠️ §14 mention | **§5 L1** |
 | **Elevator, Notification, Logger, File system** | ⚠️ mention only | **§5 L2** |
@@ -167,7 +167,7 @@ Main README §9 lists what **is** in the repo. Master these **additionally on pa
 | # | Problem | Core skill | In repo? |
 |---|---------|------------|----------|
 | 1 | **Elevator** | State, scheduling (SCAN/FCFS), multiple cars | ❌ paper |
-| 2 | **Notification system** | Channels, templates, retry, idempotency | ⚠️ §21 only |
+| 2 | **Notification system** | Channels, templates, retry, idempotency | ⚠️ [problems/ticket-notify/README.md](../problems/ticket-notify/README.md) |
 | 3 | **Logging framework** | Levels, appenders, Chain of Responsibility | ❌ paper |
 | 4 | **File system (in-memory)** | Tree, path resolve, permissions | ❌ paper |
 | 5 | **Hotel / Cab booking** | Inventory, locks, cancellation | ❌ paper |
@@ -190,7 +190,7 @@ Main README §9 lists what **is** in the repo. Master these **additionally on pa
 | 7 | **Connection pool** | Acquire, release, max, timeout | ❌ paper |
 | 8 | **In-memory DB** | — | ✅ coded |
 | 9 | **Event processing** | ingest → process → store | ❌ paper |
-| 10 | **Cache (TTL + eviction)** | — | ✅ Redis/LRU + §16 Cache Client |
+| 10 | **Cache (TTL + eviction)** | — | ✅ Redis/LRU + [problems/cache-client](../problems/cache-client/README.md) |
 
 ### Level 4 — Senior / FAANG combo
 
