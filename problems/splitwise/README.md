@@ -6,30 +6,6 @@
 **Round opening (say aloud):**
 > "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
 
-## Code in this repo
-
-| Language | Path | Notes |
-|----------|------|--------|
-| **JavaScript** | [`JavaScript/Splitwise/`](../../JavaScript/Splitwise/) | Preferred — `SplitwiseService`, pairwise `BalanceSheet`, `money.js` |
-| **Go** | [`Go/Splitwise-go/`](../../Go/Splitwise-go/) | Same design (interfaces + embedding) |
-
-### Codebase map (how the code is organized)
-
-| File | Responsibility |
-|------|----------------|
-| `money.js` / `money.go` | `toAmount(rupees)` → integer paise; `fromAmount` for display |
-| `User.js` | User entity (`id`, `name`, `email`) |
-| `Split.js` | `EqualSplit` / `ExactSplit` / `PercentageSplit` |
-| `Balance.js` | Pairwise edge `{ debtorId, creditorId, amount }` |
-| `BalanceSheet.js` | `addDebt` (merge same edge, net opposite), `getBalance` |
-| `Expense.js` | Factory + Equal/Exact/Percentage `validate` / shared `apply` |
-| `SplitwiseService.js` | Façade: `addUser`, `addExpense`, `settleUp`, `getPairwiseBalances` |
-| `index.js` / `main.go` | Demo: equal + percent expenses, full/partial settle |
-
-**Read order:** `SplitwiseService` → `Expense` factory → `BalanceSheet.addDebt` → `money.toAmount`.
-
----
-
 ## Step 1 — Clarify
 
 ### Questions (ask 6–8)
@@ -110,4 +86,30 @@ settleUp(payerId, payeeId, amountRupees?)
 ## Step 6 — Evolve
 
 - New split type → new expense type + factory entry (**OCP**)  
-- `simplify()` min transactions · groups · multi-currency  
+- `simplify()` min transactions · groups · multi-currency
+
+
+---
+
+## Code in this repo
+
+| Language | Path | Notes |
+|----------|------|--------|
+| **JavaScript** | [`JavaScript/Splitwise/`](../../JavaScript/Splitwise/) | Preferred — `SplitwiseService`, pairwise `BalanceSheet`, `money.js` |
+| **Go** | [`Go/Splitwise-go/`](../../Go/Splitwise-go/) | Same design (interfaces + embedding) |
+
+## Codebase map (how the code is organized)
+
+| File | Responsibility |
+|------|----------------|
+| `money.js` / `money.go` | `toAmount(rupees)` → integer paise; `fromAmount` for display |
+| `User.js` | User entity (`id`, `name`, `email`) |
+| `Split.js` | `EqualSplit` / `ExactSplit` / `PercentageSplit` |
+| `Balance.js` | Pairwise edge `{ debtorId, creditorId, amount }` |
+| `BalanceSheet.js` | `addDebt` (merge same edge, net opposite), `getBalance` |
+| `Expense.js` | Factory + Equal/Exact/Percentage `validate` / shared `apply` |
+| `SplitwiseService.js` | Façade: `addUser`, `addExpense`, `settleUp`, `getPairwiseBalances` |
+| `index.js` / `main.go` | Demo: equal + percent expenses, full/partial settle |
+
+**Read order:** `SplitwiseService` → `Expense` factory → `BalanceSheet.addDebt` → `money.toAmount`.
+

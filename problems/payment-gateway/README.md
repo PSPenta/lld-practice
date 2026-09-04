@@ -5,28 +5,6 @@
 **Round opening (say aloud):**
 > "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
 
-## Code in this repo
-
-| Language | Path | Notes |
-|----------|------|--------|
-| **Go** | [`Go/PaymentGateway-go/`](../../Go/PaymentGateway-go/) | **full impl** — `BankGateway` Strategy |
-| JavaScript | [`JavaScript/PaymentGateway/`](../../JavaScript/PaymentGateway/) | stub only (empty files) |
-
-REST/idempotency depth → [Backend/README.md §4](../../Backend/README.md)
-
-### Codebase map (how the code is organized)
-
-| File | Responsibility |
-|------|----------------|
-| `bank_gateway.go` | `BankGateway` interface — `ProcessPayment` |
-| `payment_gateway.go` | Maps payment method → gateway; idempotency store |
-| `payment.go` | Payment model + status |
-| `main.go` | Demo process + retry with same key |
-
-**Read order:** `PaymentGateway.ProcessPayment` → idempotency check → `BankGateway` impl.
-
----
-
 ## Step 1 — Clarify
 
 ### Questions (ask 6–8)
@@ -91,3 +69,27 @@ Payment { id, amount, method, idempotencyKey, status }
 ## Step 6 — Evolve
 
 - New provider → new `BankGateway` impl registered in map (**OCP**)
+
+
+---
+
+## Code in this repo
+
+| Language | Path | Notes |
+|----------|------|--------|
+| **Go** | [`Go/PaymentGateway-go/`](../../Go/PaymentGateway-go/) | **full impl** — `BankGateway` Strategy |
+| JavaScript | [`JavaScript/PaymentGateway/`](../../JavaScript/PaymentGateway/) | stub only (empty files) |
+
+REST/idempotency depth → [Backend/README.md §4](../../Backend/README.md)
+
+## Codebase map (how the code is organized)
+
+| File | Responsibility |
+|------|----------------|
+| `bank_gateway.go` | `BankGateway` interface — `ProcessPayment` |
+| `payment_gateway.go` | Maps payment method → gateway; idempotency store |
+| `payment.go` | Payment model + status |
+| `main.go` | Demo process + retry with same key |
+
+**Read order:** `PaymentGateway.ProcessPayment` → idempotency check → `BankGateway` impl.
+

@@ -6,27 +6,6 @@
 **Round opening (say aloud):**
 > "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
 
-## Code in this repo
-
-| Language | Path | Notes |
-|----------|------|--------|
-| **JavaScript LRU** | [`JavaScript/LRU/`](../../JavaScript/LRU/) | exact LRU (map + DLL) |
-| **JavaScript Redis-style** | [`JavaScript/Redis/`](../../JavaScript/Redis/) | TTL + policy-based eviction |
-| **Go** | [`Go/LRU-go/`](../../Go/LRU-go/) · [`Go/Redis-go/`](../../Go/Redis-go/) | |
-| Pure LRU only | [lru-cache](../lru-cache/README.md) | subset of this problem |
-
-### Codebase map (how the code is organized)
-
-| Path | Responsibility |
-|------|----------------|
-| `JavaScript/LRU/index.js` | Exact LRU — O(1) get/put via map + doubly linked list |
-| `JavaScript/Redis/index.js` | TTL expiry + `maxmemory`-style eviction policy switch |
-| `Go/LRU-go/`, `Go/Redis-go/` | Ports of the above |
-
-**Interview tip:** start design from LRU; add TTL + eviction policies when asked “like Redis.”
-
----
-
 ## Step 1 — Clarify
 
 ### Questions (ask 6–8)
@@ -124,3 +103,26 @@ DELETE /v1/cache/{key}
 **Interview lines:** pure cache → `allkeys-lru`; mix permanent + cache keys → `volatile-lru` + TTL on cache only. **Eviction** (memory full) ≠ **expiration** (TTL).
 
 **Patterns:** Strategy/Adapter for backends; SRP — cache does not know SQL (loader injected).
+
+
+---
+
+## Code in this repo
+
+| Language | Path | Notes |
+|----------|------|--------|
+| **JavaScript LRU** | [`JavaScript/LRU/`](../../JavaScript/LRU/) | exact LRU (map + DLL) |
+| **JavaScript Redis-style** | [`JavaScript/Redis/`](../../JavaScript/Redis/) | TTL + policy-based eviction |
+| **Go** | [`Go/LRU-go/`](../../Go/LRU-go/) · [`Go/Redis-go/`](../../Go/Redis-go/) | |
+| Pure LRU only | [lru-cache](../lru-cache/README.md) | subset of this problem |
+
+## Codebase map (how the code is organized)
+
+| Path | Responsibility |
+|------|----------------|
+| `JavaScript/LRU/index.js` | Exact LRU — O(1) get/put via map + doubly linked list |
+| `JavaScript/Redis/index.js` | TTL expiry + `maxmemory`-style eviction policy switch |
+| `Go/LRU-go/`, `Go/Redis-go/` | Ports of the above |
+
+**Interview tip:** start design from LRU; add TTL + eviction policies when asked “like Redis.”
+

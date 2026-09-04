@@ -5,27 +5,6 @@
 **Round opening (say aloud):**
 > "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
 
-## Code in this repo
-
-| Language | Path | Notes |
-|----------|------|--------|
-| **JavaScript** | [`JavaScript/UrlShortener/`](../../JavaScript/UrlShortener/) | Express + in-memory map |
-| **Go** | [`Go/UrlShortener-go/`](../../Go/UrlShortener-go/) | |
-
-Scale at 100M QPS → HLD (not LLD focus)
-
-### Codebase map (how the code is organized)
-
-| File | Responsibility |
-|------|----------------|
-| `index.js` | Express routes: shorten + redirect; in-memory store |
-| `uniqueCode.js` | Short-code generation (collision handling) |
-| `Go/UrlShortener-go/` | Port of shorten/resolve |
-
-**Read order:** `POST /shorten` handler → `uniqueCode` → `GET /:code` redirect.
-
----
-
 ## Step 1 — Clarify
 
 ### Questions (ask 6–8)
@@ -89,3 +68,26 @@ GET  /{code}    → 302 Location: long url
 ## Step 6 — Evolve
 
 - DB + unique index on code; cache hot codes; HLD for read scale
+
+
+---
+
+## Code in this repo
+
+| Language | Path | Notes |
+|----------|------|--------|
+| **JavaScript** | [`JavaScript/UrlShortener/`](../../JavaScript/UrlShortener/) | Express + in-memory map |
+| **Go** | [`Go/UrlShortener-go/`](../../Go/UrlShortener-go/) | |
+
+Scale at 100M QPS → HLD (not LLD focus)
+
+## Codebase map (how the code is organized)
+
+| File | Responsibility |
+|------|----------------|
+| `index.js` | Express routes: shorten + redirect; in-memory store |
+| `uniqueCode.js` | Short-code generation (collision handling) |
+| `Go/UrlShortener-go/` | Port of shorten/resolve |
+
+**Read order:** `POST /shorten` handler → `uniqueCode` → `GET /:code` redirect.
+

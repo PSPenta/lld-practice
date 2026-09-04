@@ -5,26 +5,6 @@
 **Round opening (say aloud):**
 > "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
 
-## Code in this repo
-
-| Language | Path | Notes |
-|----------|------|--------|
-| **JavaScript** | [`JavaScript/Queue/`](../../JavaScript/Queue/) | circular buffer FIFO |
-| **Go** | [`Go/Queue-go/`](../../Go/Queue-go/) | |
-
-Full worker/DLQ → [message-queue](../message-queue/README.md)
-
-### Codebase map (how the code is organized)
-
-| File | Responsibility |
-|------|----------------|
-| `Queue/index.js` | `FIFOQueue` — circular buffer, `enqueue` / `dequeue`, capacity |
-| `Go/Queue-go/` | Same FIFO structure |
-
-**Read order:** `enqueue` / `dequeue` — how full vs empty is distinguished.
-
----
-
 ## Step 1 — Clarify
 
 ### Questions (ask 6–8)
@@ -83,3 +63,25 @@ FIFOQueue
 ## Step 6 — Evolve
 
 - [message-queue](../message-queue/README.md) — ack, retry, DLQ
+
+
+---
+
+## Code in this repo
+
+| Language | Path | Notes |
+|----------|------|--------|
+| **JavaScript** | [`JavaScript/Queue/`](../../JavaScript/Queue/) | circular buffer FIFO |
+| **Go** | [`Go/Queue-go/`](../../Go/Queue-go/) | |
+
+Full worker/DLQ → [message-queue](../message-queue/README.md)
+
+## Codebase map (how the code is organized)
+
+| File | Responsibility |
+|------|----------------|
+| `Queue/index.js` | `FIFOQueue` — circular buffer, `enqueue` / `dequeue`, capacity |
+| `Go/Queue-go/` | Same FIFO structure |
+
+**Read order:** `enqueue` / `dequeue` — how full vs empty is distinguished.
+

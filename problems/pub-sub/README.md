@@ -5,26 +5,6 @@
 **Round opening (say aloud):**
 > "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
 
-## Code in this repo
-
-| Language | Path | Notes |
-|----------|------|--------|
-| **JavaScript** | [`JavaScript/Pub-Sub/`](../../JavaScript/Pub-Sub/) | in-memory Observer |
-| **Go** | [`Go/Pub-Sub-go/`](../../Go/Pub-Sub-go/) | 3 variants — good evolution discussion |
-
-### Codebase map (how the code is organized)
-
-| File | Responsibility |
-|------|----------------|
-| `pubsubCoreJS.js` | Core topic → callback list; subscribe / publish / unsubscribe |
-| `pubsubEventEmitter.js` | Variant using EventEmitter-style API |
-| `index.js` | Demo fan-out |
-| `Go/Pub-Sub-go/` | Multiple variants for “how would you evolve?” |
-
-**Read order:** `subscribe` / `publish` — copy listener list before invoke.
-
----
-
 ## Step 1 — Clarify
 
 ### Questions (ask 6–8)
@@ -84,3 +64,25 @@ PubSub
 ## Step 6 — Evolve
 
 - Async queue per subscriber; evolve to [message-queue](../message-queue/README.md)
+
+
+---
+
+## Code in this repo
+
+| Language | Path | Notes |
+|----------|------|--------|
+| **JavaScript** | [`JavaScript/Pub-Sub/`](../../JavaScript/Pub-Sub/) | in-memory Observer |
+| **Go** | [`Go/Pub-Sub-go/`](../../Go/Pub-Sub-go/) | 3 variants — good evolution discussion |
+
+## Codebase map (how the code is organized)
+
+| File | Responsibility |
+|------|----------------|
+| `pubsubCoreJS.js` | Core topic → callback list; subscribe / publish / unsubscribe |
+| `pubsubEventEmitter.js` | Variant using EventEmitter-style API |
+| `index.js` | Demo fan-out |
+| `Go/Pub-Sub-go/` | Multiple variants for “how would you evolve?” |
+
+**Read order:** `subscribe` / `publish` — copy listener list before invoke.
+

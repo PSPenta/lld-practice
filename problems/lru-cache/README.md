@@ -5,26 +5,6 @@
 **Round opening (say aloud):**
 > "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
 
-## Code in this repo
-
-| Language | Path | Notes |
-|----------|------|--------|
-| **JavaScript** | [`JavaScript/LRU/`](../../JavaScript/LRU/) | map + doubly linked list |
-| **Go** | [`Go/LRU-go/`](../../Go/LRU-go/) | |
-| Broader client | [cache-client](../cache-client/README.md) | TTL, GetOrLoad, stampede |
-| Redis-style TTL | [`JavaScript/Redis/`](../../JavaScript/Redis/) · [`Go/Redis-go/`](../../Go/Redis-go/) | eviction policies |
-
-### Codebase map (how the code is organized)
-
-| File | Responsibility |
-|------|----------------|
-| `LRU/index.js` | `LRUCache` — `Map` + doubly linked list; `get` / `put`; private move/evict helpers |
-| `Go/LRU-go/` | Same structure with mutex if concurrent |
-
-**Read order:** `get` / `put` → `moveToFront` → `evictTail` when over capacity.
-
----
-
 ## Step 1 — Clarify
 
 ### Questions (ask 6–8)
@@ -94,3 +74,25 @@ LRUCache {
 - TTL on node + lazy expiry on get
 - `Cache` interface → memory LRU / Redis adapter
 - Full client: [cache-client](../cache-client/README.md)
+
+
+---
+
+## Code in this repo
+
+| Language | Path | Notes |
+|----------|------|--------|
+| **JavaScript** | [`JavaScript/LRU/`](../../JavaScript/LRU/) | map + doubly linked list |
+| **Go** | [`Go/LRU-go/`](../../Go/LRU-go/) | |
+| Broader client | [cache-client](../cache-client/README.md) | TTL, GetOrLoad, stampede |
+| Redis-style TTL | [`JavaScript/Redis/`](../../JavaScript/Redis/) · [`Go/Redis-go/`](../../Go/Redis-go/) | eviction policies |
+
+## Codebase map (how the code is organized)
+
+| File | Responsibility |
+|------|----------------|
+| `LRU/index.js` | `LRUCache` — `Map` + doubly linked list; `get` / `put`; private move/evict helpers |
+| `Go/LRU-go/` | Same structure with mutex if concurrent |
+
+**Read order:** `get` / `put` → `moveToFront` → `evictTail` when over capacity.
+
