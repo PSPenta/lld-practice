@@ -2,6 +2,9 @@
 
 > **Timed steps:** [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ✅
 
+**Round opening (say aloud):**
+> "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
+
 ## Code in this repo
 
 | Language | Path | Notes |
@@ -11,6 +14,21 @@
 | Teaching v1 | [`JavaScript/Ratelimiter/`](../../JavaScript/Ratelimiter/) | standalone algorithms, no Strategy |
 
 Distributed variant → [distributed-rate-limiter](../distributed-rate-limiter/README.md)
+
+### Codebase map (how the code is organized)
+
+| File | Responsibility |
+|------|----------------|
+| `RateLimiterStrategy.js` / `strategy.go` | Abstract/interface — `isAllowed(key)` |
+| `RateLimiter.js` | Context: holds a strategy, delegates `allow` |
+| `TokenBucket.js` | Tokens refill over time; burst-friendly |
+| `FixedWindowCounter.js` | Count in current window |
+| `SlidingWindowLog.js` | Store request timestamps |
+| `SlidingWindowCounter.js` | Weighted previous + current window |
+| `LeakyBucket.js` | Steady outflow / queue drain |
+| `index.js` / `main.go` | Wire a strategy and demo `allow` |
+
+**Read order:** `RateLimiter` → `RateLimiterStrategy` → one algorithm (e.g. `TokenBucket`).
 
 ---
 

@@ -3,11 +3,8 @@
 > **Timed steps:** [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ❌  
 > Common Razorpay-style machine coding prompt: boards, lists, cards, drag between columns.
 
-## Code in this repo
-
-No dedicated implementation yet. Compare patterns with [task-queue](../task-queue/README.md) (FIFO only) after your design.
-
----
+**Round opening (say aloud):**
+> "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
 
 ## Step 1 — Clarify
 
@@ -18,6 +15,8 @@ No dedicated implementation yet. Compare patterns with [task-queue](../task-queu
 4. Card fields beyond title (description, assignee, due date)?
 5. Archive vs delete?
 6. Concurrent edits on same board?
+7. Default lists on board create?
+8. Soft delete / undo move?
 
 ### v1 expectations (state aloud)
 | | |
@@ -31,8 +30,6 @@ No dedicated implementation yet. Compare patterns with [task-queue](../task-queu
 ### Confirm understanding
 > "Users create a board with columns like To Do / In Progress / Done; cards move between columns."
 
----
-
 ## Step 2 — Entities & classes
 
 ```text
@@ -43,24 +40,26 @@ Card { id, listId, title, position, assigneeId? }
 
 BoardRepository, ListRepository, CardRepository
 BoardService
-  - createBoard, addList, addCard, moveCard(cardId, toListId, position?)
+  - createBoard, addList, addCard
+  - moveCard(cardId, toListId, position?)
 ```
 
 **Patterns:** **Repository** · application **service** for use-cases · ordered collections (position index)
 
----
-
 ## Step 3 — Flows
 
-**Create board:** validate user → persist board → optionally seed default lists  
+**Happy path — create board**
+1. Validate user → persist board  
+2. Optionally seed default lists (To Do / Doing / Done)  
 
-**Add card:** verify list exists → assign `position = max+1` in that list  
+**Happy path — add / move card**
+1. Add card: verify list exists → `position = max+1` in that list  
+2. Move card: load card → remove from source (recompact positions) → insert at target position → persist atomically  
+3. Permission check: only board members may mutate  
 
-**Move card:** load card → remove from source list (recompact positions) → insert at target list position → persist atomically  
-
-**Permission check:** only board members may mutate
-
----
+**Edge cases**
+1. Move to list on another board → reject  
+2. Concurrent moves → lock board/card; conflict on stale position
 
 ## Step 4 — APIs
 
@@ -68,23 +67,21 @@ BoardService
 POST   /boards                    { title }
 POST   /boards/{id}/lists         { title }
 POST   /lists/{id}/cards          { title }
-PATCH  /cards/{id}/move             { toListId, position }
+PATCH  /cards/{id}/move           { toListId, position }
 GET    /boards/{id}               → board + lists + cards
 ```
 
----
-
 ## Step 5 — Deepen
 
-- **Concurrency:** lock board or card row on move; reject stale `position` with conflict error
-- **Idempotency:** duplicate move with same target is no-op
-- **Validation:** card cannot belong to two lists; list must belong to same board as card
-
----
+- **Concurrency:** lock board or card row on move; reject stale `position` with conflict error  
+- **Idempotency:** duplicate move with same target is no-op  
+- **Validation:** card cannot belong to two lists; list must belong to same board as card  
+- Positions: integer recompact vs fractional indices — state trade-off  
+- AuthZ on every mutating API
 
 ## Step 6 — Evolve
 
-- Drag reorder within list → `reorderCard(cardId, newPosition)` with gapless or fractional positions
-- Activity log / audit trail
-- Role-based permissions (viewer read-only)
-- WebSocket fan-out for live board updates → [pub-sub](../pub-sub/README.md)
+- Drag reorder within list → `reorderCard(cardId, newPosition)`  
+- Activity log / audit trail; role-based permissions (viewer read-only)  
+- WebSocket fan-out for live board updates → [pub-sub](../pub-sub/README.md)  
+- Compare FIFO-only [task-queue](../task-queue/README.md) after your design

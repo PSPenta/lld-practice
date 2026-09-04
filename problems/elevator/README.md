@@ -1,7 +1,9 @@
 # Elevator — LLD walkthrough
 
-> **Round pattern:** [Discussion 60 min · Machine coding 90–120 min](../../docs/method/README.md#4-how-a-typical-lld-round-runs) · [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · [Method §5](../../README.md#5-the-standard-approach-memorize-this)  
-> **Solved in repo:** ❌
+> **Timed steps:** [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ❌
+
+**Round opening (say aloud):**
+> "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
 
 ## Step 1 — Clarify
 
@@ -11,6 +13,9 @@
 3. Morning rush priority?
 4. Weight capacity?
 5. Maintenance mode?
+6. Internal cabin buttons vs external hall buttons?
+7. Door obstruction / reopen?
+8. Single controller or distributed per car?
 
 ### v1 expectations (state aloud)
 | | |
@@ -24,35 +29,61 @@
 ### Confirm understanding
 > "Users press hall buttons; controller assigns an elevator and moves it to serve requests."
 
----
-
 ## Step 2 — Entities & classes
 
-`ElevatorController`, `Elevator` (IDLE/MOVING/DOORS_OPEN), `Request`, `SchedulerStrategy` (FCFS/SCAN)
+```text
+Elevator {
+  id, currentFloor, direction: UP|DOWN|IDLE
+  state: IDLE | MOVING | DOORS_OPEN
+  pendingStops: set/queue of floors
+  - step() / openDoors() / closeDoors()
+}
 
----
+Request { floor, direction?, elevatorId? }  // hall vs cabin
+
+SchedulerStrategy (interface)
+  - assign(request, elevators[]) → elevatorId
+  FCFSScheduler | SCANScheduler
+
+ElevatorController
+  - requestHall(floor, direction)
+  - requestCabin(elevatorId, floor)
+  - tick()   // advance simulation / hardware loop
+```
+
+**Patterns:** Strategy (scheduler) · State machine per car · Controller orchestrates
 
 ## Step 3 — Flows
 
-Request arrives → controller assigns elevator → move → open doors → complete request
+**Happy path**
+1. Hall request arrives → controller asks SchedulerStrategy for a car  
+2. Car adds floor to pending stops  
+3. On tick: move toward next stop → open doors → complete request → close  
+4. If more stops in same direction, continue (SCAN)  
 
----
+**Edge cases**
+1. All cars busy / maintenance → queue request; don’t drop silently  
+2. Door obstruction → reopen; opposite-direction starvation mitigated by SCAN
 
 ## Step 4 — APIs
 
-`RequestFloor(elevatorId, floor, direction)`, `GetStatus()`
+```text
+RequestHall(floor, direction)
+RequestCabin(elevatorId, floor)
+GetStatus() → []{ id, floor, state, direction }
+Tick()                    // or event-driven MoveComplete
+```
 
----
+## Step 5 — Deepen
 
-## Step 5 — Deepen (concurrency, failure, idempotency)
-
-Thread-safe request queues; don't starve opposite direction (SCAN helps)
-
----
+- Thread-safe request queues; single writer for car state or lock per elevator  
+- Don’t starve opposite direction — SCAN / LOOK scheduling helps  
+- Idempotent duplicate hall presses (same floor+direction already pending)  
+- Fail-safe: on controller crash, cars stop or go to nearest floor (policy)  
+- Capacity / weight: reject new cabin entry when over limit
 
 ## Step 6 — Evolve
 
-Swap scheduler Strategy; weight capacity; express elevator
-
----
-
+- Swap scheduler Strategy without rewriting cars (**OCP**)  
+- Weight capacity, express elevator, destination dispatch  
+- Related: [traffic-signal](../traffic-signal/README.md) (timed state machines)

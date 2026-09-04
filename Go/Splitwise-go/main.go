@@ -3,38 +3,54 @@ package main
 import "fmt"
 
 func main() {
-	user1 := NewUser("XfH4I@example.com")
-	user2 := NewUser("4fNl4@example.com")
-	user3 := NewUser("7Eo5o@example.com")
+	service := NewSplitwiseService()
 
-	balanceSheet := NewBalanceSheet()
+	user1, _ := service.AddUser("John Doe", "john.doe@example.com")
+	if _, err := service.AddUser("John Doe", "john.doe@example.com"); err != nil {
+		fmt.Println("Error adding user:", err)
+	}
+	user2, _ := service.AddUser("Jane Doe", "jane.doe@example.com")
+	user3, _ := service.AddUser("Jim Doe", "jim.doe@example.com")
 
-	split1, _ := NewSplit(user1.Email, 0, 0)
-	split2, _ := NewSplit(user2.Email, 0, 0)
-	split3, _ := NewSplit(user3.Email, 0, 0)
-	expense, _ := CreateExpense("Equal", user1.Email, 300, []Split{*split1, *split2, *split3})
-	expense.Validate()
-	expense.Apply(balanceSheet)
-	fmt.Println(balanceSheet.GetBalances())
+	_, _ = service.AddExpense(AddExpenseInput{
+		Type:   "Equal",
+		PaidBy: user1.ID,
+		Amount: 300,
+		Splits: []*Split{
+			NewEqualSplit(user1.ID),
+			NewEqualSplit(user2.ID),
+			NewEqualSplit(user3.ID),
+		},
+	})
+	fmt.Println(service.GetPairwiseBalances())
 
-	split4, _ := NewSplit(user1.Email, 0, 10)
-	split5, _ := NewSplit(user2.Email, 0, 20)
-	split6, _ := NewSplit(user3.Email, 0, 70)
-	expense2, _ := CreateExpense("Percentage", user2.Email, 150, []Split{*split4, *split5, *split6})
-	expense2.Validate()
-	expense2.Apply(balanceSheet)
-	fmt.Println(balanceSheet.GetBalances())
+	_, _ = service.AddExpense(AddExpenseInput{
+		Type:   "percentage",
+		PaidBy: user2.ID,
+		Amount: 150.50,
+		Splits: []*Split{
+			mustPct(user1.ID, 10),
+			mustPct(user2.ID, 20),
+			mustPct(user3.ID, 70),
+		},
+	})
+	fmt.Println(service.GetPairwiseBalances())
 
-	split7, _ := NewSplit(user1.Email, 225, 0)
-	split8, _ := NewSplit(user2.Email, 390, 0)
-	split9, _ := NewSplit(user3.Email, 680, 0)
-	expense3, _ := CreateExpense("Exact", user3.Email, 1295, []Split{*split7, *split8, *split9})
-	expense3.Validate()
-	expense3.Apply(balanceSheet)
-	fmt.Println(balanceSheet.GetBalances())
+	_ = service.SettleUp(user2.ID, user1.ID, nil)
+	fmt.Println(service.GetPairwiseBalances())
 
-	fmt.Println(expense)
-	fmt.Println(expense2)
-	fmt.Println(expense3)
-	fmt.Println(balanceSheet.GetBalances())
+	_ = service.SettleUp(user3.ID, user2.ID, nil)
+	fmt.Println(service.GetPairwiseBalances())
+
+	partial := 99.0
+	_ = service.SettleUp(user3.ID, user1.ID, &partial)
+	fmt.Println(service.GetPairwiseBalances())
+}
+
+func mustPct(userID, pct int) *Split {
+	s, err := NewPercentageSplit(userID, pct)
+	if err != nil {
+		panic(err)
+	}
+	return s
 }

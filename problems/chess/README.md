@@ -1,7 +1,9 @@
 # Chess / board game — LLD walkthrough
 
-> **Round pattern:** [Discussion 60 min · Machine coding 90–120 min](../../docs/method/README.md#4-how-a-typical-lld-round-runs) · [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · [Method §5](../../README.md#5-the-standard-approach-memorize-this)  
-> **Solved in repo:** ❌
+> **Timed steps:** [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ❌
+
+**Round opening (say aloud):**
+> "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
 
 ## Step 1 — Clarify
 
@@ -11,6 +13,9 @@
 3. Move validation only?
 4. Undo?
 5. AI opponent?
+6. Castling / en passant / promotion in v1?
+7. Clocks / timed games?
+8. Persist game for resume?
 
 ### v1 expectations (state aloud)
 | | |
@@ -24,35 +29,68 @@
 ### Confirm understanding
 > "Players alternate legal moves until win/draw condition."
 
----
-
 ## Step 2 — Entities & classes
 
-`Board`, `Piece` hierarchy, `Move`, `Game`, `MoveValidator`
+```text
+Color: WHITE | BLACK
+Square { file, rank }  // or 0..63
 
----
+Piece (abstract)
+  King | Queen | Rook | Bishop | Knight | Pawn
+  - color, possibleMoves(board, from) → []Square
+
+Board {
+  grid[8][8] Piece?
+  - get / set / clone
+}
+
+Move { from, to, promoPiece? }
+MoveValidator
+  - isLegal(board, move, side)  // includes check filter
+
+Game {
+  board, turn, status: ONGOING|CHECKMATE|STALEMATE|DRAW
+  history []Move
+  - makeMove(from, to) error
+  - getStatus() / undo()?
+}
+```
+
+**Patterns:** Piece hierarchy (polymorphism) · Command for undo · Strategy later for AI
 
 ## Step 3 — Flows
 
-Start → loop turns → generate legal moves → apply move → check/checkmate
+**Happy path**
+1. Start game → initial board setup; turn = WHITE  
+2. Player proposes move → generate pseudo-legal moves for piece  
+3. Filter moves that leave own king in check  
+4. Apply move (captures, special rules) → switch turn  
+5. If opponent has no legal moves → checkmate or stalemate  
 
----
+**Edge cases**
+1. Illegal move / wrong turn → reject, board unchanged  
+2. Undo → pop history and restore prior board snapshot
 
 ## Step 4 — APIs
 
-`Game.makeMove(from, to)`, `Game.getStatus()`
+```text
+Game.New() → *Game
+Game.MakeMove(from, to, promo?) error
+Game.GetStatus() → status, turn
+Game.LegalMoves(from?) → []Move
+Game.Undo() error                 // optional
+```
 
----
+## Step 5 — Deepen
 
-## Step 5 — Deepen (concurrency, failure, idempotency)
-
-Immutable board or copy-on-write for undo
-
----
+- Immutable board or copy-on-write snapshots for undo / search  
+- Legal-move generation must consider pins, checks, castling rights  
+- Single-threaded v1; online multiplayer later needs turn auth  
+- Validate promotion piece type; reject moves into check  
+- Draw rules (threefold, fifty-move) as evolve if time permits
 
 ## Step 6 — Evolve
 
-Strategy for AI; command pattern for undo stack
-
----
-
+- Strategy for AI evaluation; Command pattern undo stack  
+- Networked play + clocks  
+- Related breadth: [lld-gaps](../../docs/lld-gaps/README.md) chess notes if present

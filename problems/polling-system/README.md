@@ -2,6 +2,9 @@
 
 > **Timed steps:** [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ✅
 
+**Round opening (say aloud):**
+> "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
+
 ## Code in this repo
 
 | Language | Path | Notes |
@@ -9,6 +12,18 @@
 | **JavaScript** | [`JavaScript/PollingSystem2/`](../../JavaScript/PollingSystem2/) | `PollingService/` + `models/` + `repositories/` |
 | **Go** | [`Go/PollingSystem2-go/`](../../Go/PollingSystem2-go/) | |
 | Refactor drill | [`JavaScript/PollingSystem/`](../../JavaScript/PollingSystem/) | v1 — spot SRP gaps |
+
+### Codebase map (how the code is organized)
+
+| Path | Responsibility |
+|------|----------------|
+| `PollingService/models/` | Thin `User`, `Poll`, `Vote` entities |
+| `PollingService/repositories/` | In-memory `User` / `Poll` / `Vote` stores |
+| `PollingService/index.js` | Use-cases: create poll, vote, close, results + auth rules |
+| `PollingSystem2/index.js` | Demo wiring |
+| `PollingSystem/` (v1) | Teaching anti-example — compare layering |
+
+**Read order:** `PollingService` methods → repositories → models.
 
 ---
 

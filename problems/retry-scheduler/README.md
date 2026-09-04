@@ -1,7 +1,9 @@
 # Retry scheduler — LLD walkthrough
 
-> **Round pattern:** [Discussion 60 min · Machine coding 90–120 min](../../docs/method/README.md#4-how-a-typical-lld-round-runs) · [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · [Method §5](../../README.md#5-the-standard-approach-memorize-this)  
-> **Solved in repo:** ❌
+> **Timed steps:** [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ❌
+
+**Round opening (say aloud):**
+> "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
 
 ## Step 1 — Clarify
 
@@ -11,6 +13,9 @@
 3. Dead letter after N?
 4. Persist scheduled tasks?
 5. Clock skew?
+6. Cancel pending retries?
+7. Which errors are retryable vs permanent?
+8. Single worker or pool?
 
 ### v1 expectations (state aloud)
 | | |
@@ -24,35 +29,59 @@
 ### Confirm understanding
 > "Failed work is re-queued with increasing delay until success or DLQ."
 
----
-
 ## Step 2 — Entities & classes
 
-`RetryPolicy`, `ScheduledTask`, `RetryQueue`, `BackoffCalculator`
+```text
+RetryPolicy {
+  maxAttempts, baseDelay, maxDelay, jitter
+  - nextDelay(attempt) → duration
+}
 
----
+ScheduledTask {
+  id, payload, attempt, runAt, status
+}
+
+BackoffCalculator   // exp backoff + full/equal jitter
+RetryQueue          // min-heap by runAt
+Worker
+  - pollDue(now) → tasks; execute; on fail reschedule
+
+RetryScheduler
+  - Schedule(task, policy)
+  - Cancel(taskId)
+```
+
+**Patterns:** Strategy (backoff) · Delay queue · DLQ for exhausted attempts
 
 ## Step 3 — Flows
 
-Fail → schedule retry at now+backoff → worker picks due tasks → execute
+**Happy path**
+1. Work fails (retryable) → Schedule with attempt=1, runAt=now+backoff  
+2. Worker picks due tasks → execute  
+3. Success → done; fail → attempt++ → reschedule or DLQ if max  
 
----
+**Edge cases**
+1. Cancel before run → remove from queue; ignore late execution if cancelled  
+2. Clock skew / delayed worker → still safe if task idempotent
 
 ## Step 4 — APIs
 
-`Schedule(task, policy)`, `Cancel(taskId)`
+```text
+Schedule(task, policy) → taskId
+Cancel(taskId) error
+GetStatus(taskId)
+```
 
----
+## Step 5 — Deepen
 
-## Step 5 — Deepen (concurrency, failure, idempotency)
-
-Idempotent task execution; clock skew tolerance
-
----
+- Idempotent task execution required (at-least-once wakeups)  
+- Jitter avoids thundering herd; cap maxDelay  
+- Thread-safe heap; only one worker claims a due task  
+- Distinguish retryable vs permanent errors  
+- Persist queue if process restart must not lose retries
 
 ## Step 6 — Evolve
 
-Integrate with message queue DLQ pattern
-
----
-
+- Integrate with [message-queue](../message-queue/README.md) DLQ pattern  
+- Shared design with [job-scheduler](../job-scheduler/README.md) and [webhook-delivery](../webhook-delivery/README.md) backoff  
+- Distributed delay via Redis ZSET / SQS delay

@@ -9,14 +9,17 @@
  * @see ExactExpense, EqualExpense, PercentageExpense
  */
 class Expense {
-  constructor(paidBy, amount, splits) {
+  constructor(id, paidBy, amount, splits) {
     if (!splits || !splits.length) {
       throw new Error('Expense must have at least one split');
     }
 
+    this.id = id;
     this.paidBy = paidBy;
     this.amount = amount;
     this.splits = splits;
+
+    return this;
   }
 
   validate() {
@@ -24,12 +27,8 @@ class Expense {
   }
 
   apply(BalanceSheet) {
-    this.splits.forEach((split) => {
-      if (split.user !== this.paidBy) {
-        BalanceSheet.addBalance(split.user, split.amount);
-      } else {
-        BalanceSheet.addBalance(split.user, -split.amount);
-      }
+    this.splits.forEach(split => {
+      BalanceSheet.addDebt(split.user, this.paidBy, split.amount);
     });
   }
 }
@@ -43,20 +42,22 @@ class ExactExpense extends Expense {
       throw new Error('Total expense does not match amount');
     }
 
-    return true;
+    return this;
   }
 }
 
 /** @implements {Expense} */
 class EqualExpense extends Expense {
   validate() {
-    const amount = Number((this.amount / this.splits.length).toFixed(2));
-
+    // amount is integer paise — floor + remainder on last (sum === total)
+    const n = this.splits.length;
+    const base = Math.floor(this.amount / n);
     this.splits.forEach((split) => {
-      split.amount = amount;
+      split.amount = base;
     });
+    this.splits[n - 1].amount += this.amount - base * n;
 
-    return true;
+    return this;
   }
 }
 
@@ -72,25 +73,36 @@ class PercentageExpense extends Expense {
       throw new Error('Total percentage must be 100');
     }
 
-    this.splits.forEach((split) => {
-      split.amount = Number(
-        ((this.amount * split.percentage) / 100).toFixed(2),
-      );
+    // integer paise: floor each share, last gets remainder so sum === total
+    let allocated = 0;
+    const last = this.splits.length - 1;
+    this.splits.forEach((split, i) => {
+      if (i === last) {
+        split.amount = this.amount - allocated;
+      } else {
+        split.amount = Math.floor((this.amount * split.percentage) / 100);
+        allocated += split.amount;
+      }
     });
 
-    return true;
+    return this;
   }
 }
 
 class ExpenseFactory {
-  static createExpense(type, paidBy, amount, splits) {
+  static createExpense(expense) {
+    const { id, type, paidBy, amount, splits } = expense;
+    if (!type || !paidBy || !amount || !splits) {
+      throw new Error('Invalid expense');
+    }
+
     switch (type.toLowerCase()) {
       case 'exact':
-        return new ExactExpense(paidBy, amount, splits);
+        return new ExactExpense(id, paidBy, amount, splits);
       case 'equal':
-        return new EqualExpense(paidBy, amount, splits);
+        return new EqualExpense(id, paidBy, amount, splits);
       case 'percentage':
-        return new PercentageExpense(paidBy, amount, splits);
+        return new PercentageExpense(id, paidBy, amount, splits);
       default:
         throw new Error('Invalid expense type');
     }

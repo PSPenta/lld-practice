@@ -1,7 +1,9 @@
 # Cab booking / Ride sharing — LLD walkthrough
 
-> **Round pattern:** [Discussion 60 min · Machine coding 90–120 min](../../docs/method/README.md#4-how-a-typical-lld-round-runs) · [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · [Method §5](../../README.md#5-the-standard-approach-memorize-this)  
-> **Solved in repo:** ❌
+> **Timed steps:** [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ❌
+
+**Round opening (say aloud):**
+> "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
 
 ## Step 1 — Clarify
 
@@ -12,6 +14,8 @@
 4. Live GPS in v1?
 5. Payment in scope?
 6. One active trip per rider?
+7. Driver reject / re-match?
+8. Geo radius and max wait for matching?
 
 ### v1 expectations (state aloud)
 | | |
@@ -25,35 +29,59 @@
 ### Confirm understanding
 > "Rider requests ride; system assigns a nearby driver; driver accepts and trip completes."
 
----
-
 ## Step 2 — Entities & classes
 
-`Rider`, `Driver`, `Trip`, `Location`, `PricingStrategy`, `MatchingService`, `TripRepository`
+```text
+Rider { id, name, location? }
+Driver { id, location, status: AVAILABLE | BUSY | OFFLINE }
+Location { lat, lng }
+Trip {
+  id, riderId, driverId?, pickup, dropoff
+  status: REQUESTED | ASSIGNED | IN_PROGRESS | COMPLETED | CANCELLED
+  fare?
+}
 
----
+MatchingService
+  - findNearbyDrivers(pickup, radius) → []Driver
+  - assign(tripId, driverId)
+PricingStrategy (interface) → FlatPricing | DistancePricing
+TripRepository, TripService
+```
+
+**Patterns:** Strategy (pricing) · State machine on `Trip` · Repository
 
 ## Step 3 — Flows
 
-Request ride → find nearby drivers → assign → driver accepts → trip in progress → complete → payment
+**Happy path**
+1. Rider `POST /trips` with pickup/dropoff → status REQUESTED  
+2. MatchingService finds nearby AVAILABLE drivers → offer/assign  
+3. Driver accepts → ASSIGNED → starts trip → IN_PROGRESS  
+4. Complete → COMPLETED → compute fare → (payment if in scope)  
 
----
+**Edge cases**
+1. No drivers in radius → reject or queue; driver declines → re-match  
+2. Rider cancels before pickup → free driver; ignore late complete
 
 ## Step 4 — APIs
 
-`POST /trips`, `PATCH /trips/{id}/status`, `GET /trips/{id}`
+```http
+POST   /trips                 { pickup, dropoff }
+PATCH  /trips/{id}/status     { status }   # accept | start | complete | cancel
+GET    /trips/{id}
+POST   /drivers/{id}/location { lat, lng }
+```
 
----
+## Step 5 — Deepen
 
-## Step 5 — Deepen (concurrency, failure, idempotency)
-
-Double-book driver → lock driver row; cancel idempotency; driver location eventual consistency
-
----
+- Double-book driver → lock driver row / CAS on `status=AVAILABLE`  
+- Cancel must be idempotent (repeat cancel = same terminal state)  
+- Driver location is eventually consistent — matching uses last-known geo  
+- One active trip per rider/driver enforced in service layer  
+- Payment failure after COMPLETED → separate payment retry, don’t rewind trip state blindly
 
 ## Step 6 — Evolve
 
-Surge as Strategy; queue for matching at peak; split payment service
-
----
-
+- Surge as `PricingStrategy` (**OCP**)  
+- Async matching queue at peak; ETA / live GPS stream  
+- Split payment into its own service  
+- Related: [hotel-booking](../hotel-booking/README.md) (hold/confirm), [order-management](../order-management/README.md) (state machine)

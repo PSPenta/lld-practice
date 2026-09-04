@@ -1,7 +1,9 @@
 # Circuit breaker — LLD walkthrough
 
-> **Round pattern:** [Discussion 60 min · Machine coding 90–120 min](../../docs/method/README.md#4-how-a-typical-lld-round-runs) · [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · [Method §5](../../README.md#5-the-standard-approach-memorize-this)  
-> **Solved in repo:** ❌
+> **Timed steps:** [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ❌
+
+**Round opening (say aloud):**
+> "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
 
 ## Step 1 — Clarify
 
@@ -11,6 +13,9 @@
 3. Half-open probe count?
 4. Library wrapper or sidecar?
 5. Which failures count (timeout, 5xx)?
+6. Sliding window vs consecutive failures?
+7. Fallback when open (cached value / default / error)?
+8. Metrics / events on state change?
 
 ### v1 expectations (state aloud)
 | | |
@@ -24,35 +29,57 @@
 ### Confirm understanding
 > "Callers wrap downstream calls; after N failures we fail fast until a cooldown probe succeeds."
 
----
-
 ## Step 2 — Entities & classes
 
-`CircuitBreaker` states CLOSED/OPEN/HALF_OPEN, `CallExecutor`, `FailureCounter`, `Clock`
+```text
+State: CLOSED | OPEN | HALF_OPEN
 
----
+CircuitBreaker
+  - failureThreshold, openTimeout, halfOpenMaxProbes
+  - failureCount, lastFailureAt, state
+  - Execute(fn) (result, error)
+  - onSuccess() / onFailure()
+
+CallExecutor   // runs fn with timeout
+FailureCounter // consecutive or windowed
+Clock          // injectable for tests
+```
+
+**Patterns:** State machine · Decorator / wrapper around outbound calls
 
 ## Step 3 — Flows
 
-Call → if OPEN fail fast → if CLOSED run → on failures exceed threshold → OPEN → after timeout HALF_OPEN → probe
+**Happy path**
+1. `Execute(fn)` while CLOSED → run call  
+2. Success → reset failure count; stay CLOSED  
+3. Failures exceed threshold → transition OPEN; start cooldown timer  
+4. After timeout → HALF_OPEN; allow limited probes  
+5. Probe success → CLOSED; probe failure → OPEN again  
 
----
+**Edge cases**
+1. Call while OPEN before cooldown → immediate error (fail fast)  
+2. Concurrent probes in HALF_OPEN → limit to N in-flight probes
 
 ## Step 4 — APIs
 
-`Execute(fn) (result, error)` wraps any downstream call
+```text
+NewCircuitBreaker(config) → *CircuitBreaker
+Execute(fn) (result, error)   // wraps any downstream call
+State() → CLOSED|OPEN|HALF_OPEN
+Reset()                       // admin / tests
+```
 
----
+## Step 5 — Deepen
 
-## Step 5 — Deepen (concurrency, failure, idempotency)
-
-Thread-safe counters; don't count timeouts as success; half-open allows limited traffic
-
----
+- Thread-safe counters and state transitions (mutex or atomics)  
+- Don’t count timeouts as success; decide whether 4xx counts as failure  
+- HALF_OPEN allows limited traffic so recovery doesn’t stampede the dependency  
+- Fallback hook when open (optional) vs hard error  
+- Emit metrics on open/close for ops
 
 ## Step 6 — Evolve
 
-Per-tenant breakers; metrics export; bulkhead separate thread pools
-
----
-
+- Per-tenant / per-endpoint breakers  
+- Sliding-window failure rate instead of consecutive count  
+- Bulkhead: separate thread pools / semaphores per dependency  
+- Related: [retry-scheduler](../retry-scheduler/README.md), [api-gateway](../api-gateway/README.md)

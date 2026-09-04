@@ -3,14 +3,26 @@ package main
 import "fmt"
 
 type Split struct {
-	User       string
-	Amount     float64
-	Percentage float64
+	UserID     int
+	Amount     int64 // paise (filled by Equal/Percentage validate, or Exact input)
+	Percentage int
 }
 
-func NewSplit(user string, amount, percentage float64) (*Split, error) {
-	if amount > 0 && percentage > 0 {
-		return nil, fmt.Errorf("split cannot have both amount and percentage")
+func NewExactSplit(userID int, amountRupees float64) (*Split, error) {
+	paise, err := ToAmount(amountRupees)
+	if err != nil {
+		return nil, err
 	}
-	return &Split{User: user, Amount: amount, Percentage: percentage}, nil
+	return &Split{UserID: userID, Amount: paise}, nil
+}
+
+func NewPercentageSplit(userID int, percentage int) (*Split, error) {
+	if percentage < 0 || percentage > 100 {
+		return nil, fmt.Errorf("percentage must be 0–100")
+	}
+	return &Split{UserID: userID, Percentage: percentage}, nil
+}
+
+func NewEqualSplit(userID int) *Split {
+	return &Split{UserID: userID}
 }

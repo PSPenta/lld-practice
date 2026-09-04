@@ -2,6 +2,9 @@
 
 > **Timed steps:** [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ✅
 
+**Round opening (say aloud):**
+> "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
+
 ## Code in this repo
 
 | Language | Path | Notes |
@@ -9,6 +12,19 @@
 | **JavaScript** | [`JavaScript/ParkingLot2/`](../../JavaScript/ParkingLot2/) | composition chain — **preferred** |
 | **Go** | [`Go/ParkingLot2-go/`](../../Go/ParkingLot2-go/) | |
 | Teaching v1 | [`JavaScript/Parkinglot/`](../../JavaScript/Parkinglot/) | inheritance-heavy vehicles |
+
+### Codebase map (how the code is organized)
+
+| File | Responsibility |
+|------|----------------|
+| `ParkingLot.js` | Orchestrator — `park` / `unpark` across floors |
+| `Floor.js` | Owns slots; `findAvailableSlot(vehicleType)` |
+| `Slot.js` | Free/occupied + vehicle type fit |
+| `Vehicle.js` | Car/Bike/Truck + `VehicleFactory` |
+| `Ticket.js` | Entry time + slot id for fee calc |
+| `index.js` | Demo park/unpark |
+
+**Read order:** `ParkingLot.park` → `Floor.findAvailableSlot` → `Slot` / `Ticket`.
 
 ---
 

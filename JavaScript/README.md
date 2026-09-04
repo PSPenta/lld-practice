@@ -82,7 +82,7 @@ JavaScript **machine-coding / LLD** solutions — **design on paper first** via 
 | `Ratelimiter/` | Rate algorithms v1 — teaching | [problems/rate-limiter](../problems/rate-limiter/README.md) |
 | `ParkingLot2/` | Multi-floor parking | [problems/parking-lot](../problems/parking-lot/README.md) |
 | `Parkinglot/` | Parking v1 — inheritance-heavy | [problems/parking-lot](../problems/parking-lot/README.md) |
-| `Splitwise/` | Expense split | [problems/splitwise](../problems/splitwise/README.md) |
+| `Splitwise/` | Expense split — service + pairwise ledger + paise | [problems/splitwise](../problems/splitwise/README.md) |
 | `SearchEngine/` | Index, rank, trie | [problems/search-engine](../problems/search-engine/README.md) |
 | `Pub-Sub/` | Observer / event bus | [problems/pub-sub](../problems/pub-sub/README.md) |
 | `Database/` | In-memory DB | [problems/in-memory-database](../problems/in-memory-database/README.md) |

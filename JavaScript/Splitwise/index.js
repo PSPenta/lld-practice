@@ -1,51 +1,47 @@
-const { User } = require('./User');
-const { Split } = require('./Split');
-const { ExpenseFactory } = require('./Expense');
-const { BalanceSheet } = require('./BalanceSheet');
+const { SplitwiseService } = require('./SplitwiseService');
+const { EqualSplit, PercentageSplit, ExactSplit } = require('./Split');
 
-const user1 = new User('XfH4I@example.com');
-const user2 = new User('4fNl4@example.com');
-const user3 = new User('7Eo5o@example.com');
+const service = new SplitwiseService();
 
-const balanceSheet = new BalanceSheet();
+const user1 = service.addUser('John Doe', 'john.doe@example.com');
+try {
+  const user2 = service.addUser('John Doe', 'john.doe@example.com');
+} catch (error) {
+  console.log('Error adding user: ', error.message);
+}
 
-const split1 = new Split(user1.email);
-const split2 = new Split(user2.email);
-const split3 = new Split(user3.email);
-const expense = ExpenseFactory.createExpense('Equal', user1.email, 300, [
-  split1,
-  split2,
-  split3,
-]);
-expense.validate();
-expense.apply(balanceSheet);
-console.log(balanceSheet.getBalances());
+const user2 = service.addUser('Jane Doe', 'jane.doe@example.com');
+const user3 = service.addUser('Jim Doe', 'jim.doe@example.com');
 
-const split4 = new Split(user1.email, null, 10);
-const split5 = new Split(user2.email, null, 20);
-const split6 = new Split(user3.email, null, 70);
-const expense2 = ExpenseFactory.createExpense('Percentage', user2.email, 150, [
-  split4,
-  split5,
-  split6,
-]);
-expense2.validate();
-expense2.apply(balanceSheet);
-console.log(balanceSheet.getBalances());
+const expense = service.addExpense({
+  type: 'Equal',
+  paidBy: user1.id,
+  amount: 300,
+  splits: [
+    new EqualSplit(user1.id),
+    new EqualSplit(user2.id),
+    new EqualSplit(user3.id),
+  ],
+});
+console.log(service.getPairwiseBalances());
 
-const split7 = new Split(user1.email, 225);
-const split8 = new Split(user2.email, 390);
-const split9 = new Split(user3.email, 680);
-const expense3 = ExpenseFactory.createExpense('Exact', user3.email, 1295, [
-  split7,
-  split8,
-  split9,
-]);
-expense3.validate();
-expense3.apply(balanceSheet);
-console.log(balanceSheet.getBalances());
+const expense2 = service.addExpense({
+  type: 'Percentage',
+  paidBy: user2.id,
+  amount: 150.50,
+  splits: [
+    new PercentageSplit(user1.id, 10),
+    new PercentageSplit(user2.id, 20),
+    new PercentageSplit(user3.id, 70),
+  ],
+});
+console.log(service.getPairwiseBalances());
 
-console.log(expense);
-console.log(expense2);
-console.log(expense3);
-console.log(balanceSheet.getBalances());
+service.settleUp(user2.id, user1.id);
+console.log(service.getPairwiseBalances());
+
+service.settleUp(user3.id, user2.id);
+console.log(service.getPairwiseBalances());
+
+service.settleUp(user3.id, user1.id, 99);
+console.log(service.getPairwiseBalances());

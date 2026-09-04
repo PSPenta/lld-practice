@@ -1,7 +1,9 @@
 # API Gateway — LLD walkthrough
 
-> **Round pattern:** [Discussion 60 min · Machine coding 90–120 min](../../docs/method/README.md#4-how-a-typical-lld-round-runs) · [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · [Method §5](../../README.md#5-the-standard-approach-memorize-this)  
-> **Solved in repo:** ❌
+> **Timed steps:** [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ❌
+
+**Round opening (say aloud):**
+> "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
 
 ## Step 1 — Clarify
 
@@ -12,6 +14,8 @@
 4. Routing static config or admin API?
 5. TLS termination here or at load balancer?
 6. Request/response transform or pass-through only?
+7. Circuit breaker / timeout per upstream?
+8. Multi-region or single region for v1?
 
 ### v1 expectations (state aloud)
 | | |
@@ -25,35 +29,59 @@
 ### Confirm understanding
 > "For v1, clients hit the gateway; it matches a route, runs filters, and proxies to one upstream URL."
 
----
-
 ## Step 2 — Entities & classes
 
-`Gateway`, `Route`, `Upstream`, `Filter`/`Middleware` chain, `RateLimiter`, `AuthValidator`
+```text
+Route { id, pathPrefix, methods[], upstreamId, filters[] }
+Upstream { id, baseURL, timeoutMs, health }
 
----
+Filter (interface) → AuthFilter | RateLimitFilter | LoggingFilter
+  - pre(request) → error?
+  - post(response)?
+
+Gateway
+  - matchRoute(request) → Route
+  - handle(request) → response   // run filter chain then proxy
+
+RateLimiter, AuthValidator, AdminConfigStore
+```
+
+**Patterns:** Chain of Responsibility (filters) · Strategy (rate limit) · Reverse proxy facade
 
 ## Step 3 — Flows
 
-Request in → match route → run filter chain (auth → rate limit → log) → proxy to upstream → map response
+**Happy path**
+1. Request arrives → match path/method against route table  
+2. Run filter chain in order (auth → rate limit → log)  
+3. Proxy to upstream with timeout  
+4. Map status/body back to client  
 
----
+**Edge cases**
+1. No route match → 404; auth fail → 401; rate limited → 429  
+2. Upstream timeout / circuit open → 503 (no silent hang)
 
 ## Step 4 — APIs
 
-Admin: `POST /routes` · Data: `ANY /{prefix}/**` proxied · Health: `GET /health`
+```http
+POST /admin/routes          { pathPrefix, methods, upstreamId }
+GET  /admin/routes
+ANY  /{prefix}/**           # proxied after filters
+GET  /health
+```
 
----
+Library-style: `Gateway.Handle(ctx, req) (resp, error)`
 
-## Step 5 — Deepen (concurrency, failure, idempotency)
+## Step 5 — Deepen
 
-Timeout upstream; circuit open → 503; idempotent retries only on safe methods; per-tenant rate limit keys
-
----
+- Timeout every upstream call; never block forever on a hung dependency  
+- Circuit open → fail fast with 503; retry only on safe/idempotent methods  
+- Per-tenant rate-limit keys; concurrent route-table reads vs admin writes need locking or copy-on-write  
+- Idempotent admin upserts by route id  
+- Propagate correlation/request id for observability
 
 ## Step 6 — Evolve
 
-New filter → chain of responsibility; new upstream → register route (OCP); Redis for distributed rate limit
-
----
-
+- New filter → implement `Filter` and insert in chain (**OCP**)  
+- New upstream → register route without touching proxy core  
+- Redis for distributed rate limit; service discovery for dynamic backends  
+- Related: [load-balancer](../load-balancer/README.md), [circuit-breaker](../circuit-breaker/README.md), [distributed-rate-limiter](../distributed-rate-limiter/README.md)

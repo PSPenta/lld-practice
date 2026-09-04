@@ -1,22 +1,48 @@
+const { Balance } = require('./Balance');
+
 class BalanceSheet {
   constructor() {
-    this.balances = new Map();
+    this.balances = [];
   }
 
-  addBalance(user, amount) {
-    if (this.balances.has(user)) {
-      this.balances.set(user, this.balances.get(user) + amount);
-    } else {
-      this.balances.set(user, amount);
+  addDebt(debtorId, creditorId, amount) {
+    if (debtorId === creditorId) return;
+    if (!Number.isInteger(amount) || amount <= 0) {
+      throw new Error('amount must be a positive integer (paise)');
     }
+
+    const existingBalance = this.balances.find(balance => balance.debtorId === debtorId && balance.creditorId === creditorId);
+
+    const opposite = this.balances.find(balance => balance.debtorId === creditorId && balance.creditorId === debtorId);
+    if (opposite && opposite.amount > 0) {
+      if (opposite.amount > amount) {
+        opposite.amount -= amount;
+        return;
+      }
+
+      // Remove the opposite balance as it is fully paid
+      this.balances.splice(this.balances.indexOf(opposite), 1);
+      amount -= opposite.amount;
+    }
+
+    if (existingBalance) {
+      existingBalance.amount += amount;
+      return;
+    }
+
+    if (amount <= 0) {
+      return;
+    }
+
+    this.balances.push(new Balance(debtorId, creditorId, amount));
   }
 
-  getBalance(user) {
-    return this.balances.get(user) || 0;
-  }
-
-  getBalances() {
+  getPairwiseBalances() {
     return this.balances;
+  }
+
+  getBalance(debtorId, creditorId) {
+    return this.balances.find(balance => balance.debtorId === debtorId && balance.creditorId === creditorId);
   }
 }
 

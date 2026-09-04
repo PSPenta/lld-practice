@@ -2,34 +2,39 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"strings"
 )
 
-type Expense struct {
-	PaidBy string
-	Amount float64
-	Splits []Split
+type Expense interface {
+	Validate() error
+	Apply(sheet *BalanceSheet) error
+	GetID() int
 }
 
-func (e *Expense) Apply(sheet *BalanceSheet) {
+type baseExpense struct {
+	ID       int
+	PaidBy   int
+	Amount   int64 // paise
+	Splits   []*Split
+}
+
+func (e *baseExpense) GetID() int { return e.ID }
+
+func (e *baseExpense) Apply(sheet *BalanceSheet) error {
 	for _, split := range e.Splits {
-		if split.User != e.PaidBy {
-			sheet.AddBalance(split.User, split.Amount)
-		} else {
-			sheet.AddBalance(split.User, -split.Amount)
+		if err := sheet.AddDebt(split.UserID, e.PaidBy, split.Amount); err != nil {
+			return err
 		}
 	}
+	return nil
 }
 
-type ExactExpense struct {
-	Expense
-}
+type ExactExpense struct{ baseExpense }
 
 func (e *ExactExpense) Validate() error {
-	total := 0.0
-	for _, split := range e.Splits {
-		total += split.Amount
+	var total int64
+	for _, s := range e.Splits {
+		total += s.Amount
 	}
 	if total != e.Amount {
 		return fmt.Errorf("total expense does not match amount")
@@ -37,49 +42,53 @@ func (e *ExactExpense) Validate() error {
 	return nil
 }
 
-type EqualExpense struct {
-	Expense
-}
+type EqualExpense struct{ baseExpense }
 
 func (e *EqualExpense) Validate() error {
-	amount := math.Round(e.Amount/float64(len(e.Splits))*100) / 100
-	for i := range e.Splits {
-		e.Splits[i].Amount = amount
+	n := int64(len(e.Splits))
+	base := e.Amount / n
+	for _, s := range e.Splits {
+		s.Amount = base
 	}
+	e.Splits[n-1].Amount += e.Amount - base*n
 	return nil
 }
 
-type PercentageExpense struct {
-	Expense
-}
+type PercentageExpense struct{ baseExpense }
 
 func (e *PercentageExpense) Validate() error {
-	totalPercentage := 0.0
-	for _, split := range e.Splits {
-		totalPercentage += split.Percentage
+	var totalPct int
+	for _, s := range e.Splits {
+		totalPct += s.Percentage
 	}
-	if totalPercentage != 100 {
+	if totalPct != 100 {
 		return fmt.Errorf("total percentage must be 100")
 	}
-	for i := range e.Splits {
-		e.Splits[i].Amount = math.Round(e.Amount*e.Splits[i].Percentage/100*100) / 100
+	var allocated int64
+	last := len(e.Splits) - 1
+	for i, s := range e.Splits {
+		if i == last {
+			s.Amount = e.Amount - allocated
+		} else {
+			s.Amount = (e.Amount * int64(s.Percentage)) / 100
+			allocated += s.Amount
+		}
 	}
 	return nil
 }
 
-type expenseValidator interface {
-	Validate() error
-	Apply(sheet *BalanceSheet)
-}
-
-func CreateExpense(expenseType, paidBy string, amount float64, splits []Split) (expenseValidator, error) {
-	switch strings.ToLower(expenseType) {
+func CreateExpense(id int, typ string, paidBy int, amountPaise int64, splits []*Split) (Expense, error) {
+	if paidBy == 0 || amountPaise == 0 || len(splits) == 0 {
+		return nil, fmt.Errorf("invalid expense")
+	}
+	base := baseExpense{ID: id, PaidBy: paidBy, Amount: amountPaise, Splits: splits}
+	switch strings.ToLower(typ) {
 	case "exact":
-		return &ExactExpense{Expense{PaidBy: paidBy, Amount: amount, Splits: splits}}, nil
+		return &ExactExpense{base}, nil
 	case "equal":
-		return &EqualExpense{Expense{PaidBy: paidBy, Amount: amount, Splits: splits}}, nil
+		return &EqualExpense{base}, nil
 	case "percentage":
-		return &PercentageExpense{Expense{PaidBy: paidBy, Amount: amount, Splits: splits}}, nil
+		return &PercentageExpense{base}, nil
 	default:
 		return nil, fmt.Errorf("invalid expense type")
 	}

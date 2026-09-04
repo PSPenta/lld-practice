@@ -2,6 +2,9 @@
 
 > **Timed steps:** [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ✅
 
+**Round opening (say aloud):**
+> "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
+
 ## Code in this repo
 
 | Language | Path | Notes |
@@ -10,6 +13,15 @@
 | **Go** | [`Go/Queue-go/`](../../Go/Queue-go/) | |
 
 Full worker/DLQ → [message-queue](../message-queue/README.md)
+
+### Codebase map (how the code is organized)
+
+| File | Responsibility |
+|------|----------------|
+| `Queue/index.js` | `FIFOQueue` — circular buffer, `enqueue` / `dequeue`, capacity |
+| `Go/Queue-go/` | Same FIFO structure |
+
+**Read order:** `enqueue` / `dequeue` — how full vs empty is distinguished.
 
 ---
 

@@ -3,6 +3,9 @@
 > **Timed steps:** [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ✅  
 > Very common at product companies: *“Design a cache client for frequent queries.”*
 
+**Round opening (say aloud):**
+> "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
+
 ## Code in this repo
 
 | Language | Path | Notes |
@@ -11,6 +14,16 @@
 | **JavaScript Redis-style** | [`JavaScript/Redis/`](../../JavaScript/Redis/) | TTL + policy-based eviction |
 | **Go** | [`Go/LRU-go/`](../../Go/LRU-go/) · [`Go/Redis-go/`](../../Go/Redis-go/) | |
 | Pure LRU only | [lru-cache](../lru-cache/README.md) | subset of this problem |
+
+### Codebase map (how the code is organized)
+
+| Path | Responsibility |
+|------|----------------|
+| `JavaScript/LRU/index.js` | Exact LRU — O(1) get/put via map + doubly linked list |
+| `JavaScript/Redis/index.js` | TTL expiry + `maxmemory`-style eviction policy switch |
+| `Go/LRU-go/`, `Go/Redis-go/` | Ports of the above |
+
+**Interview tip:** start design from LRU; add TTL + eviction policies when asked “like Redis.”
 
 ---
 

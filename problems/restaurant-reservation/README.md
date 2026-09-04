@@ -3,11 +3,8 @@
 > **Timed steps:** [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ❌  
 > Common Razorpay-style machine coding prompt: check availability, book slot, avoid double booking.
 
-## Code in this repo
-
-No dedicated implementation yet. Same booking patterns as [hotel-booking](../hotel-booking/README.md) and [movie-booking](../movie-booking/README.md) — compare after your design.
-
----
+**Round opening (say aloud):**
+> "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
 
 ## Step 1 — Clarify
 
@@ -18,6 +15,8 @@ No dedicated implementation yet. Same booking patterns as [hotel-booking](../hot
 4. Cancellation window?
 5. Hold table before confirm (TTL hold)?
 6. Same customer two bookings same slot?
+7. Overbooking policy?
+8. Timezone / closing-time overlap?
 
 ### v1 expectations (state aloud)
 | | |
@@ -30,8 +29,6 @@ No dedicated implementation yet. Same booking patterns as [hotel-booking](../hot
 
 ### Confirm understanding
 > "Guest picks date, time, and party size; system assigns an available table or rejects if full."
-
----
 
 ## Step 2 — Entities & classes
 
@@ -52,19 +49,21 @@ ReservationService
 
 **Pattern:** **Repository** + domain service; slot overlap as core invariant
 
----
-
 ## Step 3 — Flows
 
-**Check availability:** load tables with `capacity >= partySize` → filter out tables with overlapping CONFIRMED/HELD reservation for slot  
+**Happy path — check availability**
+1. Load tables with `capacity >= partySize`  
+2. Filter out tables with overlapping CONFIRMED/HELD reservation for slot  
+3. Return remaining tables / boolean available  
 
-**Book:** within transaction — re-check availability → insert reservation → commit (fail if race)  
+**Happy path — book**
+1. Within transaction — re-check availability  
+2. Insert reservation (assign table) → commit  
+3. On race, fail and ask client to retry  
 
-**Cancel:** mark CANCELLED; table freed for slot  
-
-**Optional hold:** HELD + expiry job releases table if not confirmed
-
----
+**Edge cases**
+1. Cancel → mark CANCELLED; table freed for slot  
+2. Optional hold: HELD + expiry job releases if not confirmed; closing-time overlap rejected
 
 ## Step 4 — APIs
 
@@ -74,19 +73,17 @@ POST /restaurants/{id}/reservations   { guestName, partySize, date, time }
 DELETE /reservations/{id}
 ```
 
----
-
 ## Step 5 — Deepen
 
-- **Double booking:** DB unique index on `(tableId, slotStart)` or transactional re-check
-- **Overbooking:** reject when no table fits; optional waitlist in v2
-- **Idempotency:** same client token on POST returns same reservation
-- **Edge cases:** party larger than any single table → v2 combine tables; closing time overlap
-
----
+- **Double booking:** DB unique index on `(tableId, slotStart)` or transactional re-check  
+- **Overbooking:** reject when no table fits; optional waitlist in v2  
+- **Idempotency:** same client token on POST returns same reservation  
+- **Edge cases:** party larger than any single table → v2 combine tables  
+- Concurrent book of last table → one commit wins, other gets conflict
 
 ## Step 6 — Evolve
 
-- Dynamic table merging for large parties
-- SMS reminder → [ticket-notify](../ticket-notify/README.md)
-- Peak-hour slot limits → [rate-limiter](../rate-limiter/README.md) on booking API
+- Dynamic table merging for large parties  
+- SMS reminder → [ticket-notify](../ticket-notify/README.md)  
+- Peak-hour slot limits → [rate-limiter](../rate-limiter/README.md) on booking API  
+- Same hold patterns as [hotel-booking](../hotel-booking/README.md) and [movie-booking](../movie-booking/README.md)

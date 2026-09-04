@@ -2,12 +2,25 @@
 
 > **Timed steps:** [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ✅
 
+**Round opening (say aloud):**
+> "I'll clarify requirements and v1 scope, outline entities and classes, walk the main flows, define APIs, then cover concurrency/failures, and how I'd evolve the design."
+
 ## Code in this repo
 
 | Language | Path |
 |----------|------|
 | **JavaScript** | [`JavaScript/Database/`](../../JavaScript/Database/) |
 | **Go** | [`Go/Database-go/`](../../Go/Database-go/) |
+
+### Codebase map (how the code is organized)
+
+| File | Responsibility |
+|------|----------------|
+| `Database.js` | Registry of tables — `createTable`, route CRUD to a `Table` |
+| `Table.js` | Schema, rows, indexes; `insert` / `select` / `update` / `delete` |
+| `index.js` | Demo create + CRUD |
+
+**Read order:** `Database.createTable` → `Table.insert` / `select`.
 
 ---
 

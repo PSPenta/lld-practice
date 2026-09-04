@@ -51,7 +51,7 @@ Use this section to **point at real code** in interviews. Paths are relative to 
 |---------|----------|----------------------|---------|-------|
 | **Strategy** | Behavioural | `JavaScript/RateLimiter2/RateLimiter.js` + `RateLimiterStrategy.js`, `TokenBucket.js`, `LeakyBucket.js`, `FixedWindowCounter.js`, `SlidingWindowLog.js`, `SlidingWindowCounter.js` | `Go/RateLimiter2-go/` | **Best demo in repo.** Context composes strategy. |
 | **Strategy + interface** | Behavioural | — | `Go/PaymentGateway-go/bank_gateway.go`, `payment_gateway.go` | `PaymentGateway` maps method → `BankGateway` |
-| **Factory** | Creational | `JavaScript/Splitwise/Expense.js` (`ExpenseFactory`) · `JavaScript/ParkingLot2/Vehicle.js` (`VehicleFactory`) | `Go/Splitwise-go/expense.go` · `Go/ParkingLot2-go/vehicle.go` | Creates concrete type without caller knowing class |
+| **Factory** | Creational | `JavaScript/Splitwise/Expense.js` (`ExpenseFactory`) · `JavaScript/ParkingLot2/Vehicle.js` (`VehicleFactory`) | `Go/Splitwise-go/expense.go` · `Go/ParkingLot2-go/vehicle.go` | Service + pairwise ledger + paise |
 | **Observer / Pub-Sub** | Behavioural | `JavaScript/Pub-Sub/index.js` | `Go/Pub-Sub-go/pubsub.go`, `pubsub_core.go`, `pubsub_event.go` | Go has **3 variants** — good “evolution” discussion |
 | **Composition / ownership** | Structural | `JavaScript/ParkingLot2/`, `JavaScript/Parkinglot/`, `JavaScript/Database/`, `JavaScript/SearchEngine/` | Matching `Go/*-go/` | has-a chains, not deep inheritance |
 | **Facade / pipeline** | Structural | `JavaScript/SearchEngine/SearchEngine.js` orchestrates tokenizer, index, trie, ranker | `Go/SearchEngine-go/search_engine.go` | Facade-like; not named “Facade” in code |
@@ -77,7 +77,7 @@ Use this section to **point at real code** in interviews. Paths are relative to 
 | **Ratelimiter** | Encapsulation per algorithm | S, KISS, YAGNI | Middleware; worker pool in `serverRequestThrottler.js` |
 | **ParkingLot2** | Composition chain + vehicle inheritance | S | **Factory**, composition, hybrid |
 | **Parkinglot** | Inheritance-heavy vehicles + composition levels | S, L | Inheritance + composition |
-| **Splitwise** | Inheritance + polymorphic `validate()` | S, O | **Factory**, Template Method–like |
+| **Splitwise** | Service + pairwise ledger + Factory + paise | S, O, KISS | **Factory**, Template Method, application service |
 | **Pub-Sub** | Encapsulated event map | S | **Observer** |
 | **SearchEngine** | Composition pipeline | S ( ⚠️ no DIP interfaces) | Facade-like pipeline, Trie + inverted index |
 | **Database** | Aggregate composition | S | Aggregate / index maps |
