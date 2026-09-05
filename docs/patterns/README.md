@@ -9,17 +9,11 @@
 | [Singleton](#singleton) · [Factory](#factory) · [Builder](#builder) · [Abstract Factory](#abstract-factory) · [Prototype](#prototype) | Creational |
 | [Observer](#observer) · [Strategy](#strategy) · [Iterator](#iterator) · [Command](#command) · [State](#state) · [Template Method](#template-method) | Behavioural |
 | [Adapter](#adapter) · [Proxy](#proxy) · [Decorator](#decorator) · [Facade](#facade) · [Composite](#composite) · [Bridge](#bridge) | Structural |
-| [Repo map](#patterns-used-in-this-repository-reference-files) | |
+| [Repo demos](#repo-demos) | |
 
 `*` = useful · `**` = very common in LLD interviews · **GeeksforGeeks** links = deeper tutorials
 
-GoF groups:
-
-| Category | Question it answers |
-|----------|---------------------|
-| **Creational** | How do we **create** objects cleanly? |
-| **Behavioural** | How do objects **communicate / vary behavior**? |
-| **Structural** | How do we **compose** objects for flexibility/scale? |
+GoF groups + Pattern ↔ principle table: **[hub §9](../../README.md#9-design-patterns-creational--behavioural--structural)** (not repeated here).
 
 ---
 
@@ -319,22 +313,13 @@ Callers don’t need to know 15 internal classes.
 
 ---
 
-<a id="patterns-used-in-this-repository-reference-files"></a>
+<a id="repo-demos"></a>
 
-## Patterns used in this repository (reference files)
+## Repo demos
 
-| Pattern | LLD in this repo | How it shows up | Reference files |
-|---------|------------------|-----------------|-----------------|
-| **Strategy + composition** | **RateLimiter2** | `RateLimiter` **has-a** strategy; algorithms swappable at runtime | JS: `JavaScript/RateLimiter2/RateLimiter.js`, `RateLimiterStrategy.js`, `TokenBucket.js`, `LeakyBucket.js`, `FixedWindowCounter.js`, `SlidingWindowLog.js`, `SlidingWindowCounter.js` · Go: `Go/RateLimiter2-go/rate_limiter.go`, `strategy.go`, `token_bucket.go`, `leaky_bucket.go`, `fixed_window_counter.go`, `sliding_window_log.go`, `sliding_window_counter.go` |
-| **Strategy + Adapter + composition** | **PaymentGateway** | `PaymentGateway` **has-a** `BankGateway` interface | Go: `Go/PaymentGateway-go/payment_gateway.go`, `bank_gateway.go`, `payment.go`, `main.go` |
-| **Composition (ownership)** | **ParkingLot2** | `ParkingLot` → `Floor` → `Slot`; uses `Ticket` | JS: `JavaScript/ParkingLot2/ParkingLot.js`, `Floor.js`, `Slot.js`, `Ticket.js` · Go: `Go/ParkingLot2-go/parkinglot.go`, `floor.go`, `slot.go` |
-| **Composition (pipeline)** | **SearchEngine** | `SearchEngine` **has-a** tokenizer, trie, index, ranker | JS: `JavaScript/SearchEngine/SearchEngine.js`, `Tokenizer.js`, `Trie.js`, `InvertedIndex.js`, `Ranker.js` |
-| **Composition (aggregate)** | **Database** | `Database` **has-a** map of `Table` | JS: `JavaScript/Database/Database.js`, `Table.js` · Go: `Go/Database-go/database.go`, `table.go` |
-| **Factory + inheritance (hybrid)** | **Splitwise** | `ExpenseFactory` + `ExactExpense`/`EqualExpense`/`PercentageExpense` extend `Expense` | JS: `JavaScript/Splitwise/Expense.js`, `JavaScript/Splitwise/index.js` · Go: `Go/Splitwise-go/expense.go`, `main.go` |
-| **Factory + inheritance (hybrid)** | **ParkingLot2** | Vehicle factory pattern + `Car`/`Bike`/`Truck` extend `Vehicle` | JS: `JavaScript/ParkingLot2/Vehicle.js`, `index.js` · Go: `Go/ParkingLot2-go/vehicle.go`, `main.go` |
-| **Observer / Pub-Sub + composition** | **Pub-Sub** | `PubSub` **has-a** event → callbacks map | JS: `JavaScript/Pub-Sub/index.js` · Go: `Go/Pub-Sub-go/pubsub.go`, `pubsub_core.go`, `pubsub_event.go` |
-| **Composition (cache internals)** | **Redis**, **LRU** | map + doubly linked `Node` list | JS: `JavaScript/Redis/index.js`, `JavaScript/LRU/index.js` · Go: `Go/Redis-go/main.go`, `Go/LRU-go/main.go` |
-| **Inheritance only (v1 teaching)** | **Parkinglot** | Car/Bike/Truck extend Vehicle — lot itself is simpler | JS: `JavaScript/Parkinglot/Vehicle.js` · Go: `Go/Parkinglot-go/vehicle.go` |
+File/path matrix (Strategy → RateLimiter2, Factory → Splitwise / ParkingLot2, Observer → Pub-Sub, …): **[../repo-map/README.md](../repo-map/README.md#design-patterns--master-reference-table)**.
+
+**Named demos to cite:** Strategy → `RateLimiter2` · Factory → `Splitwise`, `ParkingLot2` · Observer → `Pub-Sub` · Facade-like → `SearchEngine` · DIP / gateway interface → `PaymentGateway-go`.
 
 **Know for interviews but not clearly coded as named patterns here:** Singleton, Builder, Abstract Factory, Prototype, Iterator, Command, State, Template Method, Proxy, Decorator, Facade.
 
@@ -348,12 +333,4 @@ Callers don’t need to know 15 internal classes.
 
 If only one implementation exists and none is planned → **YAGNI**: skip the pattern.
 
-### Pattern ↔ principle quick links
-
-| You say… | You’re applying… |
-|----------|------------------|
-| New class instead of editing switch | OCP + often Strategy/Factory |
-| Depend on `LLMClient` interface | DIP + Adapter |
-| Split God class | SRP |
-| Don’t build Abstract Factory yet | YAGNI + KISS |
-| Middleware wraps handler | Decorator |
+Pattern ↔ principle (OCP + Strategy, DIP + Adapter, …): **[hub §9](../../README.md#9-design-patterns-creational--behavioural--structural)**.

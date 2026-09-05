@@ -143,30 +143,7 @@ If they ask *“What do you know about us?”*:
 
 ## 22. Cheat sheet
 
-### Structure
-```text
-Clarify → Entities → Classes/Interfaces → Flows → APIs →
-Concurrency/Failure → Extend/Trade-offs
-```
-
-### SOLID + other principles one-liners
-- **S:** one reason to change  
-- **O:** extend without editing core  
-- **L:** subtypes don’t break contracts  
-- **I:** small interfaces  
-- **D:** depend on abstractions  
-- **Composition:** has-a + interfaces over deep is-a inheritance  
-- **DRY:** don’t duplicate knowledge  
-- **KISS / YAGNI / PoLK:** simplest design; add patterns when needed — repo map **§7A**  
-- **KISS:** simplest workable design  
-- **YAGNI:** don’t build unused features  
-- **PoLK:** talk only to direct collaborators  
-
-### Patterns one-liners
-**Creational:** Singleton (one instance) · Factory (create by type) · Builder (step-by-step) · Abstract Factory (product families) · Prototype (clone)  
-**Behavioural:** Observer (notify subscribers) · Strategy (swap algorithm) · Iterator (traverse) · Command (request as object) · State · Template Method  
-**Structural:** Adapter (bridge interfaces) · Proxy (stand-in / gateway) · Decorator (wrap behavior) · Facade (simple front door)  
-**Repo demos:** Full map → **[../repo-map/README.md](../repo-map/README.md)**. Quick: Strategy → RateLimiter2 · Factory → Splitwise / ParkingLot2 · Observer → Pub-Sub · DIP → PaymentGateway-go · Pipeline → SearchEngine · KISS → JavaScript/Queue/LRU
+Day-of index (structure, principles, patterns, closing line): **[hub §22](../../README.md#22-cheat-sheet)**. Principles depth → [hub §8](../../README.md#8-design-principles-solid--dry--kiss--yagni--polk) · [principles/](../principles/README.md). Patterns depth → [hub §9](../../README.md#9-design-patterns-creational--behavioural--structural) · [patterns/](../patterns/README.md).
 
 ### AI LLD one-liners
 - LLM behind `LLMClient` interface (Adapter)  
@@ -191,9 +168,6 @@ Concurrency/Failure → Extend/Trade-offs
 - What if two requests hit same row?  
 - What if we add a new variant?  
 - How do we observe this in prod?  
-
-### Closing line
-> “I kept v1 simple, made extension points where variation is real, and called out concurrency and failure modes. Happy to go deeper on any part.”
 
 ---
 

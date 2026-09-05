@@ -8,7 +8,8 @@ Principles guide **how you structure code**. Patterns are reusable **shapes**. L
 |------|--|
 | [SRP](#srp) · [OCP](#ocp) · [LSP](#lsp) · [ISP](#isp) · [DIP](#dip) | SOLID |
 | [DRY](#dry) · [KISS](#kiss) · [YAGNI](#yagni) · [PoLK](#polk) | Everyday |
-| [Cheat card](#principles-cheat-card) | |
+
+Hub one-liner index: [§8](../../README.md#8-design-principles-solid--dry--kiss--yagni--polk)
 
 ---
 
@@ -213,21 +214,3 @@ order.shippingZip()
 **Interview line:** “ParkingLot asks Floor for a free slot — it doesn’t index into `floor.slots[i].vehicle`.”
 
 **In this repo:** `JavaScript/ParkingLot2/ParkingLot.js` → `floor.findAvailableSlot()`.
-
----
-
-<a id="principles-cheat-card"></a>
-
-## Principles cheat card
-
-| Principle | One line | Deep dive |
-|-----------|----------|-----------|
-| SRP | One reason to change | [§ SRP](#srp) |
-| OCP | Extend without editing core | [§ OCP](#ocp) |
-| LSP | Impls must honor the contract | [§ LSP](#lsp) |
-| ISP | Small interfaces | [§ ISP](#isp) |
-| DIP | Depend on abstractions | [§ DIP](#dip) |
-| DRY | Don’t duplicate knowledge | [§ DRY](#dry) |
-| KISS | Simplest workable design | [§ KISS](#kiss) |
-| YAGNI | Don’t build unused features | [§ YAGNI](#yagni) |
-| PoLK | Talk only to close friends | [§ PoLK](#polk) |

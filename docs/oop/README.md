@@ -172,22 +172,9 @@ Same pattern as **`PaymentGateway`** in this repo — business logic depends on 
 
 #### In this repository
 
-**Node.js and Go LLDs that demonstrate composition (study these):**
+Full has-a / file matrix: **[../repo-map/README.md](../repo-map/README.md)** (OOP pillars + pattern table).
 
-| Style | Has-a relationship | Node.js (primary) | Go port |
-|-------|------------------|-------------------|---------|
-| **Composition + Strategy** | `RateLimiter` **has-a** `RateLimiterStrategy` | `JavaScript/RateLimiter2/RateLimiter.js` injects strategy in constructor · strategies: `TokenBucket.js`, `FixedWindowCounter.js`, `LeakyBucket.js`, `SlidingWindowLog.js`, `SlidingWindowCounter.js` · base: `RateLimiterStrategy.js` | `Go/RateLimiter2-go/rate_limiter.go`, `strategy.go`, `token_bucket.go`, … |
-| **Composition + Adapter-style interface** | `PaymentGateway` **has-a** `BankGateway` | *(Go only in this repo)* | `Go/PaymentGateway-go/payment_gateway.go`, `bank_gateway.go`, `payment.go` |
-| **Composition (ownership chain)** | `ParkingLot` **has-a** `Floor[]` **has-a** `Slot[]` | `JavaScript/ParkingLot2/ParkingLot.js`, `Floor.js`, `Slot.js`, `Ticket.js` | `Go/ParkingLot2-go/parkinglot.go`, `floor.go`, `slot.go` |
-| **Composition (pipeline)** | `SearchEngine` **has-a** `Tokenizer`, `Trie`, `InvertedIndex`, `Ranker` | `JavaScript/SearchEngine/SearchEngine.js` · parts: `Tokenizer.js`, `Trie.js`, `InvertedIndex.js`, `Ranker.js` | — |
-| **Composition (aggregate)** | `Database` **has-a** `Table` map | `JavaScript/Database/Database.js`, `JavaScript/Database/Table.js` | `Go/Database-go/database.go`, `table.go` |
-| **Composition (internal structure)** | `Redis` / `LRUCache` **has-a** map + linked `Node` list | `JavaScript/Redis/index.js`, `JavaScript/LRU/index.js` | `Go/Redis-go/main.go`, `Go/LRU-go/main.go` |
-| **Composition (event map)** | `PubSub` **has-a** `Map<event, callbacks[]>` | `JavaScript/Pub-Sub/index.js` | `Go/Pub-Sub-go/pubsub.go`, `pubsub_core.go` |
-| **Service + repositories** | `PollingService` orchestrates; models stay thin; `*Repository` stores | `JavaScript/PollingSystem2/PollingService/` (`models/`, `repositories/`, `index.js`) | `Go/PollingSystem2-go/pollingservice/`, `models/`, `repositories/` |
-| **Hybrid: composition + inheritance** | `ExpenseFactory` creates types; `Expense` **has-a** splits · subclasses for exact/equal/percent | `JavaScript/Splitwise/Expense.js`, `JavaScript/Splitwise/index.js` | `Go/Splitwise-go/expense.go` |
-| **Inheritance (is-a, teaching)** | `Car` / `Bike` / `Truck` **extends** `Vehicle` | `JavaScript/Parkinglot/Vehicle.js`, `JavaScript/ParkingLot2/Vehicle.js` | `Go/Parkinglot-go/vehicle.go`, `Go/ParkingLot2-go/vehicle.go` |
-
-**How to read the hybrid rows:** inheritance is used for **polymorphism** (vehicle type, expense algorithm). The **orchestrator** still **composes** parts — e.g. `RateLimiter` does not extend `TokenBucket`; it holds a strategy. Same for `ParkingLot2`: the lot composes floors; only `Vehicle` uses is-a.
+**How to read hybrids:** inheritance is for **polymorphism** (vehicle type, expense algorithm). The **orchestrator** still **composes** parts — e.g. `RateLimiter` does not extend `TokenBucket`; it holds a strategy. Same for `ParkingLot2`: the lot composes floors; only `Vehicle` uses is-a.
 
 **Prefer in interviews:** `RateLimiter2`, `ParkingLot2`, `SearchEngine`, `Database`, **`PollingSystem2`** (service + repos) — composition-first designs. Mention `Splitwise` when discussing Factory + when inheritance is acceptable for variant algorithms. Use **`PollingSystem`** v1 only as a refactor drill.
 

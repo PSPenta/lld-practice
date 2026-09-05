@@ -125,24 +125,7 @@ Show you can evolve without a rewrite:
 
 For each problem: actors → use cases → entities → classes → APIs → concurrency → extend.
 
-### Must-practice set
-
-| Problem | Core ideas |
-|---------|------------|
-| **LRU Cache** | Hash map + doubly linked list; O(1) get/put; capacity eviction |
-| **Rate Limiter** | Strategy (fixed window, sliding, token bucket); per-key state; thread safety |
-| **Parking Lot** | Floors/slots/vehicles; strategy for slot assignment; ticket |
-| **Splitwise** | Users, expenses, split strategies; balances; settle-up |
-| **Pub-Sub** | Topics, subscribers, publish fan-out; sync vs async |
-| **URL Shortener** (LLD slice) | encode ID, mappings, APIs (full scale is HLD) |
-| **Elevator / Traffic lights** | State machine; scheduling strategy |
-| **Chess / Snake & Ladder** | Board, pieces/moves, game rules |
-| **Logging framework** | Levels, appenders, chain of responsibility |
-| **ATM / Vending** | State + chain for cash dispense |
-| **Notification system** | Templates, channels, retry |
-| **Booking (movie/hotel)** | Seats, locks, payment, idempotency |
-| **Cache client** | get/set/TTL/LRU; optional loader; stampede |
-| **Task / Job scheduler** | Priority queue; workers; retries |
+Must-practice set (core ideas per problem): **[hub §14](../../README.md#14-common-lld-problems--how-to-think)** — not repeated here.
 
 ### AI-era LLD variants (increasingly asked)
 

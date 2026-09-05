@@ -192,21 +192,7 @@ Point at real code in interviews — **Strategy** → `RateLimiter2` · **Factor
 | **YAGNI** | Don’t build unused features | [docs/principles § YAGNI](docs/principles/README.md#yagni) |
 | **PoLK** | Talk only to direct collaborators | [docs/principles § PoLK](docs/principles/README.md#polk) |
 
-### Principles cheat card
-
-| Principle | One line | Jump |
-|-----------|----------|------|
-| SRP | One reason to change | [#srp](docs/principles/README.md#srp) |
-| OCP | Extend without editing core | [#ocp](docs/principles/README.md#ocp) |
-| LSP | Impls must honor the contract | [#lsp](docs/principles/README.md#lsp) |
-| ISP | Small interfaces | [#isp](docs/principles/README.md#isp) |
-| DIP | Depend on abstractions | [#dip](docs/principles/README.md#dip) |
-| DRY | Don’t duplicate knowledge | [#dry](docs/principles/README.md#dry) |
-| KISS | Simplest workable design | [#kiss](docs/principles/README.md#kiss) |
-| YAGNI | Don’t build unused features | [#yagni](docs/principles/README.md#yagni) |
-| PoLK | Talk only to close friends | [#polk](docs/principles/README.md#polk) |
-
-→ Full write-ups + repo examples: **[docs/principles/README.md](docs/principles/README.md)** · cheat card [#](docs/principles/README.md#principles-cheat-card)
+→ Full write-ups + examples: **[docs/principles/README.md](docs/principles/README.md)**
 
 ---
 
@@ -424,7 +410,7 @@ Concurrency/Failure → Extend/Trade-offs
 
 ### Principles (one-liners)
 
-SRP · OCP · LSP · ISP · DIP · **Composition** over deep is-a · DRY · KISS · YAGNI · PoLK — full card in [§8](#8-design-principles-solid--dry--kiss--yagni--polk).
+SRP · OCP · LSP · ISP · DIP · **Composition** over deep is-a · DRY · KISS · YAGNI · PoLK — index in [§8](#8-design-principles-solid--dry--kiss--yagni--polk).
 
 ### Patterns (one-liners)
 
@@ -445,7 +431,7 @@ SRP · OCP · LSP · ISP · DIP · **Composition** over deep is-a · DRY · KISS
 
 > “I kept v1 simple, made extension points where variation is real, and called out concurrency and failure modes. Happy to go deeper on any part.”
 
-→ Full cheat sheet + production questions: **[docs/interview-prep/ §22](docs/interview-prep/README.md#22-cheat-sheet)**
+→ Extra day-of notes (AI, HLD bleed-in, production questions): **[docs/interview-prep/ §22](docs/interview-prep/README.md#22-cheat-sheet)**
 
 ---
 
