@@ -182,31 +182,31 @@ Point at real code in interviews — **Strategy** → `RateLimiter2` · **Factor
 
 | Principle | One line | Deep dive |
 |-----------|----------|-----------|
-| **S — Single Responsibility** | One reason to change | [docs/principles/](docs/principles/README.md) |
-| **O — Open/Closed** | Extend with new classes, not editing core | [docs/principles/](docs/principles/README.md) |
-| **L — Liskov Substitution** | Subtypes honor the contract | [docs/principles/](docs/principles/README.md) |
-| **I — Interface Segregation** | Small interfaces | [docs/principles/](docs/principles/README.md) |
-| **D — Dependency Inversion** | Depend on abstractions | [docs/principles/](docs/principles/README.md) |
-| **DRY** | Don’t duplicate knowledge | [docs/principles/](docs/principles/README.md) |
-| **KISS** | Simplest workable design | [docs/principles/](docs/principles/README.md) |
-| **YAGNI** | Don’t build unused features | [docs/principles/](docs/principles/README.md) |
-| **PoLK** | Talk only to direct collaborators | [docs/principles/](docs/principles/README.md) |
+| **S — Single Responsibility** | One reason to change | [docs/principles § SRP](docs/principles/README.md#srp) |
+| **O — Open/Closed** | Extend with new classes, not editing core | [docs/principles § OCP](docs/principles/README.md#ocp) |
+| **L — Liskov Substitution** | Subtypes honor the contract | [docs/principles § LSP](docs/principles/README.md#lsp) |
+| **I — Interface Segregation** | Small interfaces | [docs/principles § ISP](docs/principles/README.md#isp) |
+| **D — Dependency Inversion** | Depend on abstractions | [docs/principles § DIP](docs/principles/README.md#dip) |
+| **DRY** | Don’t duplicate knowledge | [docs/principles § DRY](docs/principles/README.md#dry) |
+| **KISS** | Simplest workable design | [docs/principles § KISS](docs/principles/README.md#kiss) |
+| **YAGNI** | Don’t build unused features | [docs/principles § YAGNI](docs/principles/README.md#yagni) |
+| **PoLK** | Talk only to direct collaborators | [docs/principles § PoLK](docs/principles/README.md#polk) |
 
 ### Principles cheat card
 
-| Principle | One line |
-|-----------|----------|
-| SRP | One reason to change |
-| OCP | Extend without editing core |
-| LSP | Impls must honor the contract |
-| ISP | Small interfaces |
-| DIP | Depend on abstractions |
-| DRY | Don’t duplicate knowledge |
-| KISS | Simplest workable design |
-| YAGNI | Don’t build unused features |
-| PoLK | Talk only to close friends |
+| Principle | One line | Jump |
+|-----------|----------|------|
+| SRP | One reason to change | [#srp](docs/principles/README.md#srp) |
+| OCP | Extend without editing core | [#ocp](docs/principles/README.md#ocp) |
+| LSP | Impls must honor the contract | [#lsp](docs/principles/README.md#lsp) |
+| ISP | Small interfaces | [#isp](docs/principles/README.md#isp) |
+| DIP | Depend on abstractions | [#dip](docs/principles/README.md#dip) |
+| DRY | Don’t duplicate knowledge | [#dry](docs/principles/README.md#dry) |
+| KISS | Simplest workable design | [#kiss](docs/principles/README.md#kiss) |
+| YAGNI | Don’t build unused features | [#yagni](docs/principles/README.md#yagni) |
+| PoLK | Talk only to close friends | [#polk](docs/principles/README.md#polk) |
 
-→ Interview phrasing + repo examples: **[docs/principles/README.md](docs/principles/README.md)**
+→ Full write-ups + repo examples: **[docs/principles/README.md](docs/principles/README.md)** · cheat card [#](docs/principles/README.md#principles-cheat-card)
 
 ---
 
@@ -226,11 +226,11 @@ Point at real code in interviews — **Strategy** → `RateLimiter2` · **Factor
 
 | Creational | Behavioural | Structural |
 |------------|-------------|------------|
-| Singleton `**` | Observer `**` (Pub-Sub) | Adapter `**` |
-| Factory `*` | Strategy `**` | Proxy `**` |
-| Builder `*` | Iterator `*` | Decorator `*` |
-| Abstract Factory | Command `*` | Facade `*` |
-| Prototype | State · Template Method | Composite · Bridge |
+| [Singleton](docs/patterns/README.md#singleton) `**` | [Observer](docs/patterns/README.md#observer) `**` (Pub-Sub) | [Adapter](docs/patterns/README.md#adapter) `**` |
+| [Factory](docs/patterns/README.md#factory) `*` | [Strategy](docs/patterns/README.md#strategy) `**` | [Proxy](docs/patterns/README.md#proxy) `**` |
+| [Builder](docs/patterns/README.md#builder) `*` | [Iterator](docs/patterns/README.md#iterator) `*` | [Decorator](docs/patterns/README.md#decorator) `*` |
+| [Abstract Factory](docs/patterns/README.md#abstract-factory) | [Command](docs/patterns/README.md#command) `*` | [Facade](docs/patterns/README.md#facade) `*` |
+| [Prototype](docs/patterns/README.md#prototype) | [State](docs/patterns/README.md#state) · [Template Method](docs/patterns/README.md#template-method) | [Composite](docs/patterns/README.md#composite) · [Bridge](docs/patterns/README.md#bridge) |
 
 **In this repo (named):** Strategy → `RateLimiter2`, `PaymentGateway-go` · Factory → `Splitwise`, `ParkingLot2` · Observer → `Pub-Sub` · Facade-like → `SearchEngine`.  
 **Paper only:** Singleton, Builder, Command, State, Proxy, Decorator, Adapter — **[lld-gaps/ §4](lld-gaps/README.md)**.
@@ -245,7 +245,7 @@ Point at real code in interviews — **Strategy** → `RateLimiter2` · **Factor
 | Don’t build Abstract Factory yet | YAGNI + KISS |
 | Middleware wraps handler | Decorator |
 
-→ Full pattern write-ups + repo files: **[docs/patterns/README.md](docs/patterns/README.md)**
+→ Full write-ups + GeeksforGeeks deep-dives + repo files: **[docs/patterns/README.md](docs/patterns/README.md)**
 
 ---
 
@@ -428,9 +428,9 @@ SRP · OCP · LSP · ISP · DIP · **Composition** over deep is-a · DRY · KISS
 
 ### Patterns (one-liners)
 
-**Creational:** Singleton · Factory · Builder · Abstract Factory · Prototype  
-**Behavioural:** Observer · Strategy · Iterator · Command · State · Template Method  
-**Structural:** Adapter · Proxy · Decorator · Facade · Composite · Bridge  
+**Creational:** [Singleton](docs/patterns/README.md#singleton) · [Factory](docs/patterns/README.md#factory) · [Builder](docs/patterns/README.md#builder) · [Abstract Factory](docs/patterns/README.md#abstract-factory) · [Prototype](docs/patterns/README.md#prototype)  
+**Behavioural:** [Observer](docs/patterns/README.md#observer) · [Strategy](docs/patterns/README.md#strategy) · [Iterator](docs/patterns/README.md#iterator) · [Command](docs/patterns/README.md#command) · [State](docs/patterns/README.md#state) · [Template Method](docs/patterns/README.md#template-method)  
+**Structural:** [Adapter](docs/patterns/README.md#adapter) · [Proxy](docs/patterns/README.md#proxy) · [Decorator](docs/patterns/README.md#decorator) · [Facade](docs/patterns/README.md#facade) · [Composite](docs/patterns/README.md#composite) · [Bridge](docs/patterns/README.md#bridge)  
 **Repo demos:** [§7A](#7a-repository-map--oop-principles--patterns-by-lld) · [docs/repo-map/](docs/repo-map/README.md)
 
 ### AI LLD

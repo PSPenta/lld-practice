@@ -2,33 +2,48 @@
 
 ← [Back to hub §8](../../README.md#8-design-principles-solid--dry--kiss--yagni--polk)
 
----
-
-## 8. Design principles (SOLID + DRY / KISS / YAGNI / PoLK)
-
 Principles guide **how you structure code**. Patterns are reusable **shapes**. Learn principles first.
 
+| Jump | |
+|------|--|
+| [SRP](#srp) · [OCP](#ocp) · [LSP](#lsp) · [ISP](#isp) · [DIP](#dip) | SOLID |
+| [DRY](#dry) · [KISS](#kiss) · [YAGNI](#yagni) · [PoLK](#polk) | Everyday |
+| [Cheat card](#principles-cheat-card) | |
+
 ---
 
-### SOLID
+## SOLID
 
-#### S — Single Responsibility Principle (SRP)
+<a id="srp"></a>
 
-**Meaning:** A class / function / module should have **one reason to change** (one focused responsibility).
+### S — Single Responsibility Principle (SRP)
+
+**Meaning:** A class / module should have **one reason to change** — one focused job.
+
+**Why:** Mixed responsibilities force unrelated edits into the same file and make tests brittle.
+
+**Example:** A ticket API that creates tickets *and* sends Slack *and* writes billing will change for three unrelated product reasons. Split into `TicketService`, `SlackNotifier`, `BillingClient`.
 
 | Bad | Good |
 |-----|------|
 | `UserService` registers users, sends email, charges cards | `UserService`, `EmailNotifier`, `BillingService` |
+| One `SearchEngine.js` that tokenizes, indexes, and ranks inline | Separate `Tokenizer`, `InvertedIndex`, `Ranker` |
 
 **Interview line:** “If Slack notification logic changes, I shouldn’t have to touch ticket-creation code.”
 
-**In this repo:** RateLimiter2 keeps algorithms in strategy classes; `RateLimiter` only delegates. Also: `JavaScript/SearchEngine/` splits tokenizer, index, ranker; `JavaScript/ParkingLot2/` splits lot, floor, slot, ticket; **`JavaScript/PollingSystem2/PollingService/`** splits `models/`, `PollingService` (use-cases), and `repositories/`. Full map → **[../repo-map/README.md](../repo-map/README.md)**.
+**In this repo:** `RateLimiter` only delegates; algorithms live in strategy classes. Also: `JavaScript/SearchEngine/` · `JavaScript/ParkingLot2/` (lot / floor / slot / ticket) · `JavaScript/PollingSystem2/PollingService/` (`models/` · service · `repositories/`). Map → [../repo-map/README.md](../repo-map/README.md).
 
-#### O — Open/Closed Principle (OCP)
+---
 
-**Meaning:** **Open for extension**, **closed for modification**.
+<a id="ocp"></a>
 
-Add behavior by adding new classes, not by editing a giant `if/else` in existing code.
+### O — Open/Closed Principle (OCP)
+
+**Meaning:** **Open for extension**, **closed for modification** — add behavior with new types, don’t keep editing a core `switch`.
+
+**Why:** Every new algorithm shouldn’t risk regressing the orchestrator that already works.
+
+**Example:**
 
 ```text
 // Bad: edit Allow() every time you add an algorithm
@@ -38,24 +53,44 @@ if kind == "token" { ... } else if kind == "leaky" { ... }
 RateLimiter { strategy.Allow(key) }
 ```
 
-**In this repo:** `JavaScript/RateLimiter2/` — add Sliding Window without rewriting `RateLimiter.js` · `JavaScript/Splitwise/Expense.js` + new expense class · `Go/PaymentGateway-go/` — register new `BankGateway`. Full map → **[../repo-map/README.md](../repo-map/README.md)**.
+Same idea for Splitwise: new expense type → new class + factory entry, not a growing `if` in the service.
 
-#### L — Liskov Substitution Principle (LSP)
+**Interview line:** “I’d add a new class that implements the strategy interface instead of editing the core allow path.”
 
-**Meaning:** Subclasses (or interface implementations) must be **substitutable** for the base type without breaking callers.
+**In this repo:** `JavaScript/RateLimiter2/` · `JavaScript/Splitwise/Expense.js` · `Go/PaymentGateway-go/` new `BankGateway`. Map → [../repo-map/README.md](../repo-map/README.md).
 
-If code expects `Notifier.Send(msg) error`, every notifier must:
-- honor that contract  
-- not panic unexpectedly  
-- not silently no-op when the caller expects delivery or a clear error  
+---
 
-**Bad:** `NullNotifier` that pretends success but drops all messages when the product requires delivery guarantees.
+<a id="lsp"></a>
 
-**In this repo:** Every `JavaScript/RateLimiter2/*` strategy must implement `isAllowed()` correctly · `JavaScript/Parkinglot/Slot.js` — `canFit()` behavior for `Bike`/`Car`/`Truck` subtypes · all `BankGateway` impls must honor `ProcessPayment` contract (`Go/PaymentGateway-go/`).
+### L — Liskov Substitution Principle (LSP)
 
-#### I — Interface Segregation Principle (ISP)
+**Meaning:** Any subtype / interface impl must be **safe to plug in** wherever the base type is used — same contract, no surprises.
 
-**Meaning:** No class should be forced to implement methods it doesn’t use. Prefer **small interfaces**.
+**Why:** Callers program to the abstraction; a lying implementation breaks them silently.
+
+**Example:** Code expects `Notifier.send(msg)` to deliver or return a clear error. A `NullNotifier` that always returns OK but drops messages violates LSP if the product requires delivery guarantees.
+
+| Honor the contract | Break the contract |
+|--------------------|--------------------|
+| Every rate-limit strategy returns a real allow/deny | Strategy that always returns `true` “for tests” left in prod |
+| Every `BankGateway` either charges or fails explicitly | Impl that no-ops on failure and reports success |
+
+**Interview line:** “Subtypes must honor the base contract — no weaker preconditions, no surprising side effects.”
+
+**In this repo:** All `JavaScript/RateLimiter2/*` strategies · `BankGateway` in `Go/PaymentGateway-go/` · vehicle/`canFit` behavior in parking.
+
+---
+
+<a id="isp"></a>
+
+### I — Interface Segregation Principle (ISP)
+
+**Meaning:** Prefer **small interfaces**. Don’t force clients to depend on methods they don’t use.
+
+**Why:** Fat interfaces create empty stubs and couple unrelated capabilities.
+
+**Example:**
 
 ```text
 // Bad fat interface
@@ -66,90 +101,133 @@ Reader { Read() }
 Writer { Write() }
 ```
 
-**In Go interviews:** “Accept interfaces with 1–2 methods” (`io.Reader`, `LLMClient.Stream`).
+In Go interviews: accept interfaces with 1–2 methods (`io.Reader`, `LLMClient.Stream`).
 
-**In this repo:** `RateLimiterStrategy.isAllowed()` only · `BankGateway.ProcessPayment()` only · **Contrast (ISP gap):** `SearchEngine` depends on concrete collaborators — in an interview you’d introduce slim interfaces if multiple search backends were planned.
+**Interview line:** “I’d keep the strategy interface to a single `isAllowed(key)` — not a kitchen-sink rate-limit admin API.”
 
-#### D — Dependency Inversion Principle (DIP)
-
-**Meaning:** Depend on **abstractions**, not concrete classes.
-
-```text
-High-level: SuggestService / PaymentProcessor
-                ↓ depends on
-Abstract:     LLMClient / BankGateway / PaymentStrategy
-                ↑ implemented by
-Low-level:    OpenAIAdapter / UPIGateway / RazorpayPayment
-```
-
-**In this repo:** `JavaScript/RateLimiter2/RateLimiter.js` → `RateLimiterStrategy` · `Go/PaymentGateway-go/payment_gateway.go` → `BankGateway` interface. **Gap to mention:** `JavaScript/SearchEngine/SearchEngine.js` uses concrete `Ranker`/`InvertedIndex` — good trade-off discussion (YAGNI vs DIP).
+**In this repo:** `RateLimiterStrategy.isAllowed()` · `BankGateway.ProcessPayment()` · **Gap:** `SearchEngine` uses concrete deps — you’d introduce slim interfaces only if multiple backends appear (YAGNI vs ISP/DIP).
 
 ---
 
+<a id="dip"></a>
+
+### D — Dependency Inversion Principle (DIP)
+
+**Meaning:** High-level policy depends on **abstractions**, not concrete low-level classes.
+
+**Why:** You can swap OpenAI ↔ Anthropic or UPI ↔ card without rewriting the use-case.
+
+**Example:**
+
+```text
+High-level: SuggestService / PaymentGateway
+                ↓ depends on
+Abstract:     LLMClient / BankGateway
+                ↑ implemented by
+Low-level:    OpenAIAdapter / UPIGateway
+```
+
+**Interview line:** “The payment orchestrator depends on a `BankGateway` interface; providers plug in underneath.”
+
+**In this repo:** `RateLimiter` → `RateLimiterStrategy` · `Go/PaymentGateway-go` → `BankGateway`. **Trade-off:** `SearchEngine` wires concrete `Ranker`/`InvertedIndex` — fine for v1 (YAGNI); invert when a second backend shows up.
+
+---
+
+## Everyday principles
+
+<a id="dry"></a>
+
 ### DRY — Don’t Repeat Yourself
 
-**Meaning:** Avoid duplication of **logic, configuration, or behavior**. One source of truth.
+**Meaning:** Don’t duplicate **knowledge** (rules, formulas, config). One source of truth.
+
+**Why:** Copied validation drifts — one path gets a bugfix, the other doesn’t.
+
+**Example:**
 
 | Duplicated | Better |
 |------------|--------|
-| Same validation copy-pasted in 4 handlers | Shared `ValidateTicket()` / middleware |
-| Same credit-debit math in 3 services | One `CreditMeter` |
-| Vehicle creation `switch` in many places | `VehicleFactory` / `ExpenseFactory` once (`JavaScript/ParkingLot2/Vehicle.js`, `JavaScript/Splitwise/Expense.js`) |
+| Same ticket validation in 4 handlers | Shared `ValidateTicket()` / middleware |
+| Credit-debit math in 3 services | One `CreditMeter` / ledger helper |
+| Vehicle `switch` in many call sites | One `VehicleFactory` / `ExpenseFactory` |
 
-**Caution:** Don’t force unrelated things into one “util” god-object. DRY is about **knowledge**, not merging every two similar lines. **Gap in repo:** per-IP logic duplicated across `JavaScript/RateLimiter2/*` strategy files — acceptable for teaching, would extract in production.
+**Caution:** Don’t smash unrelated snippets into a god `utils.js`. DRY is about shared *meaning*, not merging every similar line.
+
+**In this repo:** `ExpenseFactory` · `VehicleFactory`. **Teaching gap:** per-key bucket helpers repeated across RateLimiter2 strategies — extract in production.
+
+---
+
+<a id="kiss"></a>
 
 ### KISS — Keep It Simple Stupid
 
-**Meaning:** Choose the **simplest solution** that solves the problem. Avoid unnecessary complexity.
+**Meaning:** Prefer the **simplest design that works** for the stated v1.
 
-- v1: one in-memory cache  
-- Later: Redis, only when multi-instance forces it  
+**Why:** Extra layers (queues, Abstract Factory, microservices) cost time and interview clarity when requirements don’t need them.
 
-**In this repo:** `JavaScript/Queue/index.js` — one FIFO class, no extra layers · `JavaScript/Ratelimiter/` v1 before `JavaScript/RateLimiter2/` Strategy · `JavaScript/LRU/` — map + list only.
+**Example:**
+- v1 cache → in-memory map + LRU  
+- Only later → Redis when multi-instance or shared state is required  
 
-**Interview line:** “I’d start simple and introduce a JavaScript/Queue/cache when a requirement justifies it.”
+**Interview line:** “I’d ship a single FIFO / in-memory sheet first, then add complexity when a requirement forces it.”
+
+**In this repo:** `JavaScript/Queue/` · `JavaScript/LRU/` · `Ratelimiter/` v1 before `RateLimiter2/` Strategy ceremony.
+
+---
+
+<a id="yagni"></a>
 
 ### YAGNI — You Ain’t Gonna Need It
 
-**Meaning:** Don’t build features until they are **actually needed**.
+**Meaning:** Don’t build features or abstractions **until a real need appears**.
 
-Don’t add Abstract Factory + 5 interfaces for one payment method “just in case.”  
-When the **second** provider arrives → introduce the abstraction.
+**Why:** Speculative “flexibility” is often unused — and harder to explain under time pressure.
 
-**In this repo:** No Singleton/Builder/Decorator in code — patterns appear only where variation exists (`RateLimiter2`, `Splitwise`, `PaymentGateway-go`). Compare `JavaScript/Ratelimiter/` (no Strategy) vs `JavaScript/RateLimiter2/` (Strategy when algorithms multiply).
+**Example:** Don’t invent Abstract Factory + five interfaces for one payment provider. When the **second** provider arrives → introduce `BankGateway` / Strategy.
+
+**Interview line:** “I won’t add an interface until I have a second implementation or a clear seam.”
+
+**In this repo:** Patterns only where variation exists (`RateLimiter2`, `Splitwise`, `PaymentGateway-go`). Contrast `Ratelimiter/` (no Strategy) vs `RateLimiter2/`.
+
+---
+
+<a id="polk"></a>
 
 ### PoLK — Principle of Least Knowledge (Law of Demeter)
 
-**Meaning:** Objects talk only to **direct collaborators** — not to “friends of friends.”
+**Meaning:** Talk only to **direct collaborators** — not friends-of-friends.
+
+**Why:** Deep chains (`a.b.c.d`) couple you to internals; refactors cascade.
+
+**Example:**
 
 ```text
 // Bad — reach through internals
 order.customer.address.zipCode
 
 // Better — ask a direct collaborator
-order.ShippingZip()
-// or customer.PrimaryZip()
+order.shippingZip()
+// or customer.primaryZip()
 ```
 
-Reduces coupling: if `Address` structure changes, `Order` callers don’t all break.
+**Interview line:** “ParkingLot asks Floor for a free slot — it doesn’t index into `floor.slots[i].vehicle`.”
 
-**In this repo:** `JavaScript/ParkingLot2/ParkingLot.js` asks `floor.findAvailableSlot()` — does not reach into `floor.slots[i].vehicle` directly. Prefer module-level APIs over deep field chains.
-
----
-
-### Principles cheat card
-
-| Principle | One line |
-|-----------|----------|
-| SRP | One reason to change |
-| OCP | Extend without editing core |
-| LSP | Impls must honor the contract |
-| ISP | Small interfaces |
-| DIP | Depend on abstractions |
-| DRY | Don’t duplicate knowledge |
-| KISS | Simplest workable design |
-| YAGNI | Don’t build unused features |
-| PoLK | Talk only to close friends |
+**In this repo:** `JavaScript/ParkingLot2/ParkingLot.js` → `floor.findAvailableSlot()`.
 
 ---
 
+<a id="principles-cheat-card"></a>
+
+## Principles cheat card
+
+| Principle | One line | Deep dive |
+|-----------|----------|-----------|
+| SRP | One reason to change | [§ SRP](#srp) |
+| OCP | Extend without editing core | [§ OCP](#ocp) |
+| LSP | Impls must honor the contract | [§ LSP](#lsp) |
+| ISP | Small interfaces | [§ ISP](#isp) |
+| DIP | Depend on abstractions | [§ DIP](#dip) |
+| DRY | Don’t duplicate knowledge | [§ DRY](#dry) |
+| KISS | Simplest workable design | [§ KISS](#kiss) |
+| YAGNI | Don’t build unused features | [§ YAGNI](#yagni) |
+| PoLK | Talk only to close friends | [§ PoLK](#polk) |
