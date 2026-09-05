@@ -51,11 +51,14 @@ class EqualExpense extends Expense {
   validate() {
     // amount is integer paise — floor + remainder on last (sum === total)
     const n = this.splits.length;
+    // Create a base amount for each split without decimal
     const base = Math.floor(this.amount / n);
+    // Assign the base amount to each split
     this.splits.forEach((split) => {
       split.amount = base;
     });
-    this.splits[n - 1].amount += this.amount - base * n;
+    // Add the remainder to the last split
+    this.splits[n - 1].amount += this.amount - (base * n);
 
     return this;
   }
@@ -74,16 +77,20 @@ class PercentageExpense extends Expense {
     }
 
     // integer paise: floor each share, last gets remainder so sum === total
-    let allocated = 0;
-    const last = this.splits.length - 1;
+    let allocated = 0, smallest = this.amount, smallestIndex = 0;
     this.splits.forEach((split, i) => {
-      if (i === last) {
-        split.amount = this.amount - allocated;
-      } else {
-        split.amount = Math.floor((this.amount * split.percentage) / 100);
-        allocated += split.amount;
+      // Assign the amount to the split based on the percentage
+      split.amount = Math.floor((this.amount * split.percentage) / 100);
+      // Add the amount to the allocated amount
+      allocated += split.amount;
+      if (smallest > split.amount) {
+        smallest = split.amount;
+        smallestIndex = i;
       }
     });
+
+    // Add the remainder to the smallest split
+    this.splits[smallestIndex].amount += this.amount - allocated;
 
     return this;
   }

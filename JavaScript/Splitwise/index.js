@@ -45,3 +45,23 @@ console.log(service.getPairwiseBalances());
 
 service.settleUp(user3.id, user1.id, 99);
 console.log(service.getPairwiseBalances());
+
+try {
+  service.addExpense({
+    type: 'Exact',
+    paidBy: user3.id,
+    amount: 100,
+    splits: [
+      new ExactSplit(user1.id, 30),
+      new ExactSplit(user2.id, 20),
+      new ExactSplit(user3.id, 51),
+    ],
+  });
+} catch (error) {
+  console.log('Error adding expense: ', error.message);
+}
+console.log(service.getPairwiseBalances());
+
+console.log('\nFinal settlements');
+service.settleUp(user3.id, user1.id);
+console.log(service.getPairwiseBalances());
