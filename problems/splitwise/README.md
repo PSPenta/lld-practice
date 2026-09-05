@@ -23,7 +23,7 @@
 | **Use cases (v1)** | Add expense · view pairwise balances · settle (full/partial) |
 | **In scope** | Equal/exact/percent, pairwise debts, integer minor units |
 | **Out of scope** | Real payments, multi-currency FX, simplify (optional evolve) |
-| **Assumptions** | Single currency; API accepts rupees, ledger stores paise |
+| **Assumptions** | Single currency; API accepts rupees, ledger stores paise; Equal remainder→last, Percentage remainder→smallest |
 
 ### Confirm understanding
 > "Users add shared expenses; we track who owes whom in paise; settle clears or reduces an edge."
@@ -39,7 +39,9 @@ Balance { debtorId, creditorId, amountPaise }
 
 Expense (abstract / interface)
   ExactExpense | EqualExpense | PercentageExpense
-  validate() → fills/checks amounts; apply(sheet) writes debts
+  validate() → fills/checks paise amounts; apply(sheet) writes debts
+  Equal: floor + remainder → last split
+  Percentage: floor + remainder → smallest split (tie → first)
 ExpenseFactory / CreateExpense(type, …)
 
 BalanceSheet
@@ -57,9 +59,12 @@ SplitwiseService
 
 ## Step 3 — Flows
 
-1. `addExpense` → convert rupees→paise → factory → `validate()` (floor + remainder on last) → `apply` pairwise debts  
-2. `settleUp(from, to, amount?)` → reverse `addDebt` to reduce/clear edge  
-3. Opposite edges net automatically inside `addDebt`
+1. `addExpense` → `toAmount(rupees)` → factory → `validate()` (fills/checks **paise** shares) → `apply` pairwise debts  
+2. **Equal:** `floor(total/n)` each; **remainder on last** so Σ === total  
+3. **Percentage:** percents must sum to 100; `floor` each share; **remainder on smallest share** (first index on ties)  
+4. **Exact:** split amounts must already sum to expense (else throw)  
+5. `settleUp(from, to, amount?)` → reverse `addDebt` to reduce/clear edge  
+6. Opposite edges net inside `addDebt`; display uses `fromAmount(paise)`
 
 ---
 
@@ -69,16 +74,17 @@ SplitwiseService
 addUser(name, email)
 addExpense({ type, paidBy, amountRupees, splits })
 getPairwiseBalances() → display strings (fromAmount)
-settleUp(payerId, payeeId, amountRupees?)
+settleUp(payerId, payeeId, amountRupees?)   // null/omit = full edge
 ```
 
 ---
 
 ## Step 5 — Deepen
 
-- Integer paise only in the ledger — never `toFixed` as source of truth  
-- Equal/percent: floor + remainder on last so Σ shares === total  
-- Reject non-positive settle / addDebt amounts  
+- Integer **paise** in the ledger only — convert at API boundary; never `toFixed` as source of truth  
+- Equal: remainder on **last**; Percentage: remainder on **smallest** — both keep Σ shares === total exactly  
+- Exact validates sum of amounts === expense (demo rejects mismatches)  
+- Reject non-positive settle / `addDebt` amounts  
 - Concurrent adds → lock `BalanceSheet`
 
 ---
@@ -107,9 +113,9 @@ settleUp(payerId, payeeId, amountRupees?)
 | `Split.js` | `EqualSplit` / `ExactSplit` / `PercentageSplit` |
 | `Balance.js` | Pairwise edge `{ debtorId, creditorId, amount }` |
 | `BalanceSheet.js` | `addDebt` (merge same edge, net opposite), `getBalance` |
-| `Expense.js` | Factory + Equal/Exact/Percentage `validate` / shared `apply` |
+| `Expense.js` | Factory + Equal (remainder→**last**) / Percentage (remainder→**smallest**) / Exact |
 | `SplitwiseService.js` | Façade: `addUser`, `addExpense`, `settleUp`, `getPairwiseBalances` |
-| `index.js` / `main.go` | Demo: equal + percent expenses, full/partial settle |
+| `index.js` / `main.go` | Demo: equal, percent, settle, Exact mismatch, final clear |
 
 **Read order:** `SplitwiseService` → `Expense` factory → `BalanceSheet.addDebt` → `money.toAmount`.
 

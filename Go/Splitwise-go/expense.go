@@ -64,16 +64,19 @@ func (e *PercentageExpense) Validate() error {
 	if totalPct != 100 {
 		return fmt.Errorf("total percentage must be 100")
 	}
+
 	var allocated int64
-	last := len(e.Splits) - 1
+	smallest := e.Amount
+	smallestIndex := 0
 	for i, s := range e.Splits {
-		if i == last {
-			s.Amount = e.Amount - allocated
-		} else {
-			s.Amount = (e.Amount * int64(s.Percentage)) / 100
-			allocated += s.Amount
+		s.Amount = (e.Amount * int64(s.Percentage)) / 100
+		allocated += s.Amount
+		if s.Amount < smallest {
+			smallest = s.Amount
+			smallestIndex = i
 		}
 	}
+	e.Splits[smallestIndex].Amount += e.Amount - allocated
 	return nil
 }
 
