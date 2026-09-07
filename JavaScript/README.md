@@ -20,6 +20,7 @@
 8. [Dynamic Typing — How JS Stores Values](#8-dynamic-typing--how-js-stores-values)
 9. [Programming Paradigms in JS](#9-programming-paradigms-in-js)
 10. [Prototypes & Prototypal Inheritance](#10-prototypes--prototypal-inheritance)
+10A. [OOP in core JS — class desugaring & closures](#10a-oop-in-core-js--class-desugaring--closures)
 11. [setTimeout, setImmediate, setInterval](#11-settimeout-setimmediate-setinterval)
 12. [NaN vs null vs undefined](#12-nan-vs-null-vs-undefined)
 13. [What Is Node.js? JS vs Node](#13-what-is-nodejs-js-vs-node)
@@ -48,7 +49,7 @@
 
 | Day | Focus | Sections |
 |-----|-------|----------|
-| **1** | Language core | §1–§12, **§27** gotchas |
+| **1** | Language core | §1–§12 (+ **§10A** OOP/closures), **§27** gotchas |
 | **2** | Node runtime & async | §13–§21, **§20** Promise combinators |
 | **3** | Production topics + drill | §22–§26, **§28** checklist, **§29** cheat sheet |
 
@@ -335,7 +336,8 @@ counter(); // 1
 counter(); // 2 — still has access to `count`
 ```
 
-**Uses:** data privacy, factories, event handlers, partial application, memoisation.
+**Uses:** data privacy, factories, event handlers, partial application, memoisation.  
+**LLD / OOP via closures:** private state + public API — full walkthrough in **[§10A](#10a-oop-in-core-js--class-desugaring--closures)**.
 
 ### Memoisation
 
@@ -512,6 +514,218 @@ interface RateLimiterStrategy { isAllowed(ip: string): boolean; }
 ```
 
 **Interview line:** “In JS I use an abstract base class or duck typing for Strategy; in TS I'd use an `interface`.”
+
+---
+
+## 10A. OOP in core JS — class desugaring & closures
+
+ES6 `class` is **syntax sugar**. The engine still builds **constructor functions + prototype chains**. Closures give **true private state** (pre-`#private` fields). For LLD interviews, be able to implement the four pillars in **core JS** and say what `class` becomes under the hood.
+
+### How the engine sees `class`
+
+```javascript
+// What you write
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+  speak() {
+    return `${this.name} makes a sound`;
+  }
+}
+
+class Dog extends Animal {
+  speak() {
+    return `${this.name} barks`;
+  }
+}
+
+const d = new Dog("Rex");
+d.speak(); // "Rex barks"
+```
+
+```javascript
+// Roughly what it is under the hood (core JS)
+function Animal(name) {
+  this.name = name;
+}
+Animal.prototype.speak = function () {
+  return `${this.name} makes a sound`;
+};
+
+function Dog(name) {
+  Animal.call(this, name); // super()
+}
+Dog.prototype = Object.create(Animal.prototype); // extends
+Dog.prototype.constructor = Dog;
+Dog.prototype.speak = function () {
+  return `${this.name} barks`;
+};
+
+const d = new Dog("Rex");
+// Lookup: d → Dog.prototype → Animal.prototype → Object.prototype
+```
+
+| `class` feature | Core JS mechanism |
+|-----------------|-------------------|
+| `constructor` | Function body when called with `new` |
+| Instance methods | Assigned on `Ctor.prototype` (shared) |
+| `extends` / `super()` | `Object.create(Parent.prototype)` + `Parent.call(this, …)` |
+| `static` methods | Properties on the constructor function itself |
+| `new.target` / `super` edge cases | Engine-enforced; hand-rolled prototypes are looser |
+
+**Interview line:** “`class` is sugar over prototypes — methods live on the prototype; instances hold own data and look up behavior on the chain.”
+
+### Encapsulation — closures (factory / module pattern)
+
+Prototype methods are **public** on the chain. For **private** data without `#fields`, close over locals and return a small API:
+
+```javascript
+function createCounter(start = 0) {
+  let count = start; // private — not on `this`, not enumerable
+
+  return {
+    inc() {
+      return ++count;
+    },
+    value() {
+      return count;
+    },
+  };
+}
+
+const c = createCounter();
+c.inc();           // 1
+c.count;           // undefined — cannot touch internals
+c.value();         // 1
+```
+
+Same idea for an LLD “service” object:
+
+```javascript
+function createWallet(owner) {
+  let balancePaise = 0; // encapsulated ledger
+
+  return {
+    credit(rupees) {
+      balancePaise += Math.round(rupees * 100);
+    },
+    debit(rupees) {
+      const amt = Math.round(rupees * 100);
+      if (amt > balancePaise) throw new Error("insufficient");
+      balancePaise -= amt;
+    },
+    balance() {
+      return balancePaise / 100;
+    },
+    get owner() {
+      return owner;
+    },
+  };
+}
+```
+
+| Approach | Privacy | Method sharing |
+|----------|---------|----------------|
+| `class` + public fields | Weak (convention) | Shared on prototype |
+| `class` + `#private` | Real private fields | Shared on prototype |
+| Closure factory | Real privacy via lexical scope | New function per instance (fine for LLD demos) |
+
+### Abstraction — expose a contract, hide the rest
+
+Return only what callers need. Internals stay closed over or unexported (modules).
+
+```javascript
+function createRateLimiter({ capacity, refillPerSec }) {
+  let tokens = capacity;
+  let last = Date.now();
+
+  function refill() {
+    const now = Date.now();
+    tokens = Math.min(
+      capacity,
+      tokens + ((now - last) / 1000) * refillPerSec
+    );
+    last = now;
+  }
+
+  // Public surface = abstraction; refill() is not exposed
+  return {
+    allow(key) {
+      refill();
+      if (tokens < 1) return false;
+      tokens -= 1;
+      return true;
+    },
+  };
+}
+
+const limiter = createRateLimiter({ capacity: 10, refillPerSec: 1 });
+limiter.allow("user:1"); // caller never sees tokens / refill
+```
+
+### Polymorphism — same message, different behavior
+
+No interface keyword. Any object with the right methods works (**duck typing**):
+
+```javascript
+function charge(gateway, amountPaise) {
+  return gateway.pay(amountPaise); // only cares about .pay
+}
+
+const razorpay = {
+  pay(amountPaise) {
+    return { ok: true, provider: "razorpay", amountPaise };
+  },
+};
+const stripe = {
+  pay(amountPaise) {
+    return { ok: true, provider: "stripe", amountPaise };
+  },
+};
+
+charge(razorpay, 50000);
+charge(stripe, 50000);
+```
+
+With prototypes / `class`, subclasses override the same method name — runtime dispatch via the prototype chain (same idea as Strategy in `RateLimiter2`).
+
+### Inheritance — prototype chain (or prefer composition)
+
+```javascript
+function Vehicle(type) {
+  this.type = type;
+}
+Vehicle.prototype.wheels = function () {
+  return 0;
+};
+
+function Car() {
+  Vehicle.call(this, "car");
+}
+Car.prototype = Object.create(Vehicle.prototype);
+Car.prototype.constructor = Car;
+Car.prototype.wheels = function () {
+  return 4;
+};
+
+new Car().wheels(); // 4 — method found on Car.prototype
+```
+
+**LLD default in this repo:** composition (`RateLimiter` **has-a** strategy; `ParkingLot` **has-a** floors) — see [../docs/oop/README.md](../docs/oop/README.md). Use inheritance when there is a stable **is-a** and shared algorithm hooks.
+
+### Pillars → JS toolkit (say this in interviews)
+
+| Pillar | Core JS | `class` era |
+|--------|---------|-------------|
+| **Encapsulation** | Closure factory / module scope | `#private` / WeakMap pattern |
+| **Abstraction** | Small returned API / duck-typed contract | Abstract base that throws |
+| **Polymorphism** | Same method names on different objects | `extends` + override / Strategy |
+| **Inheritance** | `Object.create` + prototype link | `class Child extends Parent` |
+
+**Interview line:** “I can model OOP with factories + prototypes without `class`. In LLD I prefer composition + a strategy/gateway interface; I use `class` when the team style expects it, knowing it’s still prototypes underneath.”
+
+**Repo proof:** Strategy polymorphism → `JavaScript/RateLimiter2/` · Factory + subtype validate hooks → `JavaScript/Splitwise/Expense.js` · Composition → `JavaScript/ParkingLot2/`, `JavaScript/SearchEngine/`.
 
 ---
 
@@ -946,6 +1160,8 @@ Answer aloud without looking:
 - [ ] Rest vs spread
 - [ ] Nested destructuring with defaults
 - [ ] Closure + memoisation example
+- [ ] OOP pillars in core JS (closure privacy, duck typing, prototype `extends`)
+- [ ] How `class` desugars to constructor + prototype
 - [ ] Shallow vs deep copy methods
 - [ ] Prototype chain vs `class`
 - [ ] NaN / null / undefined differences
@@ -985,6 +1201,8 @@ TDZ                     → let/const from block start until declaration line
 rest                    → collect ...args; spread → expand iterable/object
 closure                 → inner fn remembers outer scope
 memoize                 → cache by input key
+OOP via closures        → private state in outer scope; return public API
+class                   → sugar over ctor + prototype; extends = Object.create chain
 
 use strict              → no implicit globals; this undefined on plain call
 shallow copy            → spread/assign — nested shared

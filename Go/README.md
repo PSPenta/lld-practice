@@ -15,6 +15,7 @@
 7. [Error Handling](#7-error-handling)
 8. [Go Keywords — Complete Reference](#8-go-keywords--complete-reference)
 9. [Interfaces & Type System](#9-interfaces--type-system)
+   - [OOP pillars in Go (no classes)](#oop-pillars-in-go-no-classes)
    - [Reflection](#reflection)
 10. [Data Structures — Map vs Slice](#10-data-structures--map-vs-slice)
 11. [Testing](#11-testing)
@@ -92,7 +93,7 @@ err := fmt.Errorf("fetch user %d: %w", id, originalErr)
 | `select`, coordinating goroutines | **§3**, **§8** |
 | Concurrency pitfalls, safe shared data | **§4**, **§18** |
 | Error handling, panic/recover | **§7**, **§8** |
-| Interfaces, polymorphism | **§9** |
+| Interfaces, polymorphism, OOP without classes | **§9** (+ [OOP pillars](#oop-pillars-in-go-no-classes)) |
 | Garbage collection, memory leaks | **§6** |
 | Reflection | **§9 → Reflection** |
 | Error values vs error types | **§7** |
@@ -111,12 +112,12 @@ err := fmt.Errorf("fetch user %d: %w", id, originalErr)
 | Day | Focus | Sections |
 |-----|-------|----------|
 | **1 — Core concurrency** | GMP, goroutines, channels, sync, context | §1–§5, then **§18** gotchas #1–2, #8, #11–12 |
-| **2 — Language + memory** | Errors, interfaces, GC, maps/slices, keywords | §6–§10, **§18** rest of gotchas |
+| **2 — Language + memory** | Errors, interfaces (**OOP pillars**), GC, maps/slices, keywords | §6–§10 (esp. [§9 OOP pillars](#oop-pillars-in-go-no-classes)), **§18** rest of gotchas |
 | **3 — Production + drill** | HTTP, DB, modules, patterns; practice aloud | §11–§17, **§19** Qs, **§20** cheat sheet |
 
 **Before the interview:** run through **§18** (predict output without looking), skim **§20** (30 min), pick 5 **§19** questions and answer out loud.
 
-**What this doc covers well:** concurrency (GMP, channels, mutex, atomics, context), slice/map internals, error handling, GC/profiling, interfaces, high-throughput HTTP, gotchas, HTTP/DB basics, modules, middleware.
+**What this doc covers well:** concurrency (GMP, channels, mutex, atomics, context), slice/map internals, error handling, GC/profiling, interfaces + **OOP-without-classes for LLD**, high-throughput HTTP, gotchas, HTTP/DB basics, modules, middleware.
 
 **REST / payments / platform APIs:** **[Backend/README.md](../Backend/README.md)** — idempotency, pagination, status codes (pairs with §12–§16 here).
 
@@ -1531,18 +1532,99 @@ func NewService(repo UserRepository) *Service { // interface in, struct out
 }
 ```
 
-### Embedding — composition over inheritance
+### OOP pillars in Go (no classes)
+
+Go has **no** `class`, `extends`, or `implements`. LLD still needs the same design ideas — map them explicitly in interviews.
+
+| Classical OOP | Go | How |
+|---------------|----|-----|
+| **Encapsulation** | Unexported identifiers | Lowercase `field` / `func` — only same package can touch |
+| **Abstraction** | Small interfaces | Callers depend on `Pay(amount int64) error`, not `RazorpayClient` |
+| **Polymorphism** | Implicit interface satisfaction | Any type with the methods works; no `implements` |
+| **Inheritance** | **Not used** — composition + embedding | Embed structs for promotion; prefer **has-a** fields |
+
+#### Encapsulation — unexported fields + `New` constructor
+
+```go
+package wallet
+
+type Wallet struct {
+    owner   string // unexported — package-private
+    balance int64  // paise; callers cannot set arbitrarily
+}
+
+func New(owner string) *Wallet {
+    return &Wallet{owner: owner}
+}
+
+func (w *Wallet) Credit(paise int64) {
+    w.balance += paise
+}
+
+func (w *Wallet) Balance() int64 { return w.balance }
+func (w *Wallet) Owner() string  { return w.owner }
+```
+
+Outside package `wallet`, `w.balance` does not compile — stronger than JS “convention” privacy (unless `#private` / closures).
+
+#### Abstraction + polymorphism — interface as the contract
+
+```go
+type BankGateway interface {
+    ProcessPayment(amountPaise int64) error
+}
+
+type RazorpayGateway struct{ apiKey string }
+func (r *RazorpayGateway) ProcessPayment(amountPaise int64) error { /* ... */ return nil }
+
+type StripeGateway struct{ secret string }
+func (s *StripeGateway) ProcessPayment(amountPaise int64) error { /* ... */ return nil }
+
+type PaymentGateway struct {
+    banks map[string]BankGateway // depends on abstraction
+}
+
+func (pg *PaymentGateway) Pay(method string, amountPaise int64) error {
+    gw, ok := pg.banks[method]
+    if !ok {
+        return fmt.Errorf("unknown method %q", method)
+    }
+    return gw.ProcessPayment(amountPaise) // polymorphic dispatch
+}
+```
+
+Same LLD idea as JS Strategy / Adapter — see `Go/PaymentGateway-go/`, `Go/RateLimiter2-go/`.
+
+#### “Inheritance” → embedding (composition with method promotion)
+
 ```go
 type Animal struct{ Name string }
-func (a Animal) Speak() string { return a.Name }
+func (a Animal) Speak() string { return a.Name + " sound" }
 
 type Dog struct {
-    Animal              // embedded — inherits methods
-    Breed string
+    Animal // embedded — Speak promoted onto Dog
+    Breed  string
 }
+
 d := Dog{Animal: Animal{Name: "Rex"}, Breed: "Lab"}
-d.Speak() // promoted method
+d.Speak() // "Rex sound" — not classical inheritance; Dog has-an Animal
 ```
+
+Override by declaring the same method on `Dog`. Prefer **explicit fields** (`limiter Strategy`) when the relationship is “uses an algorithm,” not “is-a.”
+
+#### Side-by-side with JS (interview talking point)
+
+| Need | JavaScript | Go |
+|------|------------|-----|
+| Private state | Closures / `#fields` | Unexported fields |
+| Shared behavior | `prototype` / `class` methods | Methods on `*T` / `T` |
+| Swap algorithms | Duck typing / Strategy interface | Interface parameter |
+| Reuse structure | `extends` or compose objects | Struct embedding or named fields |
+| Constructor | `constructor` / factory fn | `NewXxx(...) *T` |
+
+**Interview line:** “Go isn’t class-OOP. I encapsulate with unexported fields, abstract with small interfaces, get polymorphism by satisfying those interfaces, and compose with embedding — same LLD shapes as JS Strategy/Factory, different syntax.”
+
+**Repo proof:** `Go/RateLimiter2-go/` (Strategy) · `Go/PaymentGateway-go/` (gateway interface) · `Go/ParkingLot2-go/` (composition) · `Go/Splitwise-go/` (factory + variants).
 
 ### Type assertion and type switch
 ```go
@@ -2729,6 +2811,7 @@ fmt.Println(s1[0]) // 99 — same backing array
 20. What is the nil interface gotcha?
 21. What does "accept interfaces, return structs" mean?
 22. Write a mock for a `UserRepository` interface for use in a unit test
+22a. Map encapsulation / abstraction / polymorphism / inheritance to Go (unexported fields, interfaces, embedding) — aloud, with a tiny Wallet or Gateway example
 23. What are generics in Go and when do you use them?
 
 ### Data Structures
@@ -2827,6 +2910,7 @@ runtime.GC()            → force GC after large batch or before latency window
 sync.Pool               → bypass GC for reusable objects (buffers, structs)
 
 Interface / polymorphism → implicit satisfaction; accept interface, return struct
+OOP without classes      → encapsulate unexported; abstract interface; compose/embed (no extends)
 nil interface gotcha    → interface{nilConcretePtr} != nil
 Multiple interfaces     → one type implements many; compose with embedding
 Reflection              → reflect package; slow; JSON/ORM; prefer interfaces/generics
