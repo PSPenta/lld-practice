@@ -13,6 +13,7 @@
 | **Golang** | **[Go/README.md](Go/README.md)** | GMP, goroutines, channels, context, GC, interfaces, high-throughput HTTP |
 | **REST API & Backend** | **[Backend/README.md](Backend/README.md)** | REST, idempotency, payments, pagination, JWT/OAuth, status codes |
 | **LLD method & theory** | **This doc §1–§22** · **[docs/](docs/README.md)** | Method, OOP, SOLID, patterns, walkthroughs in **`problems/`** |
+| **DSA notes** | **[docs/dsa/README.md](docs/dsa/README.md)** | Crisp algorithm revision notes |
 | **LLD gaps (breadth)** | **[lld-gaps/README.md](lld-gaps/README.md)** | UML, extra patterns, 12-week plan |
 | **AI code review** | **[ai-code-review-round/README.md](ai-code-review-round/README.md)** | RAG repo review, production bugs |
 | **Vibe coding** | **[vibe-coding-round/README.md](vibe-coding-round/README.md)** | Cursor/Copilot rounds — design first, AI second |
