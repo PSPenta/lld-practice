@@ -8,8 +8,12 @@
 0. [Why Go, fmt & Interview Topic Map](#0-why-go-fmt--interview-topic-map)
 1. [Go Runtime & Scheduler](#1-go-runtime--scheduler)
 2. [Goroutines](#2-goroutines)
+   - [What happens when a goroutine panics?](#what-happens-when-a-goroutine-panics)
+   - [Production: failure, retries, shutdown](#production-goroutine-failure)
 3. [Channels](#3-channels)
+   - [3rd-party socket — buffered or unbuffered?](#3rd-party-socket--buffered-or-unbuffered)
 4. [Mutex, RWMutex, Atomics](#4-mutex-rwmutex-atomics)
+   - [Mutex has no timeout](#mutex-has-no-timeout)
 5. [Context](#5-context)
 6. [Memory & Garbage Collector](#6-memory--garbage-collector)
 7. [Error Handling](#7-error-handling)
@@ -88,8 +92,11 @@ err := fmt.Errorf("fetch user %d: %w", id, originalErr)
 | Why Go? | **§0** (above) |
 | fmt (`%v`, `%T`, `Sprintf`) | **§0** |
 | Goroutines vs threads, creating/managing | **§1** GMP, **§2** |
+| Goroutine panic / infinite failure / graceful shutdown | **§2** production + **§7** / **§8** |
 | Channels, communication | **§3** |
+| Socket feed → buffered vs unbuffered | **§3** 3rd-party socket |
 | Mutex vs RWMutex, `sync` package | **§4** |
+| Mutex held forever (no lock timeout) | **§4** Mutex has no timeout |
 | `select`, coordinating goroutines | **§3**, **§8** |
 | Concurrency pitfalls, safe shared data | **§4**, **§18** |
 | Error handling, panic/recover | **§7**, **§8** |
@@ -420,6 +427,155 @@ import "go.uber.org/goleak"
 defer goleak.VerifyNone(t)
 ```
 
+### What happens when a goroutine panics?
+
+**Interview line:** An unrecovered panic in **any** goroutine kills the **entire process**, not just that goroutine.
+
+1. `panic` stops the **current** goroutine. Code after the panic does not run.
+2. Deferred funcs on **that goroutine** still run, LIFO (same as a normal return).
+3. If a deferred `recover()` runs on **that same goroutine**, the panic is caught; the process lives.
+4. If nothing recovers, the runtime dumps stacks (all goroutines) and **exits the program**.
+
+`recover()` in `main` does **not** catch a worker panic. Recovery is per-goroutine.
+
+```go
+func main() {
+    defer func() { recover() }() // does NOT save you
+    go func() {
+        panic("boom") // unrecovered → whole process dies
+    }()
+    time.Sleep(time.Second)
+}
+```
+
+```go
+go func() {
+    defer wg.Done()
+    defer mu.Unlock() // still runs during unwind
+    defer func() {
+        if r := recover(); r != nil {
+            errCh <- fmt.Errorf("panic: %v", r)
+        }
+    }()
+    doWork()
+}()
+```
+
+| | Same goroutine | Whole process |
+|---|---|---|
+| `panic` + `recover` in that goroutine | Continues after the deferred recover | Lives |
+| `panic` with no recover | Unwinds, then process exit | **Dies** |
+| `runtime.Goexit()` | Goroutine ends; defers run; **no panic** | Others keep running |
+
+What does **not** happen on panic: other goroutines are not cancelled, `context` is not cancelled, mutexes / WaitGroups / channels are not cleaned up unless you `defer`’d that cleanup **on the panicking goroutine**.
+
+Use `error` for expected failure. Use `panic` only for bugs. Full `recover` / `errgroup` notes: **§7**, **§8**.
+
+### Production: goroutine failure
+
+You cannot force-kill a goroutine. It only stops if **every blocking call has an exit path** and **retries are bounded**. `context` timeout is one exit path, not the whole design.
+
+#### Stop infinite failure
+
+“Infinite failure” is usually: unbounded retries, panic→restart→panic with no backoff, a blocked send/recv (leak), or a **permanent** error treated as retryable.
+
+**Rule:** classify the error, bound the work, always have a stop signal.
+
+```go
+func worker(ctx context.Context, fn func(context.Context) error) {
+    backoff := time.Second
+    failures := 0
+    const maxFailures = 5
+
+    for {
+        err := fn(ctx)
+        if err == nil {
+            failures = 0
+            backoff = time.Second
+            continue
+        }
+        if errors.Is(err, context.Canceled) || isPermanent(err) {
+            return // stop — do not retry
+        }
+        failures++
+        if failures >= maxFailures {
+            return // DLQ / alert; do not spin
+        }
+        select {
+        case <-ctx.Done():
+            return
+        case <-time.After(backoff): // + jitter in real code
+            backoff *= 2
+            if backoff > 30*time.Second {
+                backoff = 30 * time.Second
+            }
+        }
+    }
+}
+```
+
+| Do | Don’t |
+|---|---|
+| Retry **transient** only (timeout, 429, reset) | Retry 400 / auth / bad payload |
+| Cap attempts + exponential backoff + jitter | Tight `for { recover(); go again }` |
+| After N failures: DLQ, metric, alert | Hide failure in a restart loop |
+
+`runWithRetry` / `runWithRestart` above still need **max attempts** and a **stop signal** — otherwise they *are* infinite failure.
+
+#### Handle failure gracefully
+
+Contain → report → wait → shut down.
+
+- `defer recover()` **inside** the worker (see panic section above).
+- Report on a **buffered** error channel (`make(chan error, 1)`) so send never blocks after the reader is gone — or use `errgroup` (**§7**).
+- `defer wg.Done()` and `defer Unlock()` so panic cannot stick WaitGroup / mutex.
+
+```go
+g, ctx := errgroup.WithContext(parent)
+g.Go(func() error { return consume(ctx) })
+g.Go(func() error { return produce(ctx) })
+if err := g.Wait(); err != nil {
+    // first error cancelled the rest via ctx
+}
+```
+
+**Shutdown:** (1) cancel ctx / close stop channel (2) stop producing — sender `close`s the jobs channel (3) `WaitGroup` / `errgroup.Wait()` with a **shutdown deadline** (4) if still stuck, dump `pprof/goroutine` then exit. A goroutine blocked in a syscall **with no deadline** cannot be killed except by process exit.
+
+#### Alternatives to `context` timeout
+
+Context is the standard cancel signal. These also stop or bound a worker:
+
+| Mechanism | Use when |
+|---|---|
+| **Close a `done` channel** | Broadcast stop (`close(done)`; every `<-done` unblocks) |
+| **Close the jobs channel** | Producer finished; consumers `range` and exit |
+| **`errgroup` / parent cancel** | One worker fails → cancel siblings (not a timer) |
+| **Max retries / max items** | Bound work without a clock |
+| **Circuit breaker** | Downstream is down; fail fast (**§15**) |
+| **I/O deadlines** | Socket/HTTP/DB must not block forever if ctx is forgotten |
+| **`select` + `default`** | Non-blocking send/recv; drop or skip instead of wait |
+| **Worker pool / semaphore** | Bound concurrency so one storm cannot spawn unbounded Gs |
+| **Watchdog / heartbeat** | Worker must ping; silence → stop or restart |
+| **`http.Client{Timeout}`** | Per-call limit; prefer **both** ctx and client timeout |
+
+Socket-specific (ctx does not unblock `Read` until it returns):
+
+```go
+conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
+```
+
+Stop without a timer:
+
+```go
+select {
+case msg := <-ch:
+    handle(msg)
+case <-done: // closed channel, not a timeout
+    return
+}
+```
+
 ---
 
 ## 3. Channels
@@ -437,6 +593,48 @@ Use channels to pipeline work, fan-out/fan-in, signal completion, and limit conc
 - **Buffered** `make(chan T, n)` — send blocks only when buffer is full (decoupled)
 - Use buffered size 1 when goroutine sends exactly once and must exit immediately
 - **Classic trap:** unbuffered `ch <- x` then `<-ch` in the **same** goroutine → **deadlock** (see §18)
+
+### 3rd-party socket — buffered or unbuffered?
+
+**Interview line:** Small **buffered** channel (burst absorber). Not unbuffered, not huge/unbounded.
+
+The socket reader is the producer; your processor is the consumer.
+
+| Channel | What happens on a live socket |
+|---|---|
+| **Unbuffered** | Every frame waits for the consumer. Socket `Read` stalls → TCP backpressure on the vendor. Safe, extra latency; stalls the reader if processing is slow. |
+| **Small buffer** (64–1024) | Absorbs bursts (websocket frames, market ticks). Usual answer. |
+| **Large / unbounded** | Hides slowness until RAM blows up. A fast vendor fills memory. Don’t. |
+
+```go
+msgs := make(chan Message, 256)
+
+go func() {
+    defer close(msgs)
+    for {
+        conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+        msg, err := readFrame(conn)
+        if err != nil {
+            return
+        }
+        select {
+        case msgs <- msg:
+        case <-ctx.Done():
+            return
+        }
+    }
+}()
+```
+
+When the buffer is full, pick a **policy**:
+
+| Policy | When |
+|---|---|
+| **Block** (backpressure) | Must not drop data (orders, payments, ledger events) |
+| **Drop oldest / keep latest** | Ticks, prices, presence — stale is worthless |
+| **Disconnect / reconnect** | Consumer stuck; better to reset than to lie |
+
+Unbuffered is correct only for a strict handshake: *do not read the next frame until this one is taken* (backpressure by design, not a queue).
 
 ### Core patterns
 
@@ -590,6 +788,41 @@ defer rw.Unlock()
 **Rules:**
 - Never hold a lock during I/O — other goroutines starve
 - Always pair Lock with Unlock via `defer`
+
+### Mutex has no timeout
+
+**Interview line:** `sync.Mutex` has **no** `Lock(ctx)`. If a goroutine holds the lock and then blocks, everyone else waits forever. You cannot steal the lock.
+
+Usual causes: I/O or a blocking channel send **inside** the lock; panic without `defer Unlock()`; deadlock (A holds mu1 waits mu2; B the reverse); calling a function that takes the **same** mutex (not re-entrant).
+
+```go
+mu.Lock()
+snapshot := make([]Item, len(items))
+copy(snapshot, items)
+mu.Unlock()
+
+publish(snapshot) // I/O HERE, without the lock
+```
+
+- Critical section is **memory only**. Copy what you need, unlock, then I/O.
+- `TryLock()` (Go 1.18+) is fail-immediate, not a timed wait.
+- If you need “acquire or give up”, use a channel as a lock:
+
+```go
+sem := make(chan struct{}, 1)
+
+select {
+case sem <- struct{}{}:
+    defer func() { <-sem }()
+    // got the lock
+case <-ctx.Done():
+    return ctx.Err()
+case <-time.After(100 * time.Millisecond):
+    return errLockTimeout
+}
+```
+
+Detect: `go test -race`, mutex pprof (`go tool pprof mutex`). Never log/network under lock.
 
 ### sync/atomic — lock-free operations (multi-goroutine safe)
 
@@ -1168,6 +1401,7 @@ if errors.As(err, &ve) {
 - `error` — expected, recoverable: DB not found, invalid input, timeout
 - `panic` — unexpected, programming bug: nil pointer, index out of range
 - Never use panic for control flow
+- **Unrecovered panic in any goroutine = process death** — see **§2** [What happens when a goroutine panics?](#what-happens-when-a-goroutine-panics)
 
 ### recover
 ```go
@@ -2787,13 +3021,17 @@ fmt.Println(s1[0]) // 99 — same backing array
 6. What is a goroutine leak? How do you detect and fix it?
 7. Call 3 APIs in parallel; return the first successful response and cancel the rest (`Promise.race` equivalent). Why can't you use `wg.Wait()` for this?
 7a. Predict the output of the loop+goroutine `print(i)` snippet — and the unbuffered channel in `main` only (§18)
+7b. What happens when a goroutine panics? Does `recover` in `main` catch it?
+7c. How do you stop infinite retry/restart of a failing goroutine? Alternatives to `context` timeout?
 
 ### Channels
 8. What is the difference between buffered and unbuffered channels?
+8a. A 3rd-party service streams data over a socket — buffered or unbuffered channel? What if the buffer fills?
 9. What happens if you send to a closed channel?
 10. Implement a fan-in that merges results from 3 goroutines into one channel
 11. How do you broadcast a stop signal to 10 goroutines simultaneously?
 11a. Why does `for range ch` hang if the sender never closes?
+11b. How do you prevent a goroutine from holding a mutex forever? Does `Mutex` have a timeout?
 
 ### Memory & GC
 12. What is escape analysis? How do you inspect it?
@@ -2883,6 +3121,10 @@ defer rows.Close()      → DB connection returned to pool
 defer order             → LIFO; defer f(x) snapshots x now
 Mutex.Lock()            → one goroutine at a time (readers + writers)
 Never copy mutex        → pointer receiver; go vet catches copies
+Mutex has no timeout    → never I/O under lock; copy then unlock; channel+select if you need “lock or give up”
+Unrecovered panic       → ANY goroutine panic kills the process; recover must be inside that G
+Infinite G failure      → bound retries; classify permanent errors; backoff; not a tight restart loop
+Socket → channel        → small buffer (burst); unbuffered = backpressure; never unbounded
 RWMutex.RLock()         → many concurrent readers; writers blocked
 RWMutex.Lock()          → exclusive; blocks all readers and writers
 atomic ops              → multi-goroutine safe; CPU makes single read/write indivisible; NOT single-threaded
