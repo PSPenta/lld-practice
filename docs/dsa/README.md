@@ -215,3 +215,41 @@ return start                            // min feasible speed (low lands on answ
 
 - Search space = speed, not index. Feasibility is monotonic → BS.
 - `ceil(x / mid)` per pile (one pile per hour slot; can’t split across parallel piles).
+
+### Minimum Days to Make m Bouquets — Binary Search on answer
+
+Unsorted `array[i]` = day the `i`th flower blooms. Need `m` bouquets, each of `k` **adjacent** blooms. One flower → one bouquet.
+
+```text
+if m * k > n  →  return -1              // not enough flowers
+
+start = min(array)                      // earliest bloom  (not max)
+end   = max(array)                      // latest bloom
+
+canMake(mid):                           // how many bouquets if we wait `mid` days
+  flowersCount = 0
+  bouquets = 0
+  for x in array:
+    if x <= mid:                        // bloomed by day mid
+      flowersCount++
+      if flowersCount == k:             // k adjacent → one bouquet
+        bouquets++
+        flowersCount = 0                // flowers not reused
+    else:
+      flowersCount = 0                  // adjacency broken
+  return bouquets >= m
+
+while start <= end:
+  mid = start + (end - start) / 2
+
+  if canMake(mid):                      // mid works — try fewer days
+    end = mid - 1
+  else:
+    start = mid + 1
+
+return start                            // min feasible day (low lands on answer)
+```
+
+- Search space = **wait days**, not index. More days → never fewer bouquets → monotonic → BS.
+- Adjacent only: a gap (`x > mid`) resets `flowersCount`.
+- Same pattern as Koko: no extra `days` — feasible → `end = mid - 1`; else `start = mid + 1`; return `start`.
