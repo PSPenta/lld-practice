@@ -14,6 +14,6 @@
 | [interview-prep/](interview-prep/README.md) | §17–§22 — mocks, 4-week plan, day-of extras (AI / HLD / prod Qs) |
 | [../lld-gaps/](../lld-gaps/README.md) | UML, paper-only patterns, refactor drills |
 | [../problems/](../README.md#21-lld-problem-checklist) | §21 — **41 problem walkthroughs** (Steps 1–6) |
-| [dsa/](dsa/README.md) | Crisp DSA revision notes |
+| [dsa/](dsa/README.md) | DSA topic index — [binary search](dsa/binary-search.md) |
 
 **Master list + index cheat cards live on the hub.** Depth docs expand those topics — they should not re-paste the same index tables.
