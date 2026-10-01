@@ -111,6 +111,7 @@ Working code for a small system — **same six steps**, compressed design phase,
 | **Discussion LLD** (~60 min) | Classes, APIs, flows, trade-offs — no full coding | **[hub §1–§6](../../README.md)** — after language prep (top table) |
 | **Machine coding** (90–120 min) | Working code for a small system | Prep guides + [hub §5](../../README.md#5-the-standard-approach-memorize-this) + **`JavaScript/*/`** + **`Go/*-go/`** |
 | **Vibe coding / AI-assisted build** | Cursor/Copilot allowed; build + verify + narrate | **[vibe-coding-round/README.md](../../vibe-coding-round/README.md)** + [method doc](../method/README.md) §5 for design |
+| **HackerRank Chakra (Voice + ADE)** | Voice = AI oral Qs; ADE = Cursor-like IDE + failing tests | **[vibe-coding-round §3A](../../vibe-coding-round/README.md#3a-hackerrank-chakra--voice--ade)** — clarify → plan → AI plan review → execute |
 | **AI code review** | Clone repo, manual review — security, RAG, production gaps | **[ai-code-review-round/README.md](../../ai-code-review-round/README.md)** |
 | **LLD breadth (paper only)** | Elevator, Chess, Logger, UML, extra patterns | **[lld-gaps/README.md](../../lld-gaps/README.md)** |
 

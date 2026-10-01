@@ -192,19 +192,21 @@ nums.reduce((acc, n) => acc + n, 0); // 10
 **All three run synchronously** — they do not wait for Promises inside the callback.
 
 ```javascript
-// WRONG — async map doesn't await
+// WRONG — map is sync; await on the returned array does nothing useful
 await [1, 2, 3].map(async (id) => fetch(`/api/${id}`)); // array of Pending Promises
 
-// RIGHT — for async work use for...of or Promise.all
+// RIGHT A — sequential: await each fetch (one after another)
 const results = [];
 for (const id of ids) {
-  results.push(await fetch(`/api/${id}`));
+  results.push(await fetch(`/api/${id}`)); // await belongs HERE
 }
-// or
+
+// RIGHT B — parallel: do NOT await inside map; await Promise.all once
 const results = await Promise.all(ids.map((id) => fetch(`/api/${id}`)));
+//              ^^^^^ only await — fetch() just returns Promises for all()
 ```
 
-**Interview line:** `map`/`filter`/`reduce` are sync; for async per-item work, use **`for...of` + await** or **`Promise.all` + map**.
+**Interview line:** `map`/`filter`/`reduce` are sync; for async per-item work, use **`for...of` + await** (sequential) or **`Promise.all` + map** (parallel — `await` only on `Promise.all`, not on each `fetch`).
 
 ---
 
@@ -385,6 +387,36 @@ function f() {
 f();
 ```
 
+### `with` statement (avoid — banned in strict)
+
+`with (obj) { ... }` adds `obj` to the **front of the scope chain** for that block, so bare names resolve as properties of `obj` first.
+
+```javascript
+// Sloppy mode only — SyntaxError under "use strict"
+const user = { name: "Ada", age: 36 };
+
+with (user) {
+  console.log(name); // "Ada" — looks up user.name
+  age = 37;          // writes user.age
+}
+```
+
+| Why interviews ask | Why you never ship it |
+|--------------------|------------------------|
+| Legacy / “what does this do?” | Ambiguous scope — is `x` local, outer, or `obj.x`? |
+| Strict mode rejects it | Breaks optimisations; hard to minify / static-analyse |
+| Related to scope chain | Prefer `obj.prop`, destructuring, or a local alias |
+
+```javascript
+// Prefer
+const { name, age } = user;
+// or
+const u = user;
+console.log(u.name);
+```
+
+**Interview line:** `with` extends the scope chain with an object; **illegal in strict mode** — never use it.
+
 ---
 
 ## 7. Shallow Copy vs Deep Copy
@@ -423,13 +455,57 @@ let x = 42;       // number
 x = "hello";      // now string — legal
 ```
 
+### Assigning object ↔ string / number (and vice versa)
+
+**Reassignment** does **not** convert the old value — it **replaces** what the binding points to. No error:
+
+```javascript
+let x = 42;
+x = { a: 1 };           // OK — x now holds a reference to an object
+x = "hi";               // OK — x now holds a string
+
+let s = "hello";
+s = { name: "Ada" };    // OK — string binding now references an object
+
+let n = 10;
+n = [1, 2, 3];          // OK — number binding now references an array
+```
+
+**`const`** forbids rebinding, not mutation of an object:
+
+```javascript
+const obj = { a: 1 };
+obj.a = 2;              // OK — mutate
+obj = { a: 3 };         // TypeError — cannot reassign const
+```
+
+**Coercion** happens in **operations**, not on bare assignment:
+
+| Expression | What happens |
+|------------|--------------|
+| `"hi" + 1` | `"hi1"` — `+` with a string → string concat |
+| `"5" - 2` | `3` — `-` forces number |
+| `Number("42")` / `+"42"` | `42` — explicit / unary coerce |
+| `String(99)` / `99 + ""` | `"99"` |
+| `obj + ""` | calls `ToPrimitive` → usually `"[object Object]"` |
+| `Number({})` | `NaN` |
+| `Boolean(obj)` | always `true` for non-null objects |
+
+```javascript
+const obj = { a: 1 };
+let s = obj;            // assignment: s is the same reference — no conversion
+String(obj);            // "[object Object]" — coercion only when you ask / operators force it
+Number(obj);            // NaN
+obj + 1;                // "[object Object]1"
+```
+
 **Behind the scenes (conceptual):**
 
 - Primitives (`number`, `string`, `boolean`, `null`, `undefined`, `symbol`, `bigint`) are stored **by value** (engine-optimised; often inline for small ints).
 - Objects (including arrays, functions) are stored **by reference** — variable holds a pointer to heap object.
 - Engines (V8) use **hidden classes**, inline caches, and tagging for fast property access — you don't manage types manually.
 
-**Interview line:** JS variables are untyped bindings; values have types at runtime; objects are reference types on the heap.
+**Interview line:** JS variables are untyped bindings — assign object/string/number freely (rebinding). Types collide only when **operators** coerce; bare `=` does not convert.
 
 ---
 
@@ -454,14 +530,22 @@ JavaScript is **multi-paradigm**:
 
 ### `__proto__` vs `Object.prototype`
 
-| | **`Object.prototype`** | **`__proto__` (deprecated name)** |
-|---|------------------------|-----------------------------------|
-| **What** | The **root prototype object** — shared methods like `.toString()` | **Link** on an instance pointing to its prototype |
-| **Better API** | — | `Object.getPrototypeOf(obj)` / `Object.setPrototypeOf()` |
+These are **not** the same thing: one is a **shared root object**; the other is a **per-object link** to whatever prototype that instance uses.
+
+| Feature | **`Object.prototype`** | **`__proto__`** |
+|---------|------------------------|-----------------|
+| **Definition** | The prototype object that plain objects inherit from by default | A reference (accessor) to **that object's** prototype |
+| **Type** | A real object with default methods (`toString`, `hasOwnProperty`, …) | A **property** on instances that points at their prototype |
+| **Relationship** | Near the **top** of the usual chain (`… → Object.prototype → null`) | Points to **this** object's prototype (often `Ctor.prototype`, sometimes `Object.prototype`) |
+| **Purpose** | Shared methods/properties for (almost) all objects | Read/write access to the internal `[[Prototype]]` link |
+| **Access** | `Object.prototype` | `obj.__proto__` or preferably `Object.getPrototypeOf(obj)` |
+| **Modification** | Changing it affects **every** object that inherits from it | Changing it rewires **that one** object's chain |
+| **Recommended use** | Add shared helpers carefully (prefer composition) | **Legacy** — use `Object.getPrototypeOf` / `Object.setPrototypeOf` (or `Object.create`) |
 
 ```javascript
 const obj = { a: 1 };
 Object.getPrototypeOf(obj) === Object.prototype; // true
+obj.__proto__ === Object.prototype;              // true (legacy accessor)
 
 function Person(name) {
   this.name = name;
@@ -470,8 +554,13 @@ Person.prototype.greet = function () {
   return `Hi, ${this.name}`;
 };
 const p = new Person("Ada");
-p.greet(); // lookup: p → Person.prototype → Object.prototype
+p.greet(); // lookup: p → Person.prototype → Object.prototype → null
+
+Object.getPrototypeOf(p) === Person.prototype;           // true
+Object.getPrototypeOf(Person.prototype) === Object.prototype; // true
 ```
+
+**Interview line:** `Object.prototype` is the **root bag of shared methods**; `__proto__` is the **instance's link** to its prototype — prefer `getPrototypeOf` / `setPrototypeOf`.
 
 ### Prototypal vs classical inheritance
 
@@ -624,6 +713,34 @@ function createWallet(owner) {
   };
 }
 ```
+
+#### What is `get` here?
+
+`get owner()` defines a **getter** — a property accessor. Callers use **`wallet.owner`** (no `()`); the engine runs the function and returns its value.
+
+```javascript
+const w = createWallet("Ada");
+w.owner;       // "Ada" — invokes the getter
+w.owner();     // TypeError — owner is not a function
+```
+
+| Syntax | Meaning |
+|--------|---------|
+| `get owner() { … }` | Read-only-style accessor property (unless you also add `set owner(v)`) |
+| `owner() { … }` | Normal **method** — must call `w.owner()` |
+| `get` + `set` | Computed property with read/write hooks |
+
+Same idea on a `class`:
+
+```javascript
+class User {
+  constructor(name) { this._name = name; }
+  get name() { return this._name; }       // u.name
+  set name(v) { this._name = v; }         // u.name = "Bob"
+}
+```
+
+Under the hood this is like `Object.defineProperty(obj, "owner", { get() { … } })`.
 
 | Approach | Privacy | Method sharing |
 |----------|---------|----------------|
@@ -1051,6 +1168,34 @@ Node uses **V8's garbage collector** — primarily **generational** collection w
 
 ## 23. Child Processes — spawn, exec, fork
 
+### Does `child_process` spawn a new **thread**?
+
+**No.** It starts a new **OS process** (separate memory, own V8 if it’s Node, own event loop). Not a thread inside the parent.
+
+```text
+Parent Node process          Child (spawn / exec / fork)
+─────────────────            ───────────────────────────
+own PID, own heap            own PID, own heap
+own JS main thread           own JS main thread (if Node)
+     │                              ▲
+     └── stdin/stdout/stderr / IPC ─┘
+```
+
+| Mechanism | What the OS creates | Shared memory with parent? |
+|-----------|---------------------|----------------------------|
+| **`child_process`** | New **process** | **No** (copy / separate heaps) |
+| **`worker_threads`** | New **thread** in same process | Optional **`SharedArrayBuffer`**; else message-copy |
+| **libuv thread pool** | Internal threads for fs/crypto/DNS | Parent only — not for your JS CPU work |
+
+### How does the child perform the task?
+
+1. Parent calls `spawn` / `exec` / `fork` → OS creates the child.
+2. Child runs **independently** (binary, shell command, or another Node script).
+3. Parent talks via **stdio streams** and/or **IPC** (`fork` → `child.send` / `process.on('message')`).
+4. When the child exits, parent gets `exit` / `close`; stdout/stderr already streamed or buffered.
+
+CPU-heavy work in the child **does not block** the parent’s event loop — separate process.
+
 | Method | Shell? | Buffers stdout? | IPC channel? | Use |
 |--------|--------|-----------------|--------------|-----|
 | **`spawn`** | No (by default) | Stream — you pipe | Optional | Long-running, streaming (ffmpeg) |
@@ -1067,7 +1212,27 @@ child.send({ job: 1 });
 child.on("message", (msg) => { });
 ```
 
-**Interview line:** `fork` = Node-to-Node with IPC; `spawn` = streaming; `exec` = shell one-liner with buffered output.
+### Child process vs `worker_threads`
+
+| | **`child_process`** | **`worker_threads`** |
+|--|---------------------|----------------------|
+| **Unit** | OS **process** | OS **thread** in same process |
+| **Startup cost** | Higher (new process + often new V8) | Lower |
+| **Memory** | Separate heaps (heavier) | Shared process; lighter |
+| **Isolation** | Strong — crash/kill stays in child | Weaker — can still hurt the process |
+| **Communication** | stdio + IPC (`fork`) | `postMessage` / `MessageChannel`; optional shared memory |
+| **Use when** | Run **other programs**, shell, isolate crashes, scale like `cluster` | **CPU-bound JS** (hash, parse, compress) without a full process |
+| **Not for** | Cheap parallel loops of JS | Spawning `ffmpeg` / `git` / non-Node binaries |
+
+```javascript
+import { Worker } from "worker_threads";
+
+// Parent — offload CPU work to a thread (same process)
+const worker = new Worker("./cpu-job.js", { workerData: { n: 40 } });
+worker.on("message", (result) => console.log(result));
+```
+
+**Interview line:** `child_process` = new **process** (isolation / external binaries); `worker_threads` = new **thread** for parallel JS CPU work. Neither is the same as libuv’s fs/crypto pool. `fork` = Node-to-Node with IPC; `spawn` = streaming; `exec` = shell one-liner with buffered output.
 
 ---
 
@@ -1131,20 +1296,20 @@ Neither is universally "better" — trade-offs on scale, logout, and security.
 
 ## 27. Classic Interview Gotchas — Predict the Output
 
-| # | Snippet gist | Answer |
-|---|--------------|--------|
-| 1 | `var x = 1; function f(){ console.log(x); var x = 2; } f();` | `undefined` (hoisting) |
-| 2 | `let a = 1; { console.log(a); let a = 2; }` | ReferenceError (TDZ) |
-| 3 | `[] + []` | `""` (array toString → empty + empty) |
-| 4 | `[] + {}` vs `{} + []` | `"" + "[object Object]"` vs object literal confusion |
-| 5 | `typeof null` | `"object"` |
-| 6 | `0.1 + 0.2 === 0.3` | `false` (float precision) |
-| 7 | `this` in arrow vs regular in object method | Arrow inherits outer `this` |
-| 8 | `Promise.resolve().then(() => console.log(1)); console.log(2);` | `2` then `1` (microtask) |
-| 9 | `setTimeout(() => console.log(1), 0); console.log(2);` | `2` then `1` |
-| 10 | `async function f(){ return 1; } f().then(console.log)` | `1` (async returns Promise) |
-| 11 | Closure in loop with `var` + `setTimeout` | All print same final `i` |
-| 12 | `==` vs `===` for `null`/`undefined` | `null == undefined` true; `===` false |
+| # | Snippet gist | Answer | Explanation |
+|---|--------------|--------|-------------|
+| 1 | `var x = 1; function f(){ console.log(x); var x = 2; } f();` | `undefined` | Inner `var x` is hoisted/shadowed as `undefined` before assignment; outer `x` not used |
+| 2 | `let a = 1; { console.log(a); let a = 2; }` | ReferenceError (TDZ) | Block `let a` is in TDZ until its declaration — outer `a` is shadowed, not read |
+| 3 | `[] + []` | `""` | `+` stringifies arrays via `toString()` → empty + empty |
+| 4 | `[] + {}` vs `{} + []` | `"[object Object]"` vs block parse | `[] + {}` concat; bare leading `{}` is a **block**, then `+[]` → `0` — use `({} + [])` |
+| 5 | `typeof null` | `"object"` | Legacy quirk; `null` is still a primitive — check with `=== null` |
+| 6 | `0.1 + 0.2 === 0.3` | `false` | IEEE-754 binary floats; use cents/integers or `Number.EPSILON` for money |
+| 7 | `this` in arrow vs regular in object method | Arrow → outer `this` | Regular: `this` from call site; arrow: lexical `this` — don't use arrows as methods needing `this` |
+| 8 | `Promise.resolve().then(() => console.log(1)); console.log(2);` | `2` then `1` | Sync first; `.then` is a **microtask** (before timers) |
+| 9 | `setTimeout(() => console.log(1), 0); console.log(2);` | `2` then `1` | Timer is a **macrotask**; `0` ≠ immediate — runs next turn |
+| 10 | `async function f(){ return 1; } f().then(console.log)` | `1` | `async` always wraps return in a Promise |
+| 11 | Closure in loop with `var` + `setTimeout` | All print same final `i` | One shared `var i`; callbacks run after loop (`i === n`). Fix: `let` or capture value |
+| 12 | `==` vs `===` for `null`/`undefined` | `null == undefined` true; `===` false | Abstract equality special-cases nullish; prefer `===` (or `== null` for both) |
 
 ---
 
@@ -1176,6 +1341,7 @@ Answer aloud without looking:
 - [ ] Error handling patterns + unhandledRejection
 - [ ] GC + common Node memory leaks
 - [ ] spawn vs exec vs fork
+- [ ] child_process = process (not thread) vs worker_threads
 - [ ] Stream types + why pipeline
 - [ ] Session vs JWT trade-offs
 
@@ -1205,12 +1371,16 @@ OOP via closures        → private state in outer scope; return public API
 class                   → sugar over ctor + prototype; extends = Object.create chain
 
 use strict              → no implicit globals; this undefined on plain call
+with                    → extends scope chain; SyntaxError in strict — never use
 shallow copy            → spread/assign — nested shared
 deep copy               → structuredClone (modern)
 
 dynamic typing          → variable untyped; value has type; objects by reference
+assign obj↔string/num   → rebinding OK; coercion only via operators / Number()/String()
 prototypes              → chain lookup; class is sugar
-__proto__               → use getPrototypeOf instead
+Object.prototype        → shared root methods
+__proto__               → instance [[Prototype]] link; use getPrototypeOf instead
+get foo()               → getter; access as obj.foo (no call)
 
 setTimeout              → macrotask; 0 ≠ immediate
 setImmediate            → Node only; after I/O phase
@@ -1231,6 +1401,9 @@ Promise.any             → first success; all fail → AggregateError
 
 errors Node             → err-first cb; try/catch await; unhandledRejection
 spawn/exec/fork         → stream / shell buffer / Node IPC
+child_process           → new OS **process** (not a thread); own memory
+worker_threads          → new **thread** same process; CPU-bound JS
+child vs worker         → binaries/isolation → child; parallel JS → worker
 streams                 → readable writable duplex transform; pipeline
 no DOM in Node          → use JSDOM or browser for DOM
 

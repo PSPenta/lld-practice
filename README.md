@@ -13,10 +13,10 @@
 | **Golang** | **[Go/README.md](Go/README.md)** | GMP, goroutines, channels, context, GC, interfaces, high-throughput HTTP |
 | **REST API & Backend** | **[Backend/README.md](Backend/README.md)** | REST, idempotency, payments, pagination, JWT/OAuth, status codes |
 | **LLD method & theory** | **This doc §1–§22** · **[docs/](docs/README.md)** | Method, OOP, SOLID, patterns, walkthroughs in **`problems/`** |
-| **DSA notes** | **[docs/dsa/README.md](docs/dsa/README.md)** | Topic index — [binary search](docs/dsa/binary-search.md) |
+| **DSA notes** | **[docs/dsa/README.md](docs/dsa/README.md)** | Topic index — [binary search](docs/dsa/binary-search.md) · [linked list](docs/dsa/linked-list.md) · [DP](docs/dsa/dynamic-programming.md) |
 | **LLD gaps (breadth)** | **[lld-gaps/README.md](lld-gaps/README.md)** | UML, extra patterns, 12-week plan |
 | **AI code review** | **[ai-code-review-round/README.md](ai-code-review-round/README.md)** | RAG repo review, production bugs |
-| **Vibe coding** | **[vibe-coding-round/README.md](vibe-coding-round/README.md)** | Cursor/Copilot rounds — design first, AI second |
+| **Vibe coding** | **[vibe-coding-round/README.md](vibe-coding-round/README.md)** | Cursor/Copilot rounds — design first, AI second · **[Chakra Voice+ADE](vibe-coding-round/README.md#3a-hackerrank-chakra--voice--ade)** |
 | **External** | [awesome-low-level-design](https://github.com/ashishps1/awesome-low-level-design) · [Coder Army LLD playlist](https://youtube.com/playlist?list=PLQEaRBV9gAFvzp6XhcNFpk1WdOcyVo9qT) | Problem index · video supplement (Java/C++) |
 
 | Your focus | Read first |
@@ -122,7 +122,7 @@ Same **six steps** ([§5](#5-the-standard-approach-memorize-this)) — different
 | 85–105 | Public API, 2–3 edge cases, basic thread-safety |
 | 105–120 | Trade-offs + one evolution out loud |
 
-**Other rounds:** Vibe coding · AI code review · Language Q&A — **[docs/method/ §4](docs/method/README.md#4-how-a-typical-lld-round-runs)**.
+**Other rounds:** Vibe coding · **HackerRank Chakra (Voice + ADE)** · AI code review · Language Q&A — **[docs/method/ §4](docs/method/README.md#4-how-a-typical-lld-round-runs)** · Chakra ADE playbook → **[vibe-coding-round §3A](vibe-coding-round/README.md#3a-hackerrank-chakra--voice--ade)**.
 
 **Problem walkthroughs:** one doc per checklist row under **`problems/<name>/`** — see [§21](#21-lld-problem-checklist).
 

@@ -13,6 +13,7 @@
 1. [What this round is (and is not)](#1-what-this-round-is-and-is-not)
 2. [What interviewers score](#2-what-interviewers-score)
 3. [Interview formats you'll see](#3-interview-formats-youll-see)
+3A. [HackerRank Chakra — Voice + ADE](#3a-hackerrank-chakra--voice--ade)
 4. [Vibe coding + LLD — how they combine](#4-vibe-coding--lld--how-they-combine)
 5. [The SCOPE workflow (memorize this)](#5-the-scope-workflow-memorize-this)
 6. [Prompting for LLD problems](#6-prompting-for-lld-problems)
@@ -47,6 +48,7 @@ Write every line  →  Prompt → Review → Steer   →   Approve without readi
 | **Discussion LLD** | Usually **no** | Classes, APIs on whiteboard | [../README.md](../README.md) |
 | **Machine coding** | Sometimes **yes** | Build working slice in 90–120 min | This doc + [../README.md](../README.md) |
 | **Vibe coding / AI-assisted build** | **Yes** | Feature or LLD spike with Cursor/Copilot | **This doc** |
+| **HackerRank Chakra (Voice + ADE)** | ADE tool **yes** | Voice Qs + AI IDE with failing tests | **This doc §3A** |
 | **AI code review** | N/A | Find bugs in existing repo **manually** | [../ai-code-review-round](../ai-code-review-round/README.md) |
 | **Review AI-generated code** | N/A | Interviewer gives AI slop; you critique | This doc §7 + ai-code-review |
 
@@ -86,6 +88,122 @@ From hiring-manager rubrics ([Underdog.io](https://underdog.io/blog/vibe-coding-
 | **Review AI output** | 45 min | Find bugs in generated code | Same skills as code review round |
 | **Extend existing repo** | 60–120 min | Add endpoint in codebase | Match patterns in `JavaScript/RateLimiter2/` |
 | **Agentic round** | 60+ min | Direct Claude Code / Cursor agent | Senior+ — task spec + intervene |
+| **HackerRank Chakra** | Split | **Voice** (AI verbal Qs) + **ADE** (Cursor/Claude-like IDE) | Plan from failing tests → AI-reviewed plan → implement — **§3A** |
+
+---
+
+## 3A. HackerRank Chakra — Voice + ADE
+
+Another LLD-shaped loop you’ll see on **HackerRank Chakra**: one session split into **Voice** and **ADE**. Same fundamentals as discussion LLD + vibe coding — different delivery.
+
+| Part | What it is | What you do |
+|------|------------|-------------|
+| **Voice** | Verbal questions from an **AI agent** | Answer out loud — clarity, trade-offs, depth (like a short oral LLD / CS screen) |
+| **ADE** | Cursor/Claude-like **AI IDE** + problem statement | Read repo/README, drive from **failing tests**, plan, then implement with the tool |
+
+**Scoring signal (ADE):** you don’t dive into codegen first. You **read → clarify → plan → peer-review the plan with the AI → then execute**. Blind prompting fails.
+
+### ADE playbook (memorize this order)
+
+```text
+1. Read README / question fully
+2. Open failing tests — treat them as the spec
+3. Ask short clarifying Qs (ambiguity, boundaries, errors)
+4. Write the plan (template below)
+5. Ask AI to review the plan — discuss options, then lock it
+6. Execute the plan (implement → unit tests → integration check)
+```
+
+### Step 1–2 — Read first; tests are requirements
+
+- Skim **README / problem statement** before touching code or the agent.
+- Run or read the **failing test cases** — they encode FRs, NFRs, edges, and error contracts.
+- Note: what already passes vs what must change. Don’t rewrite green paths unless the README says so.
+
+### Step 3 — Short clarifying questions (before the plan)
+
+Ask only what unblocks design — keep them short:
+
+| Ask about | Examples |
+|-----------|----------|
+| **Requirement** | “Is X in scope for this pass, or only what’s asserted in the tests?” |
+| **Ambiguity** | “On tie / empty input, which of these two behaviors is correct?” |
+| **Boundaries** | “Max size / null / concurrent callers — any constraint beyond the tests?” |
+| **Errors** | “Should invalid input throw, return error object, or HTTP 4xx?” |
+
+If no human: **state assumptions in the plan** and keep them tight to the failing tests.
+
+### Step 4 — Plan template (write this before coding)
+
+Use failing tests as the source of **FRs** and **NFRs**. One page is enough:
+
+```text
+Goal:
+  - One sentence — what green looks like
+
+Functional requirements (from tests / README):
+  - …
+Non-functional requirements (from tests / README):
+  - latency / concurrency / idempotency / persistence / … as implied
+
+Estimates:
+  - Clarify + plan: …
+  - Implement: …
+  - Tests / integration: …
+
+Entities / modules:
+  - …
+
+Approach (how FRs / NFRs are met):
+  - …
+
+Edges:
+  - …
+
+Out of scope:
+  - …
+
+Unit tests:
+  - Cover the actual requirement
+  - Explicitly cover the given failing cases (and close cousins)
+
+Integration test (after development):
+  - How you’ll run the full flow end-to-end / harness / provided runner
+  - What “done” means beyond unit green
+```
+
+### Step 5 — AI reviews the plan (then you lock it)
+
+Before implementation:
+
+1. Paste the plan into ADE / ask the agent to **critique** it.
+2. Ask for **gaps**, alternate approaches, and risk spots (concurrency, API shape, over-engineering).
+3. **Discuss** briefly — pick one approach; update the plan.
+4. **Finalize** the plan — only then start coding against it.
+
+**Interview line:** “I’m locking the plan from the failing tests first; I’ll use the agent to stress-test the plan, then implement.”
+
+### Step 6 — Execute
+
+- Implement to the locked plan; keep prompts **milestone-sized** (same as SCOPE §5).
+- Make the **given failing tests** pass; add any unit cases you listed.
+- Run the **integration** path you wrote in the plan (full suite / smoke / provided ADE runner).
+- Narrate ownership: what you chose, what the agent suggested that you rejected.
+
+### Voice tip
+
+Treat Voice like §2 of the hub method: structured answers, assumptions stated, trade-offs in one breath. ADE is where you prove you can **drive an AI IDE without skipping design**.
+
+### Failure modes (Chakra-specific)
+
+| Failure | Why it hurts |
+|---------|--------------|
+| Code before reading README / failures | Wrong problem; wasted ADE time |
+| Plan with no test-derived FRs/NFRs | Looks like guesswork |
+| Skip AI plan review | Missed approaches; brittle build |
+| Only green the given tests, no edges | Thin requirement coverage |
+| No integration story | “Works in isolation” only |
+| Voice answers vague; ADE prompt-spam | Weak on both halves |
 
 ---
 
@@ -267,6 +385,7 @@ AI **will** get these wrong — say you check for them aloud:
 | **Google** | Pilot: human-led, AI-assisted comprehension (2026) | DS&A still AI-free |
 | **Stripe** | **AI prohibited** in interviews | Train **without** AI too |
 | **Amazon** | Classic OOP/LD + LP (as of 2026 reports) | [../README.md](../README.md) whiteboard |
+| **HackerRank Chakra** | **Voice** (AI oral) + **ADE** (AI IDE + failing tests) | **§3A** — plan from tests, AI-review plan, then code |
 | **Startups** | Take-home + “how did you use AI?” call | Document your prompts honestly |
 
 **Always ask recruiter:** Which tools are allowed? Screen share? Internet? Copy-paste from your own notes?
@@ -342,6 +461,9 @@ Stop AI when           → core algo, 2nd failure, concurrency
 
 Stripe                 → AI often banned — practice without
 Shopify/Meta/startups  → AI expected — narrate verification
+HackerRank Chakra      → Voice (oral AI) + ADE (IDE) — §3A
+                       → read README + failing tests → clarify → plan
+                       → AI reviews plan → lock → implement → unit + integration
 
 Repo practice          → JavaScript/RateLimiter2, ParkingLot2
 Gap topics             → lld-gaps/ (Elevator, Notification, …)
