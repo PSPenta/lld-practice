@@ -17,6 +17,7 @@
 | **LLD gaps (breadth)** | **[lld-gaps/README.md](lld-gaps/README.md)** | UML, extra patterns, 12-week plan |
 | **AI code review** | **[ai-code-review-round/README.md](ai-code-review-round/README.md)** | RAG repo review, production bugs |
 | **Vibe coding** | **[vibe-coding-round/README.md](vibe-coding-round/README.md)** | Cursor/Copilot rounds — design first, AI second · **[Chakra Voice+ADE](vibe-coding-round/README.md#3a-hackerrank-chakra--voice--ade)** |
+| **AI-native open challenge** | **[ai-native-open-challenge/README.md](ai-native-open-challenge/README.md)** | “Build anything” take-home (e.g. Billeasy) — process write-up + personality |
 | **External** | [awesome-low-level-design](https://github.com/ashishps1/awesome-low-level-design) · [Coder Army LLD playlist](https://youtube.com/playlist?list=PLQEaRBV9gAFvzp6XhcNFpk1WdOcyVo9qT) | Problem index · video supplement (Java/C++) |
 
 | Your focus | Read first |
@@ -122,7 +123,7 @@ Same **six steps** ([§5](#5-the-standard-approach-memorize-this)) — different
 | 85–105 | Public API, 2–3 edge cases, basic thread-safety |
 | 105–120 | Trade-offs + one evolution out loud |
 
-**Other rounds:** Vibe coding · **HackerRank Chakra (Voice + ADE)** · AI code review · Language Q&A — **[docs/method/ §4](docs/method/README.md#4-how-a-typical-lld-round-runs)** · Chakra ADE playbook → **[vibe-coding-round §3A](vibe-coding-round/README.md#3a-hackerrank-chakra--voice--ade)**.
+**Other rounds:** Vibe coding · **HackerRank Chakra (Voice + ADE)** · **AI-native open challenge (Billeasy-style)** · AI code review · Language Q&A — **[docs/method/ §4](docs/method/README.md#4-how-a-typical-lld-round-runs)** · Chakra → **[vibe-coding-round §3A](vibe-coding-round/README.md#3a-hackerrank-chakra--voice--ade)** · Open challenge → **[ai-native-open-challenge](ai-native-open-challenge/README.md)**.
 
 **Problem walkthroughs:** one doc per checklist row under **`problems/<name>/`** — see [§21](#21-lld-problem-checklist).
 

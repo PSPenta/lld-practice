@@ -7,3 +7,5 @@ One topic per doc. Add a row here when you add a file.
 | Topic | Doc |
 |-------|-----|
 | Binary Search | [binary-search.md](binary-search.md) |
+| Linked List | [linked-list.md](linked-list.md) |
+| Dynamic Programming | [dynamic-programming.md](dynamic-programming.md) |

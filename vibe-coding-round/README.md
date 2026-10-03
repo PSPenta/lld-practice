@@ -49,6 +49,7 @@ Write every line  →  Prompt → Review → Steer   →   Approve without readi
 | **Machine coding** | Sometimes **yes** | Build working slice in 90–120 min | This doc + [../README.md](../README.md) |
 | **Vibe coding / AI-assisted build** | **Yes** | Feature or LLD spike with Cursor/Copilot | **This doc** |
 | **HackerRank Chakra (Voice + ADE)** | ADE tool **yes** | Voice Qs + AI IDE with failing tests | **This doc §3A** |
+| **AI-native open challenge** | **Yes** (any) | You pick the problem; artifact + process write-up | **[ai-native-open-challenge](../ai-native-open-challenge/README.md)** |
 | **AI code review** | N/A | Find bugs in existing repo **manually** | [../ai-code-review-round](../ai-code-review-round/README.md) |
 | **Review AI-generated code** | N/A | Interviewer gives AI slop; you critique | This doc §7 + ai-code-review |
 
@@ -386,6 +387,7 @@ AI **will** get these wrong — say you check for them aloud:
 | **Stripe** | **AI prohibited** in interviews | Train **without** AI too |
 | **Amazon** | Classic OOP/LD + LP (as of 2026 reports) | [../README.md](../README.md) whiteboard |
 | **HackerRank Chakra** | **Voice** (AI oral) + **ADE** (AI IDE + failing tests) | **§3A** — plan from tests, AI-review plan, then code |
+| **Billeasy / AI-native** | Open **“Build anything”** + process write-up | **[ai-native-open-challenge](../ai-native-open-challenge/README.md)** — personality + AI depth |
 | **Startups** | Take-home + “how did you use AI?” call | Document your prompts honestly |
 
 **Always ask recruiter:** Which tools are allowed? Screen share? Internet? Copy-paste from your own notes?
