@@ -6,17 +6,17 @@
 
 ## 10. API design for LLD
 
-Whether HTTP or in-process library APIs. **Full REST/backend interview prep:** **[Backend/README.md](../../Backend/README.md)** (HTTP methods, idempotent payments, pagination, status codes, platform APIs).
+Whether HTTP or in-process library APIs. **Full REST/backend interview prep:** **[backend/README.md](backend/README.md)** (HTTP methods, idempotent payments, pagination, status codes, platform APIs).
 
 ### Good practices
 - Resource-oriented names (`/tickets`, not `/doCreateTicket`)
-- Correct HTTP verbs — **POST** create, **PUT** full replace, **PATCH** partial update ([Backend §2](../../Backend/README.md))
+- Correct HTTP verbs — **POST** create, **PUT** full replace, **PATCH** partial update ([Backend §2](../backend/README.md))
 - Versioning for public HTTP (`/v1/...`)
 - Explicit error model with stable `code` + `trace_id`
-- Pagination for lists — **cursor** preferred for large data ([Backend §6](../../Backend/README.md))
-- Idempotency for unsafe retries (payments, webhooks, creates) — `Idempotency-Key` ([Backend §3–§4](../../Backend/README.md))
+- Pagination for lists — **cursor** preferred for large data ([Backend §6](../backend/README.md))
+- Idempotency for unsafe retries (payments, webhooks, creates) — `Idempotency-Key` ([Backend §3–§4](../backend/README.md))
 - Validation at the boundary (422 + field errors)
-- Rate limiting → 429 + `Retry-After` ([Backend §7](../../Backend/README.md); [Rate Limiter walkthrough](../../problems/rate-limiter/README.md))
+- Rate limiting → 429 + `Retry-After` ([Backend §7](../backend/README.md); [Rate Limiter walkthrough](../../problems/rate-limiter/README.md))
 
 ### HTTP status codes (quick reference)
 
@@ -29,7 +29,7 @@ Whether HTTP or in-process library APIs. **Full REST/backend interview prep:** *
 | 429 | Rate limited |
 | 502 / 503 / 504 | Upstream failure — retry with backoff |
 
-Full table: **[Backend/README.md §12](../../Backend/README.md)**.
+Full table: **[backend/README.md §12](backend/README.md)**.
 
 ### Example error shape
 

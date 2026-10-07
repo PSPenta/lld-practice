@@ -1,6 +1,6 @@
 # Cache (TTL + eviction) — LLD walkthrough
 
-> **Timed steps:** [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ✅  
+> **Timed steps:** [Hub §4](../../README.md#4-how-a-typical-lld-round-runs) · **Solved:** ⚠️  
 > Very common at product companies: *“Design a cache client for frequent queries.”*
 
 **Round opening (say aloud):**

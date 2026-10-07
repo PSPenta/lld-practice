@@ -80,7 +80,7 @@ Payment { id, amount, method, idempotencyKey, status }
 | **Go** | [`Go/PaymentGateway-go/`](../../Go/PaymentGateway-go/) | **full impl** — `BankGateway` Strategy |
 | JavaScript | [`JavaScript/PaymentGateway/`](../../JavaScript/PaymentGateway/) | stub only (empty files) |
 
-REST/idempotency depth → [Backend/README.md §4](../../Backend/README.md)
+REST/idempotency depth → [docs/backend §4](../../docs/backend/README.md)
 
 ## Codebase map (how the code is organized)
 

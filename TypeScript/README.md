@@ -79,7 +79,7 @@
 | JavaScript | [../JavaScript/](../JavaScript/) | [../JavaScript/README.md](../JavaScript/README.md) |
 | TypeScript | Patterns in **§19** (port `.ts` when ready) | **This doc** |
 | Go | [../Go/](../Go/) | [../Go/README.md](../Go/README.md) |
-| REST / Backend | — | [../Backend/README.md](../Backend/README.md) |
+| REST / Backend | — | [../docs/backend/README.md](../docs/backend/README.md) |
 
 ---
 

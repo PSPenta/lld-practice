@@ -10,6 +10,7 @@
 | [principles/](principles/README.md) | §8 — SOLID, DRY, KISS, YAGNI, PoLK (examples + interview lines) |
 | [patterns/](patterns/README.md) | §9 — GoF patterns + repo examples |
 | [design-topics/](design-topics/README.md) | §10–§14 — API, data, concurrency, must-practice thinking |
+| [backend/](backend/README.md) | REST API & Backend — HTTP, idempotency, payments, pagination, JWT/OAuth |
 | [ai-lld/](ai-lld/README.md) | §15 — AI / LLM LLD theory |
 | [interview-prep/](interview-prep/README.md) | §17–§22 — mocks, 4-week plan, day-of extras (AI / HLD / prod Qs) |
 | [../lld-gaps/](../lld-gaps/README.md) | UML, paper-only patterns, refactor drills |

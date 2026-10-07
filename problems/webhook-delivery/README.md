@@ -92,6 +92,6 @@ DELETE /webhooks/{id}
 
 ## Step 6 — Evolve
 
-- See Backend docs for production webhook patterns; transactional outbox  
+- See [docs/backend](../../docs/backend/README.md) for production webhook patterns; transactional outbox  
 - Ordering per subscription via partition key  
 - Related: [retry-scheduler](../retry-scheduler/README.md), [message-queue](../message-queue/README.md), [ticket-notify](../ticket-notify/README.md)

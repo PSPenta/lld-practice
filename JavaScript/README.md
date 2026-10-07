@@ -4,7 +4,7 @@
 > **Extended Q&A bank:** use [sudheerj/javascript-interview-questions](https://github.com/sudheerj/javascript-interview-questions) for hundreds of additional questions — this doc avoids duplicating that list and focuses on **structured answers + one-liners** for fast recall.  
 > **LLD implementations (JS):** working code for Rate Limiter, Parking Lot, LRU, etc. lives in **this folder** — see [LLD implementations](#lld-implementations-in-this-folder) below. **Design method:** [../README.md](../README.md).  
 > **TypeScript prep (types, generics, LLD in TS):** [../TypeScript/README.md](../TypeScript/README.md) — read **after** JS language core (§1–§12); runtime behaviour stays in this doc.  
-> **REST / backend / payments API prep:** [../Backend/README.md](../Backend/README.md) — HTTP semantics, idempotency, pagination, OAuth; complements §26 here (JWT).
+> **REST / backend / payments API prep:** [../docs/backend/README.md](../docs/backend/README.md) — HTTP semantics, idempotency, pagination, OAuth; complements §26 here (JWT).
 
 ---
 
@@ -67,7 +67,7 @@
 
 ### Backend / REST API roles
 
-For **Lead backend**, **fintech**, or **platform API** interviews, read **[../Backend/README.md](../Backend/README.md)** after Node basics (§13–§21). It covers POST vs PUT vs PATCH, idempotent payments, cursor pagination, status codes, OAuth, and developer-platform APIs. **§26 below** stays the quick JWT vs session reference.
+For **Lead backend**, **fintech**, or **platform API** interviews, read **[../docs/backend/README.md](../docs/backend/README.md)** after Node basics (§13–§21). It covers POST vs PUT vs PATCH, idempotent payments, cursor pagination, status codes, OAuth, and developer-platform APIs. **§26 below** stays the quick JWT vs session reference.
 
 ### TypeScript roles
 
@@ -1345,7 +1345,7 @@ Answer aloud without looking:
 - [ ] Stream types + why pipeline
 - [ ] Session vs JWT trade-offs
 
-**Backend / REST** (full guide: [../Backend/README.md](../Backend/README.md))
+**Backend / REST** (full guide: [../docs/backend/README.md](../docs/backend/README.md))
 - [ ] POST vs PUT vs PATCH + idempotency
 - [ ] Idempotent payment with Idempotency-Key
 - [ ] 401 vs 403 vs 409; cursor vs offset pagination
@@ -1409,7 +1409,7 @@ no DOM in Node          → use JSDOM or browser for DOM
 
 session                 → server state; easy revoke
 JWT                     → stateless; scale; short TTL + refresh pattern
-REST/API depth          → Backend/README.md (POST/PUT/PATCH, payments, pagination)
+REST/API depth          → docs/backend/README.md (POST/PUT/PATCH, payments, pagination)
 
 sudheerj repo           → extra Q&A volume after this doc
 ```

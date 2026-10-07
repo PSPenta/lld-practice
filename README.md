@@ -11,7 +11,7 @@
 | **JavaScript & Node.js** | **[JavaScript/README.md](JavaScript/README.md)** | `this`, closures, event loop, Promises, streams, auth, gotchas |
 | **TypeScript** | **[TypeScript/README.md](TypeScript/README.md)** | type system, generics, unions, `strict` tsconfig, LLD interfaces |
 | **Golang** | **[Go/README.md](Go/README.md)** | GMP, goroutines, channels, context, GC, interfaces, high-throughput HTTP |
-| **REST API & Backend** | **[Backend/README.md](Backend/README.md)** | REST, idempotency, payments, pagination, JWT/OAuth, status codes |
+| **REST API & Backend** | **[docs/backend/README.md](docs/backend/README.md)** | REST, idempotency, payments, pagination, JWT/OAuth, status codes |
 | **LLD method & theory** | **This doc §1–§22** · **[docs/](docs/README.md)** | Method, OOP, SOLID, patterns, walkthroughs in **`problems/`** |
 | **DSA notes** | **[docs/dsa/README.md](docs/dsa/README.md)** | Topic index — [binary search](docs/dsa/binary-search.md) · [linked list](docs/dsa/linked-list.md) · [DP](docs/dsa/dynamic-programming.md) |
 | **LLD gaps (breadth)** | **[lld-gaps/README.md](lld-gaps/README.md)** | UML, extra patterns, 12-week plan |
@@ -241,7 +241,7 @@ Point at real code in interviews — **Strategy** → `RateLimiter2` · **Factor
 
 Resource names · HTTP verbs (POST/PUT/PATCH) · versioning · error model + `trace_id` · cursor pagination · idempotency keys · validation (422) · rate limit (429).
 
-→ REST depth: **[Backend/README.md](Backend/README.md)** · LLD slice: **[docs/design-topics/ §10](docs/design-topics/README.md#10-api-design-for-lld)**
+→ REST depth: **[docs/backend/README.md](docs/backend/README.md)** · LLD slice: **[docs/design-topics/ §10](docs/design-topics/README.md#10-api-design-for-lld)**
 
 ---
 
@@ -344,12 +344,13 @@ Before / during / avoid lists · company research template · LLD vs code-review
 
 ## 21. LLD problem checklist
 
-**How to use:** Open **Walkthrough** → follow six steps + [§4](#4-how-a-typical-lld-round-runs) time boxes for your round type → code only if ✅.
+**How to use:** Open **Walkthrough** → follow six steps + [§4](#4-how-a-typical-lld-round-runs) time boxes for your round type → code if ✅ or harden ⚠️ to Staff bar.
 
 | Legend | Meaning |
 |--------|---------|
-| ✅ | Working code in `JavaScript/` and/or `Go/` (compare after design) |
-| ❌ | Paper / discussion round — walkthrough only |
+| ✅ | Coded + meets **FAANG Staff / SDE-3** bar (patterns, extensibility, concurrency/failure talkable) — compare with `JavaScript/` / `Go/` after design |
+| ⚠️ | Coded / walkthrough done, but **not** yet at Staff/SDE-3 bar (thin design, SRP/DIP gaps, missing production edges) — tighten before citing in interviews |
+| ❌ | Paper / discussion only — walkthrough, no solid coded impl yet |
 
 ### Master list
 
@@ -358,13 +359,13 @@ Before / during / avoid lists · company research template · LLD vs code-review
 | **API gateway** | ❌ | [problems/api-gateway/](problems/api-gateway/README.md) |
 | **ATM** | ❌ | [problems/atm/](problems/atm/README.md) |
 | **Cab booking** | ❌ | [problems/cab-booking/](problems/cab-booking/README.md) |
-| **Cache (TTL + eviction)** | ✅ | [problems/cache-client/](problems/cache-client/README.md) |
+| **Cache (TTL + eviction)** | ⚠️ | [problems/cache-client/](problems/cache-client/README.md) |
 | **Circuit breaker** | ❌ | [problems/circuit-breaker/](problems/circuit-breaker/README.md) |
 | **Connection pool** | ❌ | [problems/connection-pool/](problems/connection-pool/README.md) |
 | **Elevator** | ❌ | [problems/elevator/](problems/elevator/README.md) |
 | **Expense splitter (Splitwise)** | ✅ | [problems/splitwise/](problems/splitwise/README.md) |
 | **File storage (in-memory FS)** | ❌ | [problems/file-storage/](problems/file-storage/README.md) |
-| **In-memory database** | ✅ | [problems/in-memory-database/](problems/in-memory-database/README.md) |
+| **In-memory database** | ⚠️ | [problems/in-memory-database/](problems/in-memory-database/README.md) |
 | **Inventory management** | ❌ | [problems/inventory-management/](problems/inventory-management/README.md) |
 | **Job scheduler** | ❌ | [problems/job-scheduler/](problems/job-scheduler/README.md) |
 | **LFU cache** | ❌ | [problems/lfu-cache/](problems/lfu-cache/README.md) |
@@ -383,11 +384,11 @@ Before / during / avoid lists · company research template · LLD vs code-review
 | **Rate limiter** | ✅ | [problems/rate-limiter/](problems/rate-limiter/README.md) |
 | **Restaurant table reservation** | ❌ | [problems/restaurant-reservation/](problems/restaurant-reservation/README.md) |
 | **Retry scheduler** | ❌ | [problems/retry-scheduler/](problems/retry-scheduler/README.md) |
-| **Search engine** | ✅ | [problems/search-engine/](problems/search-engine/README.md) |
+| **Search engine** | ⚠️ | [problems/search-engine/](problems/search-engine/README.md) |
 | **Subscription manager** | ❌ | [problems/subscription-manager/](problems/subscription-manager/README.md) |
 | **Task board (Trello-like)** | ❌ | [problems/task-board/](problems/task-board/README.md) |
-| **Task queue (FIFO)** | ✅ | [problems/task-queue/](problems/task-queue/README.md) |
-| **URL shortener** | ✅ | [problems/url-shortener/](problems/url-shortener/README.md) |
+| **Task queue (FIFO)** | ⚠️ | [problems/task-queue/](problems/task-queue/README.md) |
+| **URL shortener** | ⚠️ | [problems/url-shortener/](problems/url-shortener/README.md) |
 | **Vending machine** | ❌ | [problems/vending-machine/](problems/vending-machine/README.md) |
 | **Wallet / ledger** | ❌ | [problems/wallet-ledger/](problems/wallet-ledger/README.md) |
 | **Webhook delivery system** | ❌ | [problems/webhook-delivery/](problems/webhook-delivery/README.md) |
@@ -397,7 +398,7 @@ Before / during / avoid lists · company research template · LLD vs code-review
 | **Hotel booking** | ❌ | [problems/hotel-booking/](problems/hotel-booking/README.md) |
 | **Traffic light / signal** | ❌ | [problems/traffic-signal/](problems/traffic-signal/README.md) |
 
-**Scorecard:** **12 ✅** · **29 ❌** (41 total). **Coded impl map:** [docs/repo-map/](docs/repo-map/README.md). **Browse by difficulty:** [awesome-low-level-design](https://github.com/ashishps1/awesome-low-level-design).
+**Scorecard:** **7 ✅** · **5 ⚠️** · **29 ❌** (41 total). **Coded impl map:** [docs/repo-map/](docs/repo-map/README.md). **Browse by difficulty:** [awesome-low-level-design](https://github.com/ashishps1/awesome-low-level-design).
 
 ---
 

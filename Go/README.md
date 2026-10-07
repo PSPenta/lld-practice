@@ -112,7 +112,7 @@ err := fmt.Errorf("fetch user %d: %w", id, originalErr)
 | Middleware & middleware chains | **§12** |
 | Slice / map internals | **§10 → Internals** |
 | High-throughput Go API design | **§12 → High-throughput** |
-| REST / idempotency / payments (cross-doc) | **[../Backend/README.md](../Backend/README.md)** |
+| REST / idempotency / payments (cross-doc) | **[../docs/backend/README.md](../docs/backend/README.md)** |
 
 ### How to revise with this doc (interview-ready path)
 
@@ -126,7 +126,7 @@ err := fmt.Errorf("fetch user %d: %w", id, originalErr)
 
 **What this doc covers well:** concurrency (GMP, channels, mutex, atomics, context), slice/map internals, error handling, GC/profiling, interfaces + **OOP-without-classes for LLD**, high-throughput HTTP, gotchas, HTTP/DB basics, modules, middleware.
 
-**REST / payments / platform APIs:** **[Backend/README.md](../Backend/README.md)** — idempotency, pagination, status codes (pairs with §12–§16 here).
+**REST / payments / platform APIs:** **[docs/backend/README.md](../docs/backend/README.md)** — idempotency, pagination, status codes (pairs with §12–§16 here).
 
 **Pair with hands-on:** run `go test -race` on a small snippet, trace one goroutine leak fix, write a table-driven test — interviewers often follow theory with “what’s wrong with this code?”
 
@@ -2394,7 +2394,7 @@ Request → middleware (auth, trace, limit) → handler (validate)
        → async side effects via queue (webhooks, email)
 ```
 
-**REST / payments / idempotency:** see **[../Backend/README.md](../Backend/README.md)** §3–§4.
+**REST / payments / idempotency:** see **[../docs/backend/README.md](../docs/backend/README.md)** §3–§4.
 
 **Interview line:** “Measure first with pprof; bound concurrency; reuse connections; keep critical path short; push slow work async.”
 
@@ -3083,8 +3083,8 @@ fmt.Println(s1[0]) // 99 — same backing array
 43. How do you design a high-throughput Go HTTP API? (pooling, bounds, pprof)
 
 ### REST / backend (cross-doc)
-44. POST vs PUT vs PATCH — idempotency? → **[Backend/README.md](../Backend/README.md)** §2
-45. Design an idempotent payment API → **Backend** §4
+44. POST vs PUT vs PATCH — idempotency? → **[docs/backend/README.md](../docs/backend/README.md)** §2
+45. Design an idempotent payment API → **docs/backend** §4
 
 ---
 
@@ -3173,7 +3173,7 @@ Map hmap                → buckets + overflow; grow/evacuate; range order rando
 Map concurrent write    → panic; RWMutex or sync.Map
 len(string)             → bytes, not runes; range gives runes + byte index
 High-throughput API     → shared Client/DB pool; bounded workers; ctx timeouts; pprof; async side effects
-REST/idempotency        → Backend/README.md §3–§4 (payments, Idempotency-Key)
+REST/idempotency        → docs/backend/README.md §3–§4 (payments, Idempotency-Key)
 send on closed ch       → panic; receive on closed → zero, ok=false
 
 http.DefaultClient      → no timeouts; never use in production
