@@ -17,23 +17,24 @@ Crisp revision. Add new BS problems here, a row in the index, and a **Practice**
 | 5 | [Is the array rotated-sorted? — O(n)](#is-the-array-rotated-sorted--on) | [1752](https://leetcode.com/problems/check-if-array-is-sorted-and-rotated/) |
 | 6 | [Single element in a sorted array](#single-element-in-a-sorted-array) | [540](https://leetcode.com/problems/single-element-in-a-sorted-array/) |
 | 7 | [Find Peak Element / Mountain Peak Index](#find-peak-element--mountain-peak-index) | [162](https://leetcode.com/problems/find-peak-element/) · [852](https://leetcode.com/problems/peak-index-in-a-mountain-array/) |
-| 8 | [Square root of `n` (floor)](#square-root-of-n-floor--binary-search) | [69](https://leetcode.com/problems/sqrtx/) |
-| 9 | [nth root of `m` (exact)](#nth-root-of-m-exact--binary-search) | [GFG](https://www.geeksforgeeks.org/problems/find-nth-root-of-m5843/1) |
-| 10 | [Koko Eating Bananas](#koko-eating-bananas--binary-search-on-answer) | [875](https://leetcode.com/problems/koko-eating-bananas/) |
-| 11 | [Minimum Days to Make m Bouquets](#minimum-days-to-make-m-bouquets--binary-search-on-answer) | [1482](https://leetcode.com/problems/minimum-number-of-days-to-make-m-bouquets/) |
-| 12 | [Smallest Divisor Given a Threshold](#smallest-divisor-given-a-threshold--binary-search-on-answer) | [1283](https://leetcode.com/problems/find-the-smallest-divisor-given-a-threshold/) |
-| 13 | [Capacity to Ship Packages Within D Days](#capacity-to-ship-packages-within-d-days--binary-search-on-answer) | [1011](https://leetcode.com/problems/capacity-to-ship-packages-within-d-days/) |
-| 14 | [Kth Missing Positive Number](#kth-missing-positive-number) | [1539](https://leetcode.com/problems/kth-missing-positive-number/) |
-| 15 | [Aggressive Cows](#aggressive-cows) | [GFG](https://www.geeksforgeeks.org/problems/aggressive-cows/1) · [1552](https://leetcode.com/problems/magnetic-force-between-two-balls/) |
-| 16 | [Search in 2D Matrix](#search-in-2d-matrix) | [74](https://leetcode.com/problems/search-a-2d-matrix/) |
-| 17 | [Search in 2D Matrix II](#search-in-2d-matrix-ii) | [240](https://leetcode.com/problems/search-a-2d-matrix-ii/) |
-| 18 | [Row with Maximum Ones](#row-with-maximum-ones) | [2643](https://leetcode.com/problems/row-with-maximum-ones/) |
-| 19 | [Row with Maximum Ones (row-wise sorted)](#row-with-maximum-ones-row-wise-sorted) | [GFG](https://www.geeksforgeeks.org/problems/row-with-max-1s0023/1) |
-| 20 | [Allocate Minimum Pages](#allocate-minimum-pages) | [GFG](https://www.geeksforgeeks.org/problems/allocate-minimum-number-of-pages0937/1) · [410](https://leetcode.com/problems/split-array-largest-sum/) · [painters](https://www.geeksforgeeks.org/problems/the-painters-partition-problem1535/1) |
-| 21 | [Minimize Max Distance of Adjacent Gas Stations](#minimize-max-distance-of-adjacent-gas-stations) | [GFG](https://www.geeksforgeeks.org/problems/minimize-max-distance-to-gas-station/1) · [774](https://leetcode.com/problems/minimize-max-distance-to-gas-station/) |
-| 22 | [Median of Two Sorted Arrays](#median-of-two-sorted-arrays) | [4](https://leetcode.com/problems/median-of-two-sorted-arrays/) · [GFG kth](https://www.geeksforgeeks.org/problems/k-th-element-of-two-sorted-array1317/1) |
+| 8 | [Find Peak Element II](#find-peak-element-ii) | [1901](https://leetcode.com/problems/find-a-peak-element-ii/) |
+| 9 | [Square root of `n` (floor)](#square-root-of-n-floor--binary-search) | [69](https://leetcode.com/problems/sqrtx/) |
+| 10 | [nth root of `m` (exact)](#nth-root-of-m-exact--binary-search) | [GFG](https://www.geeksforgeeks.org/problems/find-nth-root-of-m5843/1) |
+| 11 | [Koko Eating Bananas](#koko-eating-bananas--binary-search-on-answer) | [875](https://leetcode.com/problems/koko-eating-bananas/) |
+| 12 | [Minimum Days to Make m Bouquets](#minimum-days-to-make-m-bouquets--binary-search-on-answer) | [1482](https://leetcode.com/problems/minimum-number-of-days-to-make-m-bouquets/) |
+| 13 | [Smallest Divisor Given a Threshold](#smallest-divisor-given-a-threshold--binary-search-on-answer) | [1283](https://leetcode.com/problems/find-the-smallest-divisor-given-a-threshold/) |
+| 14 | [Capacity to Ship Packages Within D Days](#capacity-to-ship-packages-within-d-days--binary-search-on-answer) | [1011](https://leetcode.com/problems/capacity-to-ship-packages-within-d-days/) |
+| 15 | [Kth Missing Positive Number](#kth-missing-positive-number) | [1539](https://leetcode.com/problems/kth-missing-positive-number/) |
+| 16 | [Aggressive Cows](#aggressive-cows) | [GFG](https://www.geeksforgeeks.org/problems/aggressive-cows/1) · [1552](https://leetcode.com/problems/magnetic-force-between-two-balls/) |
+| 17 | [Search in 2D Matrix](#search-in-2d-matrix) | [74](https://leetcode.com/problems/search-a-2d-matrix/) |
+| 18 | [Search in 2D Matrix II](#search-in-2d-matrix-ii) | [240](https://leetcode.com/problems/search-a-2d-matrix-ii/) |
+| 19 | [Row with Maximum Ones](#row-with-maximum-ones) | [2643](https://leetcode.com/problems/row-with-maximum-ones/) |
+| 20 | [Row with Maximum Ones (row-wise sorted)](#row-with-maximum-ones-row-wise-sorted) | [GFG](https://www.geeksforgeeks.org/problems/row-with-max-1s0023/1) |
+| 21 | [Allocate Minimum Pages](#allocate-minimum-pages) | [GFG](https://www.geeksforgeeks.org/problems/allocate-minimum-number-of-pages0937/1) · [410](https://leetcode.com/problems/split-array-largest-sum/) · [painters](https://www.geeksforgeeks.org/problems/the-painters-partition-problem1535/1) |
+| 22 | [Minimize Max Distance of Adjacent Gas Stations](#minimize-max-distance-of-adjacent-gas-stations) | [GFG](https://www.geeksforgeeks.org/problems/minimize-max-distance-to-gas-station/1) · [774](https://leetcode.com/problems/minimize-max-distance-to-gas-station/) |
+| 23 | [Median of Two Sorted Arrays](#median-of-two-sorted-arrays) | [4](https://leetcode.com/problems/median-of-two-sorted-arrays/) · [GFG kth](https://www.geeksforgeeks.org/problems/k-th-element-of-two-sorted-array1317/1) |
 
-1–7 classic / array. 8–9 search on numeric range. 10–13, **20–21** **binary search on answer** (minimise). 14 missing-count on a sorted index. 15 **maximise** min-distance (return `end`). 16–17 2D search (LC 74 / 240). **18** unsorted max-ones (nested loops). **19** row-wise sorted → lower-bound BS per row. 21 float BS (`ε`). **22** partition BS on cut (same family as **k-th of two sorted arrays**). nth root has no LeetCode twin — use GFG.
+1–7 classic / array. **8** 2D peak — BS on columns + max of mid col (not 2D mid-shrink). 9–10 search on numeric range. 11–14, **21–22** **binary search on answer** (minimise). 15 missing-count on a sorted index. 16 **maximise** min-distance (return `end`). 17–18 2D search (LC 74 / 240). **19** unsorted max-ones (nested loops). **20** row-wise sorted → lower-bound BS per row. 22 float BS (`ε`). **23** partition BS on cut (same family as **k-th of two sorted arrays**). nth root has no LeetCode twin — use GFG.
 
 ---
 
@@ -272,6 +273,57 @@ while start <= end:
 ```
 
 - Return **index**, not `a[mid]`. 852 is the same algorithm on a guaranteed single mountain.
+
+## Find Peak Element II
+
+**Practice:** [1901. Find a Peak Element II](https://leetcode.com/problems/find-a-peak-element-ii/)
+
+2D peak = cell strictly greater than its 4-neighbors (outside = −∞). Return any `[row, col]`.
+
+### Wrong — shrink both row and col from a 2D mid cell
+
+Same class of bug as Matrix II mid-shrink. An arbitrary `mat[midRow][midCol]` is not a column/row max — climbing can leave the discarded half. Loop `startRow < endRow && startCol < endCol` also exits early → `[-1, -1]`.
+
+```text
+// Counterexample — peak is 9 at [2, 2]
+[
+  [1, 2, 3],
+  [6, 5, 4],
+  [7, 8, 9]
+]
+// mid = 5 at [1, 1] → shrink cols → loop dies → [-1, -1]
+```
+
+### Correct — BS on columns, max of mid column — O(m log n)
+
+The “mid element” must be the **global max of the mid column**. Then compare left/right and discard a half (1D peak idea on columns).
+
+```text
+start = 0, end = n - 1                     // columns
+
+while start <= end:
+  mid = start + (end - start) / 2
+
+  maxRow = 0
+  for r in 0 .. m - 1:
+    if mat[r][mid] > mat[maxRow][mid]:
+      maxRow = r
+
+  left  = (mid > 0)     ? mat[maxRow][mid - 1] : -INF
+  right = (mid < n - 1) ? mat[maxRow][mid + 1] : -INF
+  cur   = mat[maxRow][mid]
+
+  if cur > left && cur > right:
+    return [maxRow, mid]                   // also ≥ up/down — col max
+  if left > cur:
+    end = mid - 1                          // climb left
+  else:
+    start = mid + 1                        // climb right
+```
+
+- Safe because: from column max, a larger neighbor means a peak exists in that half (keep climbing).
+- Symmetric: BS on **rows**, scan max in mid row → `O(n log m)`.
+- 1D peak (LC 162) is the same pattern; here the mid pick is **max of the mid line**, not a geometric 2D mid.
 
 ## Square root of `n` (floor) — Binary Search
 
