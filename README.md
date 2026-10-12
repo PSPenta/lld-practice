@@ -12,6 +12,7 @@
 | **TypeScript** | **[TypeScript/README.md](TypeScript/README.md)** | type system, generics, unions, `strict` tsconfig, LLD interfaces |
 | **Golang** | **[Go/README.md](Go/README.md)** | GMP, goroutines, channels, context, GC, interfaces, high-throughput HTTP |
 | **REST API & Backend** | **[docs/backend/README.md](docs/backend/README.md)** | REST, idempotency, payments, pagination, JWT/OAuth, status codes |
+| **Staff / SDE-3 Q&A** | **[docs/staff-sde3-qa/README.md](docs/staff-sde3-qa/README.md)** | Node, event loop, microservices, Kafka, security, GenAI, 50k-upload scenario |
 | **LLD method & theory** | **This doc §1–§22** · **[docs/](docs/README.md)** | Method, OOP, SOLID, patterns, walkthroughs in **`problems/`** |
 | **DSA notes** | **[docs/dsa/README.md](docs/dsa/README.md)** | Topic index — [binary search](docs/dsa/binary-search.md) · [linked list](docs/dsa/linked-list.md) · [DP](docs/dsa/dynamic-programming.md) |
 | **LLD gaps (breadth)** | **[lld-gaps/README.md](lld-gaps/README.md)** | UML, extra patterns, 12-week plan |

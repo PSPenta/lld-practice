@@ -1310,6 +1310,9 @@ Neither is universally "better" — trade-offs on scale, logout, and security.
 | 10 | `async function f(){ return 1; } f().then(console.log)` | `1` | `async` always wraps return in a Promise |
 | 11 | Closure in loop with `var` + `setTimeout` | All print same final `i` | One shared `var i`; callbacks run after loop (`i === n`). Fix: `let` or capture value |
 | 12 | `==` vs `===` for `null`/`undefined` | `null == undefined` true; `===` false | Abstract equality special-cases nullish; prefer `===` (or `== null` for both) |
+| 13 | `try { Promise.reject('x') } catch (e) {…}` | catch **does not** run; unhandledRejection | `Promise.reject` returns a rejected Promise — it does **not throw sync**; `try/catch` only catches throws |
+| 14 | `try { await Promise.reject('x') } catch (e) {…}` | logs `'x'` | `await` on rejected Promise **throws** into the async function → `catch` works (must be in `async`) |
+| 15 | `[a, ...b, c] = arr` or `[a, ...b, ...c]` | **SyntaxError** | Rest (`...`) must be **last** and **only once** in array destructuring |
 
 ---
 

@@ -78,7 +78,12 @@
     "ui.diagnostic.staticcheck": true
   },
 
-  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
   "eslint.workingDirectories": [{ "mode": "auto" }],
 
   "markdown.preview.breaks": true,

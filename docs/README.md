@@ -13,6 +13,7 @@
 | [backend/](backend/README.md) | REST API & Backend — HTTP, idempotency, payments, pagination, JWT/OAuth |
 | [ai-lld/](ai-lld/README.md) | §15 — AI / LLM LLD theory |
 | [interview-prep/](interview-prep/README.md) | §17–§22 — mocks, 4-week plan, day-of extras (AI / HLD / prod Qs) |
+| [staff-sde3-qa/](staff-sde3-qa/README.md) | Staff/SDE-3 Q&A — Node, microservices, Kafka, security, GenAI, scenarios |
 | [../lld-gaps/](../lld-gaps/README.md) | UML, paper-only patterns, refactor drills |
 | [../problems/](../README.md#21-lld-problem-checklist) | §21 — **41 problem walkthroughs** (Steps 1–6) |
 | [dsa/](dsa/README.md) | DSA topic index — [binary search](dsa/binary-search.md) · [linked list](dsa/linked-list.md) · [DP](dsa/dynamic-programming.md) |
