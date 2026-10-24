@@ -5,7 +5,7 @@
 Crisp revision. Add new DP problems here, a row in the index, and a **Practice** link.
 
 ---
-
+ 
 ## Index
 
 | # | Topic | Practice |
@@ -14,9 +14,11 @@ Crisp revision. Add new DP problems here, a row in the index, and a **Practice**
 | 2 | [Memoization vs Tabulation](#memoization-vs-tabulation) | [509](https://leetcode.com/problems/fibonacci-number/) |
 | 3 | [Climbing Stairs](#climbing-stairs) | [70](https://leetcode.com/problems/climbing-stairs/) |
 | 4 | [Frog Jump (min energy)](#frog-jump-min-energy) | [GFG](https://www.geeksforgeeks.org/problems/geek-jump/1) |
+| 5 | [Frog Jump with K distance](#frog-jump-with-k-distance) | [GFG](https://www.geeksforgeeks.org/problems/minimal-cost/1) |
+| 6 | [House Robber (max sum non-adjacent)](#house-robber-max-sum-non-adjacent) | [198](https://leetcode.com/problems/house-robber/) |
 
 ---
-
+ 
 ## DP shortcut
 
 Three steps before you write code:
@@ -94,6 +96,8 @@ return dp[n]
 - Space can often shrink to a few variables when only recent states matter.
 
 **Interview line:** Memo = top-down recursion + cache; Tabulation = bottom-up fill from bases. Same recurrence — different evaluation order.
+
+---
 
 ## Climbing Stairs
 
@@ -187,6 +191,8 @@ climb(n, dp):
 - Same recurrence as tabulation; evaluation order is top-down.
 - Cache check must be **`dp[n] != -1`** (or `undefined`), not `!dp[n]`.
 
+---
+
 ## Frog Jump (min energy)
 
 **Practice:** [GFG — Geek Jump / Frog Jump](https://www.geeksforgeeks.org/problems/geek-jump/1)
@@ -249,3 +255,155 @@ return dp[n - 1]
 | `dp` size | `Array(n)` is enough (`0 .. n-1`) |
 
 **Interview line:** “Stairs with cost — `f(i) = min(f(i-1)+|Δ|, f(i-2)+|Δ|)`.”
+
+---
+
+## Frog Jump with K distance
+
+**Practice:** [GFG — Minimal Cost](https://www.geeksforgeeks.org/problems/minimal-cost/1)
+
+Same as [Frog Jump (min energy)](#frog-jump-min-energy), but from `i` the frog may jump **any** `1 .. k` steps (not only 1 or 2).
+
+### DP shortcut
+
+| Step | Here |
+|------|------|
+| **1. Index** | `f(i)` = min energy to reach `i` |
+| **2. Stuff** | Arrive from `i-1`, `i-2`, …, `i-k` (if valid) |
+| **3. Combine** | **Minimise** → `min` over those jumps |
+
+### Tabulation — O(n · k)
+
+```text
+dp[0] = 0
+
+for i in 1 .. n - 1:
+  minCost = INF
+  for j in 1 .. k:                       // j = jump length — NOT from 0
+    if i - j >= 0:
+      minCost = min(minCost, dp[i - j] + abs(height[i] - height[i - j]))
+  dp[i] = minCost
+
+return dp[n - 1]
+```
+
+### Memoization — top-down
+
+```text
+f(i):
+  if i == 0: return 0
+  if dp[i] != -1: return dp[i]
+
+  minCost = INF
+  for j in 1 .. k:
+    if i - j >= 0:
+      minCost = min(minCost, f(i - j) + abs(height[i] - height[i - j]))
+  dp[i] = minCost
+  return dp[i]
+
+// answer = f(n - 1)
+```
+
+### Bugs in the pasted code
+
+```text
+// WRONG pieces
+dp[1] = abs(...)                        // optional; loop can set it
+for i in 0 .. n-1:
+  for j in 0 .. k:                      // j=0 is the killer
+    cost = dp[i - j] + abs(...)
+```
+
+| Bug | Why |
+|-----|-----|
+| **`j` from `0`** | `j=0` → `dp[i] + 0` while `dp[i]` is still `-1` → `minCost` becomes `-1` for every `i` |
+| Jump of 0 | Not a legal move — start **`j = 1`** |
+| Loop `i` from `0` | Harmless if `j≥1`, but clearer to start **`i = 1`** and leave `dp[0] = 0` |
+
+- `k = 2` reduces to classic frog jump (min energy).
+- Time `O(n·k)`, space `O(n)` (or rolling window of size `k` if you want).
+
+---
+
+## House Robber (max sum non-adjacent)
+
+**Practice:** [198. House Robber](https://leetcode.com/problems/house-robber/)
+
+You are a professional robber planning to rob houses along a street. Each house has a certain amount of money stashed, the only constraint stopping you from robbing each of them is that adjacent houses have security systems connected and it will automatically contact the police if two adjacent houses were broken into on the same night.
+
+Given an integer array `nums` representing the amount of money in each house, return the maximum amount of money you can rob tonight without alerting the police.
+
+### DP shortcut
+
+| Step | Here |
+|------|------|
+| **1. Index** | `f(i)` = max money that can be robbed from houses `[0..i]` |
+| **2. Stuff** | At house `i`, you can either rob it (then you can't rob `i-1`) or skip it |
+| **3. Combine** | **Maximise** → `max(rob current + f(i-2), skip current + f(i-1))` |
+
+### Tabulation — bottom-up
+
+```text
+if n == 0: return 0
+if n == 1: return nums[0]
+
+dp = array of size n
+dp[0] = nums[0]
+dp[1] = max(nums[0], nums[1])
+
+for i in 2 .. n-1:
+  dp[i] = max(dp[i-1], nums[i] + dp[i-2])
+
+return dp[n-1]
+```
+
+### Space O(1) — rolling variables
+
+```text
+if n == 0: return 0
+if n == 1: return nums[0]
+
+prev2 = nums[0]                    // dp[i-2]
+prev  = max(nums[0], nums[1])      // dp[i-1]
+
+for i in 2 .. n-1:
+  curr  = max(prev, nums[i] + prev2)
+  prev2 = prev
+  prev  = curr
+
+return prev
+```
+
+### Memoization — top-down
+
+```text
+houseRobber(nums):
+  n = nums.length
+  if n == 0: return 0
+  memo = array(n).fill(-1)
+  return rob(nums, n-1, memo)
+
+rob(nums, i, memo):
+  if i < 0: return 0
+  if i == 0: return nums[0]
+  if memo[i] != -1: return memo[i]
+  
+  // Rob current house + skip previous
+  robCurrent = nums[i] + rob(nums, i-2, memo)
+  // Skip current house
+  robSkip = rob(nums, i-1, memo)
+  
+  memo[i] = max(robCurrent, robSkip)
+  return memo[i]
+```
+
+### Common bugs to avoid
+
+| Mistake | Why it fails |
+|---------|--------------|
+| `for i in 0 .. n-1` without base cases | Will access `dp[-1]` or `nums[-1]` |
+| Forgetting `n == 0` and `n == 1` edge cases | Returns incorrect values for small arrays |
+| Using `dp[i] = max(dp[i-1], nums[i] + dp[i-1])` | Doesn't skip adjacent house (should be `i-2`) |
+| Not initializing `dp[1]` correctly | Should be `max(nums[0], nums[1])` not `nums[1]` |
+
+**Interview line:** "House robber is a classic DP where `f(i) = max(f(i-1), nums[i] + f(i-2))` — either skip current house or rob it and skip the previous one."
