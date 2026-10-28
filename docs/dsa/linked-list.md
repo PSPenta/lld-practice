@@ -14,6 +14,7 @@ Crisp revision. Add new LL problems here, a row in the index, and a **Practice**
 | 2 | [Fast & slow pointers](#fast--slow-pointers) | [141](https://leetcode.com/problems/linked-list-cycle/) · [142](https://leetcode.com/problems/linked-list-cycle-ii/) · [876](https://leetcode.com/problems/middle-of-the-linked-list/) |
 | 3 | [Merge two sorted lists](#merge-two-sorted-lists) | [21](https://leetcode.com/problems/merge-two-sorted-lists/) |
 | 4 | [Merge K sorted lists](#merge-k-sorted-lists) | [23](https://leetcode.com/problems/merge-k-sorted-lists/) |
+| 5 | [Sort a linked list](#sort-a-linked-list) | [148](https://leetcode.com/problems/sort-list/) |
 
 ---
 
@@ -257,3 +258,90 @@ function mergeKLists(lists):
 - Use `mergeTwoLists` unchanged as the merge primitive either way; only the *scheduling* of merges changes.
 
 **Interview line:** "K sorted lists = repeated 2-way merge. Min-heap or divide-and-conquer gets `O(N log k)`; naive front-of-array pairing is `O(k^2 · n)`."
+
+---
+
+## Sort a linked list
+
+**Practice:** [148. Sort List](https://leetcode.com/problems/sort-list/)
+
+Sort a singly linked list **in-place** (no extra nodes; only pointer changes) — target `O(n log n)` time, `O(log n)` stack for recursion (or `O(1)` extra with bottom-up merge sort).
+
+### DP/algorithm shortcut
+
+| Step | Here |
+|------|------|
+| **1. Index** | Split the list into halves by the **middle** node (fast & slow) |
+| **2. Stuff** | Recursively sort the left half and the right half |
+| **3. Combine** | **Merge** the two sorted halves (reuse [`mergeTwoLists`](#merge-two-sorted-lists)) |
+
+### Top-down merge sort — O(n log n) time, O(log n) stack
+
+```text
+sortList(head):
+  if head == null || head.next == null: return head   // base: 0 or 1 node already sorted
+
+  // split at the middle (left middle keeps the extra node when odd)
+  slow = fast = head
+  while fast.next != null && fast.next.next != null:
+    slow = slow.next
+    fast = fast.next.next
+
+  rightHead = slow.next
+  slow.next  = null                                  // cut the list in two
+
+  left  = sortList(head)
+  right = sortList(rightHead)
+  return mergeTwoLists(left, right)                   // pointers reused, no new nodes
+```
+
+- Find the **left middle** (`fast.next.next` guard) so the split is balanced on odd lengths; the right half is never empty.
+- `mergeTwoLists` already produces a sorted list from two sorted lists and reuses nodes (`O(1)` extra per merge).
+- Stack depth = `log n` (balanced splits). Do not bubble sort / insertion sort here — that’s `O(n^2)`.
+
+### Bottom-up merge sort — O(n log n) time, O(1) extra (interview “no recursion” variant)
+
+```text
+sortList(head):
+  if head == null || head.next == null: return head
+
+  // count nodes to bound pass count (optional but clean)
+  count = 0; cur = head
+  while cur != null: count++; cur = cur.next
+
+  dummy = { next: head }
+  size  = 1
+
+  while size < count:
+    cur  = dummy.next                               // start of current pass
+    tail = dummy                                   // last merged node cursor
+
+    while cur != null:
+      left  = cur
+      right = split(left, size)                      // split size nodes, return rest
+      cur   = split(right, size)                      // advance for next group
+
+      merged = mergeTwoLists(left, right)            // tail attaches merged block
+      tail.next = merged
+      while tail.next != null: tail = tail.next      // walk to the new end
+
+    size *= 2                                       // double sub-list size each pass
+
+  return dummy.next
+```
+
+- `split(start, n)` walks `n-1` steps, detaches and returns the node after the `n`-th node (like `mergeTwoLists`’s implicit “leftover” rule).
+- `O(1)` extra space beyond pointers; preferred when the interviewer disallows recursion.
+- Same primitive as merge sort on arrays — only the “merge” step is the list primitive.
+
+### Common bugs to avoid
+
+| Mistake | Why it fails |
+|---------|--------------|
+| Splitting at `fast` instead of `fast.next` (right middle) on odd lists | Left half can become empty → infinite recursion / unbalanced |
+| Forgetting `slow.next = null` | Two `sortList` calls share the same tail (cycle) |
+| Returning a newly allocated node in `mergeTwoLists` | Creates `O(n)` extra nodes; violates “in-place” |
+| Trying quicksort on a linked list without random access | Picking a pivot is `O(n)` per step and partitioning is awkward — merge sort is the standard answer |
+| Using insertion sort for large `n` | `O(n^2)` — only acceptable as a warm-up / small-list optimization |
+
+**Interview line:** "Sort a linked list = merge sort: split at the middle (left middle), recurse, then reuse `mergeTwoLists`. Top-down `O(log n)` stack; bottom-up `O(1)` extra if asked."

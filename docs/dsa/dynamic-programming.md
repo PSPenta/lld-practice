@@ -15,7 +15,8 @@ Crisp revision. Add new DP problems here, a row in the index, and a **Practice**
 | 3 | [Climbing Stairs](#climbing-stairs) | [70](https://leetcode.com/problems/climbing-stairs/) |
 | 4 | [Frog Jump (min energy)](#frog-jump-min-energy) | [GFG](https://www.geeksforgeeks.org/problems/geek-jump/1) |
 | 5 | [Frog Jump with K distance](#frog-jump-with-k-distance) | [GFG](https://www.geeksforgeeks.org/problems/minimal-cost/1) |
-| 6 | [House Robber (max sum non-adjacent)](#house-robber-max-sum-non-adjacent) | [198](https://leetcode.com/problems/house-robber/) |
+| 6 | [House Robber (max sum non-adjacent)](#house-robber-max-sum-non-adjacent) / [Maximum sum of non-adjacent elements](#house-robber-max-sum-non-adjacent) | [198](https://leetcode.com/problems/house-robber/) · [GFG](https://www.geeksforgeeks.org/problems/max-sum-without-adjacents2430/1) |
+| 7 | [House Robber 2 (circular)](#house-robber-2-circular) | [213](https://leetcode.com/problems/house-robber-ii/) |
 
 ---
  
@@ -327,7 +328,7 @@ for i in 0 .. n-1:
 
 ## House Robber (max sum non-adjacent)
 
-**Practice:** [198. House Robber](https://leetcode.com/problems/house-robber/)
+**Practice:** [198. House Robber](https://leetcode.com/problems/house-robber/) · [GFG — Max sum without adjacent elements](https://www.geeksforgeeks.org/problems/max-sum-without-adjacents2430/1) (same problem, "Maximum sum of non-adjacent elements")
 
 You are a professional robber planning to rob houses along a street. Each house has a certain amount of money stashed, the only constraint stopping you from robbing each of them is that adjacent houses have security systems connected and it will automatically contact the police if two adjacent houses were broken into on the same night.
 
@@ -407,3 +408,83 @@ rob(nums, i, memo):
 | Not initializing `dp[1]` correctly | Should be `max(nums[0], nums[1])` not `nums[1]` |
 
 **Interview line:** "House robber is a classic DP where `f(i) = max(f(i-1), nums[i] + f(i-2))` — either skip current house or rob it and skip the previous one."
+
+---
+
+## House Robber 2 (circular)
+
+**Practice:** [213. House Robber II](https://leetcode.com/problems/house-robber-ii/)
+
+Same as [House Robber](#house-robber-max-sum-non-adjacent), but the houses are arranged in a **circle**: house `0` and house `n-1` are adjacent, so they can never both be robbed. Run the linear House Robber twice — once excluding the last house (`[0..n-2]`), once excluding the first house (`[1..n-1]`) — and take the maximum.
+
+### DP shortcut (reuses House Robber)
+
+| Step | Here |
+|------|------|
+| **1. Index** | `g(nums)` = House Robber answer on a slice `[l..r]` (max sum of non-adjacent in that range) |
+| **2. Stuff** | Either the first house or the last house is in the slice — but never both |
+| **3. Combine** | **Maximise** → `max(rob(nums, 0, n-2), rob(nums, 1, n-1))` |
+
+### Tabulation — bottom-up
+
+```text
+houseRobber2(nums):
+  n = nums.length
+  if n == 1: return nums[0]
+  if n == 2: return max(nums[0], nums[1])
+
+  a = robRangeTab(nums, 0, n - 2)
+  b = robRangeTab(nums, 1, n - 1)
+  return max(a, b)
+
+robRangeTab(nums, lo, hi):
+  if lo > hi: return 0
+  m = hi - lo + 1
+  dp = array of size m
+  dp[0] = nums[lo]
+  if m >= 2:
+    dp[1] = max(nums[lo], nums[lo + 1])
+  for i in 2 .. m - 1:
+    dp[i] = max(dp[i - 1], nums[lo + i] + dp[i - 2])
+  return dp[m - 1]
+```
+
+### Space O(1) — rolling variables
+
+```text
+houseRobber2(nums):
+  n = nums.length
+  if n == 1: return nums[0]                  // only one house
+  if n == 2: return max(nums[0], nums[1])    // adjacent circle pair
+
+  // slice excluding the last house
+  a = robRange(nums, 0, n - 2)
+  // slice excluding the first house
+  b = robRange(nums, 1, n - 1)
+
+  return max(a, b)
+
+robRange(nums, lo, hi):                      // standard House Robber on nums[lo..hi]
+  prev2 = 0
+  prev  = 0
+  for i in lo .. hi:
+    curr = max(prev, nums[i] + prev2)
+    prev2 = prev
+    prev  = curr
+  return prev
+```
+
+- Slice the array mentally via indices (`lo`..`hi`), not by copying it — keeps space O(1).
+- Edge cases `n == 1` and `n == 2` must be handled before slicing, otherwise a slice can be empty/invalid.
+- Both slices share the middle houses; taking the `max` of the two answers covers the best excluded-house case.
+
+### Common bugs to avoid
+
+| Mistake | Why it fails |
+|---------|--------------|
+| Running House Robber once on the whole circle | `nums[0]` and `nums[n-1]` both counted even though they are adjacent |
+| Slicing with `nums[0..n-1]` and `nums[1..n-2]` | Drops two houses instead of one in each slice |
+| Forgetting `n == 1` / `n == 2` | Empty range or self-adjacent contradiction |
+| Returning `max(prev from slice1, ...)` without storing | Need the final value from each slice |
+
+**Interview line:** "Circular constraint splits into two linear problems: exclude the first house, or exclude the last — `max(rob(0..n-2), rob(1..n-1))`."
